@@ -10,7 +10,7 @@ const fs = require('fs');
 // Load test data from JSON file for consistency
 function loadTestData() {
     try {
-        const jsonContent = fs.readFileSync('../../tests/common/handshake/cbor_test_vectors_fixed.json', 'utf8');
+        const jsonContent = fs.readFileSync('../../../tests/common/handshake/cbor_test_vectors_fixed.json', 'utf8');
         return JSON.parse(jsonContent);
     } catch (error) {
         console.error('Failed to load test data:', error.message);

@@ -360,7 +360,7 @@ jobs:
         
         # Check for insecure random usage
         echo "Checking for secure random usage..."
-        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom\|def.*random\|\"\"\"\""; then
+        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom\|def.*random\|\"\"\"\".*Generate.*random"; then
           echo "⚠️  Insecure random usage detected"
           exit 1
         else
