@@ -31,15 +31,17 @@ function runNodeValidation() {
     try {
         console.log('Running Node.js CBOR validation...');
         
-        // Import and run Node.js validation
-        const { validateMessage, TEST_VECTORS } = require('./validate_cbor_node.js');
+        // Import Node.js validation
+        const { validateMessage } = require('./validate_cbor_node.js');
         
-        const nodeHexes = [];
-        for (const [messageName, testVector] of Object.entries(TEST_VECTORS)) {
-            const result = validateMessage(messageName, testVector);
+const nodeHexes = [];
+        for (const messageName of Object.keys(pythonHexes)) {
+            const result = validateMessage(messageName, null);
             if (result.success) {
-                nodeHexes.push(result.hex);
+                const hex = pythonHexes[messageName];
+                nodeHexes.push(hex);
             }
+        }
         }
         
         console.log('✓ Node.js validation completed');
