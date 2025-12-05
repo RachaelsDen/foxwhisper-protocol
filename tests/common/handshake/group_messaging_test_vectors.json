@@ -1,0 +1,207 @@
+{
+  "group_creation": {
+    "description": "Group creation with initial member",
+    "scenario": "group_creation",
+    "creator": "+kTWRYAjluLX7En01SwWzC3UjNfpm+Ejhj9X1uDwYFQ=",
+    "group_info": {
+      "group_id": "+cSlOmULSmTIrUGhdlAzYA==",
+      "group_name": "Test Group",
+      "created_at": 1701763200000,
+      "group_type": "standard",
+      "max_members": 100
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "GROUP_CREATE",
+        "from": "creator",
+        "to": "system",
+        "message": {
+          "type": "GROUP_CREATE",
+          "version": 1,
+          "creator_id": "+kTWRYAjluLX7En01SwWzC3UjNfpm+Ejhj9X1uDwYFQ=",
+          "group_id": "+cSlOmULSmTIrUGhdlAzYA==",
+          "group_name": "Test Group",
+          "group_type": "standard",
+          "max_members": 100,
+          "timestamp": 1701763200000
+        },
+        "expected_result": "group_created"
+      }
+    ],
+    "validation_criteria": {
+      "valid_group_structure": true,
+      "proper_creator_authentication": true,
+      "unique_group_id": true,
+      "valid_group_parameters": true
+    }
+  },
+  "group_join": {
+    "description": "New member joining existing group",
+    "scenario": "group_join",
+    "group_context": {
+      "group_id": "S0smZKU5W7lDTIDAuBD65w==",
+      "existing_members": [
+        "eVmT4Xm39pk9+AM/DG4+CQVHoJwvUrkEu7IQ+fzFTHM="
+      ],
+      "group_admin": "eVmT4Xm39pk9+AM/DG4+CQVHoJwvUrkEu7IQ+fzFTHM="
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "GROUP_JOIN_REQUEST",
+        "from": "new_member",
+        "to": "group_admin",
+        "message": {
+          "type": "GROUP_JOIN_REQUEST",
+          "version": 1,
+          "group_id": "S0smZKU5W7lDTIDAuBD65w==",
+          "member_id": "45g2IMYAUqmpwFL1+xpXCY/40hL/2pBXF2bWpq18h38=",
+          "join_request_id": "jaEV9D1GVUiy+Q3duB+kKg==",
+          "timestamp": 1701763201000
+        },
+        "expected_result": "join_approved"
+      },
+      {
+        "step": 2,
+        "type": "GROUP_JOIN_APPROVAL",
+        "from": "group_admin",
+        "to": "new_member",
+        "message": {
+          "type": "GROUP_JOIN_APPROVAL",
+          "version": 1,
+          "group_id": "S0smZKU5W7lDTIDAuBD65w==",
+          "member_id": "45g2IMYAUqmpwFL1+xpXCY/40hL/2pBXF2bWpq18h38=",
+          "join_request_id": "jaEV9D1GVUiy+Q3duB+kKg==",
+          "approval": true,
+          "timestamp": 1701763202000
+        },
+        "expected_result": "member_added"
+      }
+    ],
+    "validation_criteria": {
+      "proper_join_flow": true,
+      "admin_authorization": true,
+      "unique_member_ids": true,
+      "valid_group_context": true
+    }
+  },
+  "group_leave": {
+    "description": "Member leaving group gracefully",
+    "scenario": "group_leave",
+    "group_context": {
+      "group_id": "3ziu0hHDXOcxDewvaUiX0w==",
+      "members": [
+        "ghGfhLV+UzkYMUv4WWA34r/ZkCdjEP7OwRzIlpsWEec=",
+        "Hz7HE74BDjGvrOL3KymMzbx3M/wNDQmlv3A2FcuOVXE="
+      ],
+      "group_admin": "Hz7HE74BDjGvrOL3KymMzbx3M/wNDQmlv3A2FcuOVXE="
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "GROUP_LEAVE_REQUEST",
+        "from": "leaving_member",
+        "to": "group_system",
+        "message": {
+          "type": "GROUP_LEAVE_REQUEST",
+          "version": 1,
+          "group_id": "3ziu0hHDXOcxDewvaUiX0w==",
+          "member_id": "ghGfhLV+UzkYMUv4WWA34r/ZkCdjEP7OwRzIlpsWEec=",
+          "leave_reason": "voluntary",
+          "timestamp": 1701763201000
+        },
+        "expected_result": "leave_processed"
+      },
+      {
+        "step": 2,
+        "type": "GROUP_MEMBER_REMOVE",
+        "from": "group_system",
+        "to": "all_members",
+        "message": {
+          "type": "GROUP_MEMBER_REMOVE",
+          "version": 1,
+          "group_id": "3ziu0hHDXOcxDewvaUiX0w==",
+          "member_id": "ghGfhLV+UzkYMUv4WWA34r/ZkCdjEP7OwRzIlpsWEec=",
+          "removed_by": "system",
+          "timestamp": 1701763202000
+        },
+        "expected_result": "member_removed"
+      }
+    ],
+    "validation_criteria": {
+      "proper_leave_flow": true,
+      "member_authentication": true,
+      "graceful_removal": true,
+      "group_integrity_maintained": true
+    }
+  },
+  "group_messaging": {
+    "description": "Encrypted group message to all members",
+    "scenario": "group_messaging",
+    "group_context": {
+      "group_id": "qwMYX6mJAlrqq3jaD60Cww==",
+      "member_count": 5,
+      "message_encryption": "group_key"
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "GROUP_MESSAGE_ENCRYPT",
+        "from": "sender",
+        "to": "group",
+        "message": {
+          "type": "GROUP_MESSAGE_ENCRYPT",
+          "version": 1,
+          "group_id": "qwMYX6mJAlrqq3jaD60Cww==",
+          "sender_id": "NJbBX7SfVakGaCqJ8ApOQ0rrWam8f1D3hfL/qtiPVAk=",
+          "message_id": "WBjUJtdNEJiM/OMo7HCMFA==",
+          "message_content": "SGVsbG8gZ3JvdXAgbWVtYmVycyE=",
+          "encryption_type": "group_key",
+          "timestamp": 1701763200000
+        },
+        "expected_result": "message_encrypted"
+      },
+      {
+        "step": 2,
+        "type": "GROUP_MESSAGE_DISTRIBUTE",
+        "from": "sender",
+        "to": "group_members",
+        "message": {
+          "type": "GROUP_MESSAGE_DISTRIBUTE",
+          "version": 1,
+          "group_id": "qwMYX6mJAlrqq3jaD60Cww==",
+          "sender_id": "NJbBX7SfVakGaCqJ8ApOQ0rrWam8f1D3hfL/qtiPVAk=",
+          "message_id": "WBjUJtdNEJiM/OMo7HCMFA==",
+          "encrypted_message": "or21RSv39XQTrYuaa8QJ2zvkDybdWzEr8EKyBsfjZYD1iRN6z2OjChJ/LhBJOK8dxaoSfutTbqMNdLdDncFQQVN6jK/58soN54ed5MjEUbM2kyzvEn+rnvmTRvYO1Yltd2hpOYVID3F9rs9TGH4MWmW9Jh6TLs9MyHcLXsLz3MupCk0e+HN+90R8SN6ePrR1VAyn4DYWSR4fOPFtV5q7knglmDOaTET1rlLDV5UFUGwYq/bxb7Pi5wT+2Bql5tMfHbcz1zmPUzdwmPT3hV53YwGII40QxJ9UQ7Y2AgrrJB694YtSDWa6TRuhjzXqfUFcptobfwS1IFRpFyLOVsa1Iw==",
+          "timestamp": 1701763201000
+        },
+        "expected_result": "message_delivered"
+      }
+    ],
+    "validation_criteria": {
+      "proper_encryption": true,
+      "message_integrity": true,
+      "group_key_usage": true,
+      "sender_authentication": true
+    }
+  },
+  "_metadata": {
+    "version": "0.9",
+    "generated_by": "FoxWhisper Group Messaging Test Vector Generator",
+    "description": "Group messaging test vectors for FoxWhisper E2EE",
+    "test_categories": [
+      "group_creation",
+      "group_join",
+      "group_leave",
+      "group_messaging"
+    ],
+    "validation_features": [
+      "group_management",
+      "member_authentication",
+      "message_encryption",
+      "access_control",
+      "group_integrity"
+    ]
+  }
+}

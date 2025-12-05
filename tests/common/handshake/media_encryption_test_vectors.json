@@ -1,0 +1,152 @@
+{
+  "key_derivation": {
+    "description": "Media key derivation from ratchet chain",
+    "scenario": "media_key_derivation",
+    "session_context": {
+      "session_id": "YMWute4egWH7CdyhnKHdr2Ts9nvvgGvo0Nkc44NcMGo=",
+      "root_key": "wWpHWbM+12vsCrIqGjykjtEq4IJxvZYI0vPZImE1RiM=",
+      "chain_key": "4QwUufSFiBwa8MyZybe2YeOmCkLN8M45A3O9SzRTaxg=",
+      "message_index": 42
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "KEY_DERIVE",
+        "operation": "derive_media_key",
+        "input": {
+          "root_key": "wWpHWbM+12vsCrIqGjykjtEq4IJxvZYI0vPZImE1RiM=",
+          "chain_key": "4QwUufSFiBwa8MyZybe2YeOmCkLN8M45A3O9SzRTaxg=",
+          "message_index": 42,
+          "salt": "DfKG0Xk/gfvDKOK3gzQ3zg=="
+        },
+        "output": {
+          "media_key": "Zk5xjoYGIY2AYFxjcI4azjXLMZg+Xk7Wd3L2VmZsakQ=",
+          "key_id": "sRKVqwJEASs=",
+          "key_expiry": 1701763280000
+        },
+        "validation": {
+          "key_length": 32,
+          "key_uniqueness": true,
+          "proper_derivation": true
+        }
+      }
+    ],
+    "validation_criteria": {
+      "proper_key_derivation": true,
+      "key_length_correct": true,
+      "key_uniqueness": true,
+      "secure_randomness": true
+    }
+  },
+  "frame_protection": {
+    "description": "Media frame protection with encryption and authentication",
+    "scenario": "frame_protection",
+    "media_context": {
+      "media_key": "VjGIJgQiuuQZJ4QhOTo2qTalHb5LIAO4bKD/6QUlBR4=",
+      "frame_type": "video",
+      "sequence_number": 12345,
+      "timestamp": 1701763200000
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "FRAME_ENCRYPT",
+        "operation": "encrypt_media_frame",
+        "input": {
+          "media_key": "VjGIJgQiuuQZJ4QhOTo2qTalHb5LIAO4bKD/6QUlBR4=",
+          "frame_data": "emlkW89mlwlWmTqEMBifNEpPzYmVUGhUPglbwsn+IdrgBbbNps2ReUChmsDGHQSFWG4pkd2zfNbsZRld2D4D5dWUU22hhM+7DKYhlUmV7vkRPrMW40et5d/t+6QkA0xD+aKQT8RQykkxwjdiubz3Fmp8n7F1VVI0ZWEX9nmxfN75K0zXICGhQ79b0oUKH5Q4wRba8hCgEbungCXaO0dzMHRxjVznazXtkXHtTGYHVRTKbuMm6YL+P6zcjAfj2C72Z/wrbFkgPH8ljBzisSiP2eHsOoZNkZk9htNvucHd+2/ybbFwT7rwaA86CYvrk02bLi/31fDtwc5ZvOziYH7INCZ6LDnhUQOAim3ZEi8y15dvesyMMXCcShF1G6bvOcUk4O2rCgAes6bFNhwpZZiBURaf0+2cRagBqdB7oJcOz7ilAS/3Nnu/GkIWo4/3lN0jT5Yyyb3QC6qhEejqPsCdi7rmeYHHQYD+alV5Oe9iPNqbUFklgAPR+qEWmJl1D+Gwn+E7ldLaLa3Tk9OX7lyyaKFK6/0GGIQLa8L2QvCS3LzGLt9TisN/eBuIkr5RMahNcyuQJo2JFKGCpPKMG/tMhviI8pAuacsM3CNl1BgGBB9HYw5/kUqZ7WG+satSzNKaC27PlWfayR0VkeL2lVWog/pDfvv/Ya/9bqdleQhngsYW3PgARC8SX1C0OiUVMj8TUvLhoM1LlGGwK2hUJ2SNZ58oFMZxJO4gKUesOlmuroTReFMwVliscL2lXQflKOkfS7divbQmxMu/XbP3EC3BaWGq9RoPHI9XiUSAI94fmIGtRvmQ7LmgfueQ/2G77eyDoy4FDqefbBSzs6mIsInihHkSbI6iigkrEgvoxmS3a27OF8QC1FcW5EbKo3x7fyDQAPvXmQWaaELyKPx+kSHm66FUUCTsuG9YHowCkF7ktN4dLzuF49krlG+IQzRhWA/6Monm4X+PXpNzlw6h0kWW+UDFJZ0aycMOv0qAfrHNPcGx3mw/7ubWrJPltFSXC0p5N0zkdeG8KHV5xtuwa6fpPd+Em3yGE4uNg3Ox00ELGBJBvkcTp3WXKc7AcUBUFkfT6EQC4GMkkEtRAukYhCtmhMOkQCLKQFT9JVuHydRc5AkOMDmkJ2JBYftLrP3vMygNqSwhcfvOX7u9mTafa+VmelygvwaTtE3lVEH4Hqbey8WRcfcV9bYb6CmXxwDO8itiSi+pmEzAhaCKuEgAopbNhThj/aXgUc91WwmURQmObcLwykwmYiYV5KCYC3aIrixa8G/fGyvrIvmfP0Zos9omtxsEB5QpvdZ7Ckp81lAysX+BoY7+yOO39K75CYruV9Kux3t8eBisE1kz8UnpsOCpjQ==",
+          "frame_iv": "Pg8pmkVn8iUAU6QT",
+          "aad": "dmlkZW9fZnJhbWVfMTIzNDU="
+        },
+        "output": {
+          "encrypted_frame": "XuZWVlRENqFc7j+Ssgt4/e2tonRdGvbTEu1IWiXrEjQFkZCnNGorTURKhMtNcsh1BvqZKKuIQmbrcGqdxVPYD8eiCNlWF3iazpY+/GPQq08cSxAN+9vDhAUXkkHUyRAd7DWuxI521dxKf7yidU0eOR1MDzkmITqt02EQ55I5pILxDcKBtNTSNBppx5mgC/c09wOw8OKfYFz/94l+5jMHnYzdKMowRx8sPHSPiCSjA5RjJAsmwfWZ+kDA3WAxYrpjl73vNFM0JjrHQ2qUVO1vuxRtRWM7UHwiS5OOhgeClGlKUyUEX9NKnDmsdKZioa+5t6fQof82IOuUoFBLi4PzV75R4SZuxPD29ELErshdlICF7ye7lLx3HgEjMbEzVTU96u0+N3YbS8KD4DET9k+JAuUZzVw8h935tQdFf9FZPqFbnvl1IZf+kE3KNY3UndtZWemBOc97mOSpfuyV3cPMBrW/5+SIvIZxG6agHcmvGfmPijgzHqiNqGPfzq19oTDdUUuT5sWvcIfmrNcIAeV3rLy35HZmGDEKoXRnYJRNVGGvZ0NOfUo7YytJVu3sVLf7QX6EhBOFsXXHeEMsKMK+syZVi1Cnh5p8L6nofIvay0uEmKFVoH4IkXEfHE6DQ6kLE6czZfpdlf+wa2FWOrL/uHocQjNpxYq5bern2K8FB0KjiylgjEthz4/OnkrxZCWmfg/0zpHSMsVKJZz3jAMhTLdcuoEMOgIHuaPWL6+vqGFmJiGFFv0LwZ2rE6B3Lp6gLd6WMLaBWLUhmyozs5c7ZwxyH7+52jsaEK9ER/yZ7nhMmRJOS+UCPOrFRJ0GZ9l/FkpBKFmPScKcGAKi2HbfiSPbzeIG7NxVY511n0Iuvkxs9BYZm4lS8c5sbsG+PLmEl7/C1MizzoBtRVie1em/44lTLA1J8oU/eyirIIbh+LMiHfC/AlDMlm9L/6JDlnbsiNDG9QmmwjysL83QQdqrE1KCut3BLgOqUN+WFWzqgBN6aAS+OWf3y3htXp/MnYCJOQLk7exGj978mqzvR9WcRqW7qvFmWuO6XI4x4puFePNsGEXXfjOsUhczX7su5Z1fJ1du+RlsKBMPYcdgsO37qbMz/srgHxTOMy/MMUJks4V3C6COd7xt6+9kTueqRlMB59gE1qYYRGxCmsD9C8Ab3yxjnGy9G69htBkpVO4hsY5H5rok1kUoFWNz1Yq5SEtt5IsGeYdUYet/NRnpRVHjfPmbvVmR9YK5ihb6s0lGYAcm9C4zOrqcP2jjsHjSaE+sfFWAZtHtDDPjKfmgL197kZOPyq1XqlHwJkDOkuV1nhECgBNN6OLe9d0SlZuo4K5EOLX9r8tu+NP3HbguK+mvPCtjThosx0+GmxDjx5SljNw=",
+          "auth_tag": "iB8dkdhRNtF651vZES9U4g==",
+          "frame_header": {
+            "frame_type": "video",
+            "sequence_number": 12345,
+            "encrypted_length": 1040,
+            "key_id": "HNvYgdnY8f0="
+          }
+        },
+        "validation": {
+          "confidentiality": true,
+          "integrity": true,
+          "authenticity": true,
+          "proper_aad_binding": true
+        }
+      }
+    ],
+    "validation_criteria": {
+      "frame_encryption": true,
+      "authentication_tag": true,
+      "aad_binding": true,
+      "iv_uniqueness": true
+    }
+  },
+  "key_distribution": {
+    "description": "SFU media key distribution to participant",
+    "scenario": "key_distribution",
+    "sfu_context": {
+      "sfu_id": "LFv51VqL37vhCzSRZ14+vI1qMw5RkR5oeogIYrzh1EM=",
+      "participant_id": "3FFcfeLo94C2WFwcuf69Bt/L7PKBhXOWjJHFL6PU1fE=",
+      "session_type": "group_call"
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "KEY_DISTRIBUTE",
+        "from": "sfu",
+        "to": "participant",
+        "message": {
+          "type": "KEY_DISTRIBUTE",
+          "version": 1,
+          "sfu_id": "LFv51VqL37vhCzSRZ14+vI1qMw5RkR5oeogIYrzh1EM=",
+          "participant_id": "3FFcfeLo94C2WFwcuf69Bt/L7PKBhXOWjJHFL6PU1fE=",
+          "media_key": "qcT5ehFp7UHH/PK6FG/GNpvAAnsUFz8UqxLGggsZQIo=",
+          "key_lifetime": 3600,
+          "distribution_timestamp": 1701763200000,
+          "signature": "igAr5MzLZ2u72ZhdSiPNaWeU9wK96hD0zHwFeCk9q9pMavqknJoqdjhZgdIKS2J31pFZRGzo4g+2lX6l0XrURg=="
+        },
+        "expected_result": "key_received"
+      },
+      {
+        "step": 2,
+        "type": "KEY_ACK",
+        "from": "participant",
+        "to": "sfu",
+        "message": {
+          "type": "KEY_ACK",
+          "version": 1,
+          "sfu_id": "LFv51VqL37vhCzSRZ14+vI1qMw5RkR5oeogIYrzh1EM=",
+          "participant_id": "3FFcfeLo94C2WFwcuf69Bt/L7PKBhXOWjJHFL6PU1fE=",
+          "key_id": "Ej4m2dTbkmI=",
+          "ack_timestamp": 1701763201000,
+          "signature": "y6NrWfzvlI+45LNh4a3A9VeDjMeR6XcM2q4MPGyyZ7TbCfADVoQZglzpbkB1o8Yvd09vORvPKipao/G9+F6sYw=="
+        },
+        "expected_result": "key_confirmed"
+      }
+    ],
+    "validation_criteria": {
+      "secure_key_distribution": true,
+      "proper_authentication": true,
+      "key_lifecycle": true,
+      "sfu_authorization": true
+    }
+  },
+  "_metadata": {
+    "version": "0.9",
+    "generated_by": "FoxWhisper Media Encryption Test Vector Generator",
+    "description": "Media encryption and key distribution test vectors for FoxWhisper E2EE",
+    "test_categories": [
+      "key_derivation",
+      "frame_protection",
+      "key_distribution"
+    ],
+    "validation_features": [
+      "cryptographic_key_derivation",
+      "frame_encryption_authentication",
+      "secure_key_distribution",
+      "sfu_participant_authentication"
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "_metadata": {
+    "version": "0.9",
+    "generated_by": "FoxWhisper End-to-End Test Vector Generator (JavaScript)",
+    "description": "Complete protocol flow test vectors for FoxWhisper E2EE",
+    "test_categories": [
+      "handshake_flow"
+    ],
+    "validation_features": [
+      "message_structure_validation",
+      "field_size_validation",
+      "base64_encoding_validation",
+      "chronological_validation",
+      "session_consistency_validation"
+    ]
+  },
+  "handshake_flow": {
+    "description": "Complete FoxWhisper handshake flow",
+    "participants": [
+      "client",
+      "server"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "type": "HANDSHAKE_INIT",
+        "from": "client",
+        "to": "server",
+        "message": {
+          "type": "HANDSHAKE_INIT",
+          "version": 1,
+          "client_id": "X3U1AEagIWtOm7dJzzTOiCgeLDAaCA/cakhqooyREEI=",
+          "x25519_public_key": "Quwjho0W5P2+2oAMo33bbTWc2SPejdDSWH9dwEydKH8=",
+          "kyber_public_key": "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",
+          "timestamp": 1701763200000,
+          "nonce": "yvJ3clHUkjdIftQIWOq3wg=="
+        },
+        "expected_response": "HANDSHAKE_RESPONSE"
+      },
+      {
+        "step": 2,
+        "type": "HANDSHAKE_RESPONSE",
+        "from": "server",
+        "to": "client",
+        "message": {
+          "type": "HANDSHAKE_RESPONSE",
+          "version": 1,
+          "server_id": "BHI3jPpB8bY88dCDUko/DsyyAcnMOExKi+4jawCOBqc=",
+          "x25519_public_key": "0d7Whj4xvGNvjeNVKqyclGj2vAusjRorq0nb7eMMCSQ=",
+          "kyber_ciphertext": "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",
+          "timestamp": 1701763201000,
+          "nonce": "1R/hdflvgLcp+MPwrUBWtg=="
+        },
+        "expected_response": "HANDSHAKE_COMPLETE"
+      },
+      {
+        "step": 3,
+        "type": "HANDSHAKE_COMPLETE",
+        "from": "client",
+        "to": "server",
+        "message": {
+          "type": "HANDSHAKE_COMPLETE",
+          "version": 1,
+          "session_id": "fzEAN5SJGc1v9eusloMDQEdiH8eScMD2bEhIMQEev7g=",
+          "handshake_hash": "yK1Vjru1AWlr7zxGimUSfwD4d4WKGfTKmHrO0NruLgo=",
+          "timestamp": 1701763202000
+        },
+        "expected_response": "ENCRYPTED_MESSAGE"
+      }
+    ],
+    "validation_criteria": {
+      "all_required_fields_present": true,
+      "correct_message_types": true,
+      "valid_base64_encoding": true,
+      "correct_field_sizes": true,
+      "chronological_timestamps": true,
+      "matching_session_ids": true
+    }
+  }
+}

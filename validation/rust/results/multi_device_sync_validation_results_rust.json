@@ -1,0 +1,26 @@
+{
+  "sync_conflict": {
+    "scenario": "sync_conflict",
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "device_removal": {
+    "scenario": "device_removal",
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "backup_restore": {
+    "scenario": "backup_restore",
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "device_addition": {
+    "scenario": "device_addition",
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  }
+}

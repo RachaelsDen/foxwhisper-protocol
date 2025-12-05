@@ -1,0 +1,129 @@
+{
+  "handshake_flow": {
+    "description": "Complete FoxWhisper handshake flow",
+    "participants": [
+      "client",
+      "server"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "type": "HANDSHAKE_INIT",
+        "from": "client",
+        "to": "server",
+        "message": {
+          "type": "HANDSHAKE_INIT",
+          "version": 1,
+          "client_id": "+yhRvGpzrcryiyDT5b14eI7E3jTwxP9QEcLpTgKsWPI=",
+          "x25519_public_key": "uojdfOzsryjdZFTFxs/h0xgAZERRuYGriVQNs0KXE8g=",
+          "kyber_public_key": "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",
+          "timestamp": 1701763200000,
+          "nonce": "pFygfDeg6Nt/0X8PkgG0ug=="
+        },
+        "expected_response": "HANDSHAKE_RESPONSE"
+      },
+      {
+        "step": 2,
+        "type": "HANDSHAKE_RESPONSE",
+        "from": "server",
+        "to": "client",
+        "message": {
+          "type": "HANDSHAKE_RESPONSE",
+          "version": 1,
+          "server_id": "DrlhJToO0V5rWbkh+lBfNsqu7oX7attBYgaH67A9Jas=",
+          "x25519_public_key": "VTsIVH3zXg8iX7lpywHQxu352WOpuV2TEQs/jXdAJ20=",
+          "kyber_ciphertext": "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",
+          "timestamp": 1701763201000,
+          "nonce": "VPuHrEuTeMG4V1m/3nUX0A=="
+        },
+        "expected_response": "HANDSHAKE_COMPLETE"
+      },
+      {
+        "step": 3,
+        "type": "HANDSHAKE_COMPLETE",
+        "from": "client",
+        "to": "server",
+        "message": {
+          "type": "HANDSHAKE_COMPLETE",
+          "version": 1,
+          "session_id": "GyS/DJeJ9AALZvTg92PiyUeKPAJVjUU7mhLxbdWfpyw=",
+          "handshake_hash": "pUH9RgAKy/1z4slSFp5kQwWHC0gUoRC3d2S2Jr2RhzY=",
+          "timestamp": 1701763202000
+        },
+        "expected_response": "ENCRYPTED_MESSAGE"
+      }
+    ],
+    "validation_criteria": {
+      "all_required_fields_present": true,
+      "correct_message_types": true,
+      "valid_base64_encoding": true,
+      "correct_field_sizes": true,
+      "chronological_timestamps": true,
+      "matching_session_ids": true
+    }
+  },
+  "device_addition": {
+    "description": "Add new device to existing FoxWhisper session",
+    "scenario": "device_addition",
+    "existing_session": {
+      "session_id": "wBoS7K+XQ5/wFMnPdGPmLNTUv9ZmumrQYgAkNGeaFHc=",
+      "devices": [
+        "fboowo6nM8vQ7YkdJRrJCIbiz9zzA1DKnPQdNMsg6hA="
+      ]
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "DEVICE_ANNOUNCE",
+        "from": "new_device",
+        "to": "existing_devices",
+        "message": {
+          "type": "DEVICE_ANNOUNCE",
+          "version": 1,
+          "device_id": "Sva1nH+hUbVACbXtgeiYsKBaY3t2X7H01opLRqABvBs=",
+          "session_id": "wBoS7K+XQ5/wFMnPdGPmLNTUv9ZmumrQYgAkNGeaFHc=",
+          "x25519_public_key": "WzmxRi9qIx+cXRl5EjvZCyIqDpffjESujYl9IoxadTA=",
+          "timestamp": 1701763203000
+        }
+      },
+      {
+        "step": 2,
+        "type": "DEVICE_ACK",
+        "from": "existing_devices",
+        "to": "new_device",
+        "message": {
+          "type": "DEVICE_ACK",
+          "version": 1,
+          "device_id": "fboowo6nM8vQ7YkdJRrJCIbiz9zzA1DKnPQdNMsg6hA=",
+          "session_id": "wBoS7K+XQ5/wFMnPdGPmLNTUv9ZmumrQYgAkNGeaFHc=",
+          "existing_devices": [
+            "fboowo6nM8vQ7YkdJRrJCIbiz9zzA1DKnPQdNMsg6hA="
+          ],
+          "timestamp": 1701763204000
+        }
+      }
+    ],
+    "validation_criteria": {
+      "device_authentication": true,
+      "session_consistency": true,
+      "no_duplicate_devices": true,
+      "proper_device_ids": true
+    }
+  },
+  "_metadata": {
+    "version": "0.9",
+    "generated_by": "FoxWhisper End-to-End Test Vector Generator",
+    "description": "Complete protocol flow test vectors for FoxWhisper E2EE",
+    "test_categories": [
+      "handshake_flow",
+      "device_addition"
+    ],
+    "validation_features": [
+      "message_structure_validation",
+      "field_size_validation",
+      "base64_encoding_validation",
+      "chronological_validation",
+      "session_consistency_validation"
+    ]
+  }
+}

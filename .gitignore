@@ -1,0 +1,132 @@
+# Build artifacts
+target/
+node_modules/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Temporary folders
+tmp/
+temp/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.test
+
+# Rust
+Cargo.lock
+**/*.rs.bk
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Test results (keep test vectors, ignore generated results)
+tests/*_results.json
+validation/**/*_results.json
+!tests/*_vectors.json
+
+# Python
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.egg-info/
+dist/
+build/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Rust
+**/target/
+Cargo.lock
+
+# Node.js
+.npm
+.nyc_output/
+
+# Editor backup files
+*.bak
+*.backup
+*.orig
+*.rej
+
+# System files
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Cache directories
+.cache/
+.sass-cache/
+.parcel-cache/
+
+# Documentation build
+docs/_build/
+docs/.doctrees/
+site/
+
+# CI/CD
+.github/workflows/*/cache/
+.github/workflows/*/temp/

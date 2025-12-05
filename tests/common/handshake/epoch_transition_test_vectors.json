@@ -1,0 +1,207 @@
+{
+  "epoch_transition": {
+    "description": "Normal epoch transition with proper chain validation",
+    "scenario": "epoch_transition",
+    "session_context": {
+      "session_id": "wpXFMeF3QaJoUV0SI6R8ay3i8PdhqJFwBHCPi8n37Kk=",
+      "current_epoch": "jq0/e7jWeaPDW/3PuH7v8g==",
+      "transition_reason": "message_limit_reached"
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "EPOCH_CREATE",
+        "operation": "create_new_epoch",
+        "input": {
+          "old_epoch_id": "jq0/e7jWeaPDW/3PuH7v8g==",
+          "new_epoch_id": "vAqhGcQjXxNcg8mQikH2Gw==",
+          "epoch_hash": "uuGb/bsqb58hlvI6AxndtpRVq4kGy0alhVuBe3J+NFI=",
+          "transition_timestamp": 1701763200000
+        },
+        "output": {
+          "new_epoch_created": true,
+          "epoch_chain_extended": true,
+          "previous_epoch_hashed": true
+        },
+        "validation": {
+          "proper_epoch_creation": true,
+          "chain_continuity": true,
+          "hash_correctness": true
+        }
+      }
+    ],
+    "validation_criteria": {
+      "epoch_uniqueness": true,
+      "chain_integrity": true,
+      "proper_hashing": true,
+      "transition_authorization": true
+    }
+  },
+  "epoch_fork_detection": {
+    "description": "Epoch fork detection and resolution",
+    "scenario": "epoch_fork_detection",
+    "session_context": {
+      "session_id": "GiWLQ3iH4eDdoA8CyVIS1HHUOFhp2DQOqtWEh7amW2M=",
+      "competing_epochs": [
+        {
+          "epoch_id": "gaMIJsyL8TVmzG9Z1sLIXg==",
+          "epoch_hash": "9aBggCHCaWlWP7NiWjBb7zEVQjqzQ2o0u0/k6YzCrhs=",
+          "creator": "legitimate_node",
+          "timestamp": 1701763200000
+        },
+        {
+          "epoch_id": "X5wSDCWePSe470niMHtKtg==",
+          "epoch_hash": "lqB0hwN0eUnX9Mb3iOPXwmlTg4lMqD4CcfPWsi8nwtA=",
+          "creator": "attacker_node",
+          "timestamp": 1701763200500
+        }
+      ]
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "EPOCH_DETECT_FORK",
+        "operation": "detect_competing_epochs",
+        "input": {
+          "current_epoch": "gaMIJsyL8TVmzG9Z1sLIXg==",
+          "competing_epochs": [
+            {
+              "epoch_id": "X5wSDCWePSe470niMHtKtg==",
+              "epoch_hash": "lqB0hwN0eUnX9Mb3iOPXwmlTg4lMqD4CcfPWsi8nwtA=",
+              "timestamp": 1701763200500
+            }
+          ]
+        },
+        "output": {
+          "fork_detected": true,
+          "conflict_epochs": [
+            "gaMIJsyL8TVmzG9Z1sLIXg==",
+            "X5wSDCWePSe470niMHtKtg=="
+          ],
+          "resolution_required": true
+        },
+        "validation": {
+          "fork_detection": true,
+          "conflict_identification": true,
+          "proper_resolution": true
+        }
+      },
+      {
+        "step": 2,
+        "type": "EPOCH_RESOLVE_FORK",
+        "operation": "resolve_epoch_conflict",
+        "input": {
+          "resolution_strategy": "longest_chain",
+          "selected_epoch": "gaMIJsyL8TVmzG9Z1sLIXg==",
+          "rejected_epoch": "X5wSDCWePSe470niMHtKtg==",
+          "resolution_timestamp": 1701763201000
+        },
+        "output": {
+          "conflict_resolved": true,
+          "consensus_achieved": true,
+          "chain_reorganized": true
+        },
+        "validation": {
+          "proper_resolution": true,
+          "consensus_validation": true,
+          "chain_integrity_maintained": true
+        }
+      }
+    ],
+    "validation_criteria": {
+      "fork_detection_accuracy": true,
+      "conflict_resolution": true,
+      "consensus_mechanism": true,
+      "chain_security": true
+    }
+  },
+  "epoch_recovery": {
+    "description": "Epoch recovery after network partition",
+    "scenario": "epoch_recovery",
+    "session_context": {
+      "session_id": "KUxqakdodIh1Goq0GTkP1/l5juTrmm4Mxv/ej76SE+M=",
+      "partition_detected": true,
+      "partition_duration": 300,
+      "lost_epochs": [
+        "5MVctlCaJGLOYD9xSMj7VQ=="
+      ],
+      "sync_peers": [
+        "peer1",
+        "peer2",
+        "peer3"
+      ]
+    },
+    "steps": [
+      {
+        "step": 1,
+        "type": "EPOCH_PARTITION_DETECT",
+        "operation": "detect_network_partition",
+        "input": {
+          "last_epoch_before_partition": "5MVctlCaJGLOYD9xSMj7VQ==",
+          "partition_proof": "Fpxy8dhDPtB62pvJ1WEMNcBl0VanPZh8xex+yfnPtziTmrbIPN2/EL65Mn8Z7QgUZlQl/Jp5sI/3HB4oAI0p2A==",
+          "partition_timestamp": 1701763200000
+        },
+        "output": {
+          "partition_confirmed": true,
+          "recovery_mode": "active",
+          "sync_peers": [
+            "peer1",
+            "peer2",
+            "peer3"
+          ]
+        },
+        "validation": {
+          "partition_detection": true,
+          "recovery_prepared": true,
+          "peer_connectivity": true
+        }
+      },
+      {
+        "step": 2,
+        "type": "EPOCH_RECOVERY_SYNC",
+        "operation": "synchronize_after_partition",
+        "input": {
+          "recovery_epoch_id": "HFkvlM24iMHQNtOueJs/WQ==",
+          "sync_peers": [
+            "peer1",
+            "peer2",
+            "peer3"
+          ],
+          "recovery_timestamp": 1701763203000
+        },
+        "output": {
+          "sync_completed": true,
+          "convergence_achieved": true,
+          "chain_recovered": true
+        },
+        "validation": {
+          "proper_recovery": true,
+          "chain_convergence": true,
+          "data_integrity": true
+        }
+      }
+    ],
+    "validation_criteria": {
+      "partition_handling": true,
+      "recovery_mechanism": true,
+      "data_consistency": true,
+      "network_resilience": true
+    }
+  },
+  "_metadata": {
+    "version": "0.9",
+    "generated_by": "FoxWhisper Epoch Transition Test Vector Generator",
+    "description": "Epoch transition and fork detection test vectors for FoxWhisper E2EE",
+    "test_categories": [
+      "epoch_transition",
+      "epoch_fork_detection",
+      "epoch_recovery"
+    ],
+    "validation_features": [
+      "epoch_chain_management",
+      "fork_detection_resolution",
+      "network_partition_recovery",
+      "consensus_mechanisms"
+    ]
+  }
+}

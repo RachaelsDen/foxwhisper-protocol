@@ -1,0 +1,130 @@
+{
+  "dr_backup": {
+    "description": "Device Record backup for secure storage",
+    "scenario": "dr_backup",
+    "device_record": {
+      "type": "DEVICE_RECORD_BACKUP",
+      "version": 1,
+      "user_id": "jSo3vcCadD1oEL4YiIqM3gJiPLmkA+cO5Zd+aYOxdHM=",
+      "device_id": "6l8ww2J8XGPShoIyE5smphbt3fp/YlkTjjOd3n3f6b4=",
+      "device_private_key": "JR/iOBQygQC3F5rkWdjIF+LKMVWTnPJ8V4Yt2Yh1Ryo=",
+      "device_public_key": "lrsN8uaAmNpEqUQTJeO/etm4hJogQ2HEjlX0p8S6NQM=",
+      "device_info": {
+        "device_type": "mobile",
+        "platform": "iOS",
+        "version": "1.0.0",
+        "created_at": 1701763200000
+      },
+      "timestamp": 1701763200000
+    },
+    "validation_criteria": {
+      "valid_device_structure": true,
+      "proper_key_encryption": true,
+      "required_fields_present": true,
+      "device_info_complete": true
+    }
+  },
+  "dr_restore": {
+    "description": "Device Record restore from backup",
+    "scenario": "dr_restore",
+    "backup_data": "2sv9lroB6IIqu9GHTV7daqrzOkGmAH8R5bRXBxXz1xp9/FYdDWykQWk2ogv075LlDYGRPlBa9ItYtJz0M3rBRCuvz28gbhZA8A2nASIe6Ae3sA5LCxe2qVe1lBokYgGwi3Q7XxW5onE0PvDEF/Ppzm+CfroRYN33MoJOgQYuKh+EYpELOFyok6OyP98H8aXO0lIeq9u+GrmOZqSP0m9cu+Fgz67hxE+qUkhcZ2aDIc911Wu5p0qQBdXFS6Xt60/GiqHxlfDXjv0wGypIo/vBPq+fGJMhqVQOVp4hbsNT2FH/vsCT+q9PxKKzOB4ArGL/6XdTXjLVj1vqf0/9tHsnug==",
+    "restore_request": {
+      "type": "DEVICE_RECORD_RESTORE",
+      "version": 1,
+      "user_id": "1qWNAV/sb+HAuzAVln+nOqdf5+rvm7RVWE1CBhhyyOQ=",
+      "device_id": "LuDGbi0YVz4tDEB1+k185G5XcsKDVr3xb4Bz27HuJVc=",
+      "restore_timestamp": 1701763201000,
+      "verification_code": "RSV12cdfqOnRVcIl2JxLnw=="
+    },
+    "expected_result": {
+      "device_active": true,
+      "keys_restored": true,
+      "session_sync": true
+    },
+    "validation_criteria": {
+      "valid_restore_request": true,
+      "proper_verification": true,
+      "backup_integrity": true,
+      "device_authentication": true
+    }
+  },
+  "dr_reset": {
+    "description": "Device Record reset for lost device",
+    "scenario": "dr_reset",
+    "reset_request": {
+      "type": "DEVICE_RECORD_RESET",
+      "version": 1,
+      "user_id": "n2Bxlzw5XN/b1PsApZJqB3WveCxa8NO1S/ikZ0fGrcw=",
+      "device_id": "NqdGgI/ly46k077g8o/R3smIyIBJ/Sfj1wCcn24MFnQ=",
+      "reset_reason": "device_lost",
+      "reset_timestamp": 1701763202000,
+      "verification_code": "5jpitEaTu/6syXZ3/5AyZw=="
+    },
+    "expected_result": {
+      "device_deactivated": true,
+      "sessions_invalidated": true,
+      "new_device_allowed": true
+    },
+    "validation_criteria": {
+      "valid_reset_request": true,
+      "proper_authorization": true,
+      "correct_reason_code": true,
+      "security_measures_applied": true
+    }
+  },
+  "multi_device_sync": {
+    "description": "Multi-device synchronization test",
+    "scenario": "multi_device_sync",
+    "devices": [
+      "I0gKYcJM9t6OkoIJozN5THCZ5AHQS2m2uk9FTw1EMZ8=",
+      "yJ596CiW3SJm9GXvpCnIJPyl4Cbmn0yVe8K69MRAvV8=",
+      "EzkRWKmuXdPSnTC7deGXCjf7B6a0z15uddJdElRCbi4="
+    ],
+    "sync_operations": [
+      {
+        "operation": "MESSAGE_SYNC",
+        "from_device": "I0gKYcJM9t6OkoIJozN5THCZ5AHQS2m2uk9FTw1EMZ8=",
+        "to_devices": [
+          "yJ596CiW3SJm9GXvpCnIJPyl4Cbmn0yVe8K69MRAvV8=",
+          "EzkRWKmuXdPSnTC7deGXCjf7B6a0z15uddJdElRCbi4="
+        ],
+        "message_id": "qlsmGmIO6TwCdHUlZsZCig==",
+        "timestamp": 1701763200000
+      },
+      {
+        "operation": "KEY_SYNC",
+        "from_device": "yJ596CiW3SJm9GXvpCnIJPyl4Cbmn0yVe8K69MRAvV8=",
+        "to_devices": [
+          "I0gKYcJM9t6OkoIJozN5THCZ5AHQS2m2uk9FTw1EMZ8=",
+          "EzkRWKmuXdPSnTC7deGXCjf7B6a0z15uddJdElRCbi4="
+        ],
+        "key_material": "7iKFOXgIKqCWTi2CbzF/NmSzIHep6H+TGvO32HdO/kWDIywBPgPp4xwgkT0Zb9fNgruJTicmSvWBqw7acJF4Ew==",
+        "timestamp": 1701763201000
+      }
+    ],
+    "validation_criteria": {
+      "all_devices_reachable": true,
+      "sync_consistency": true,
+      "no_duplicate_messages": true,
+      "proper_key_distribution": true
+    }
+  },
+  "_metadata": {
+    "version": "0.9",
+    "generated_by": "FoxWhisper Device Record Test Vector Generator",
+    "description": "Device Record (DR) test vectors for FoxWhisper E2EE",
+    "test_categories": [
+      "dr_backup",
+      "dr_restore",
+      "dr_reset",
+      "multi_device_sync"
+    ],
+    "validation_features": [
+      "device_record_structure",
+      "backup_integrity",
+      "restore_verification",
+      "reset_authorization",
+      "multi_device_synchronization"
+    ]
+  }
+}

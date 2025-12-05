@@ -1,0 +1,32 @@
+[package]
+name = "foxwhisper-cbor-validator"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "generate_e2e_test_vectors"
+path = "tools/generate_e2e_test_vectors.rs"
+
+[[bin]]
+name = "validate_cbor_rust"
+path = "validation/rust/validators/validate_cbor_rust.rs"
+
+[[bin]]
+name = "validate_cbor_crosslang"
+path = "validation/common/validators/validate_cbor_crosslang.rs"
+
+[[bin]]
+name = "validate_cbor_schema"
+path = "validation/rust/validators/validate_cbor_schema.rs"
+
+[[bin]]
+name = "validate_multi_device_sync_rust"
+path = "validation/rust/validators/validate_multi_device_sync_rust.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_cbor = "0.11"
+serde_json = "1.0"
+rand = "0.8"
+hex = "0.4"
+base64 = "0.21"

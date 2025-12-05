@@ -1,0 +1,36 @@
+{
+  "HANDSHAKE_COMPLETE": {
+    "tag": 209,
+    "data": {
+      "type": "HANDSHAKE_COMPLETE",
+      "version": 1,
+      "session_id": "YWJjZGVmZ2hpamsxMjM0NTY3ODkwMTIzNDU=",
+      "handshake_hash": "ODlBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY2RlZDEyMzQ1Njc4OTAxMjM0NQ==",
+      "timestamp": 1701763202000
+    }
+  },
+  "HANDSHAKE_INIT": {
+    "tag": 209,
+    "data": {
+      "type": "HANDSHAKE_INIT",
+      "version": 1,
+      "client_id": "ABCDEFGHijklmnopqrstuvwxyz1234567890MTIzNDU=",
+      "x25519_public_key": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Oj8xMjM0NTY3ODkwMTIzNDU=",
+      "kyber_public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "timestamp": 1701763200000,
+      "nonce": "ABERhnd4uJrq67z7MTIzNDU="
+    }
+  },
+  "HANDSHAKE_RESPONSE": {
+    "tag": 210,
+    "data": {
+      "type": "HANDSHAKE_RESPONSE",
+      "version": 1,
+      "server_id": "UVVXV1lZYWJjZGVmZ2hpamsxMjM0NTY3ODkwMTIzNDU=",
+      "x25519_public_key": "ISIjJCUmJygpKissLS4vMTIzNDU2Nzg5Oj8-PjEyMzQ1Njc4OTAxMjM0NQ==",
+      "kyber_ciphertext": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "timestamp": 1701763201000,
+      "nonce": "ESIzJCVSMVqLMTIzNDU="
+    }
+  }
+}
