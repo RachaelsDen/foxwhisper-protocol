@@ -89,7 +89,7 @@ jobs:
         
     - name: Run Node.js Multi-Device Sync Validation
       run: |
-        cd validation/python/validators
+        cd validation/nodejs/validators
         node validate_multi_device_sync.js ../../tests/common/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Node.js Results
