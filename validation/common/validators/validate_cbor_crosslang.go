@@ -88,14 +88,14 @@ func (cv *CrossLanguageValidator) runLanguageValidator(language string) Language
 
 	switch language {
 	case "python":
-		cmd = exec.Command("python3", "validate_cbor_python_fixed.py")
-		workingDir = "./"
+		cmd = exec.Command("python3", "validate_cbor_python.py")
+		workingDir = "../../python/validators/"
 	case "node":
 		cmd = exec.Command("node", "validate_cbor_node_fixed.js")
-		workingDir = "./"
+		workingDir = "../../nodejs/validators/"
 	case "go":
 		cmd = exec.Command("go", "run", "validate_cbor_go.go")
-		workingDir = "./"
+		workingDir = "../../go/validators/"
 	default:
 		return LanguageResult{
 			Language: language,
