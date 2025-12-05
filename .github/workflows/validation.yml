@@ -45,7 +45,7 @@ jobs:
         python3 validate_multi_device_sync.py test-vectors/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Python Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: python-validation-results
         path: |
@@ -93,7 +93,7 @@ jobs:
         node validate_multi_device_sync.js test-vectors/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Node.js Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: nodejs-validation-results
         path: |
@@ -129,7 +129,7 @@ jobs:
         go run validate_cbor_crosslang.go
         
     - name: Upload Go Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: go-validation-results
         path: |
@@ -171,7 +171,7 @@ jobs:
         cargo run --bin validate_multi_device_sync_rust -- test-vectors/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Rust Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: rust-validation-results
         path: |
@@ -189,7 +189,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Download all results
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -277,7 +277,7 @@ jobs:
         EOF
         
     - name: Upload Summary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: validation-summary
         path: validation-summary.md
@@ -328,7 +328,7 @@ jobs:
         EOF
         
     - name: Upload Benchmark Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-benchmarks
         path: tools/benchmark-results.json
@@ -349,7 +349,8 @@ jobs:
         
         # Check for any hardcoded secrets
         echo "Checking for hardcoded secrets..."
-        if grep -r -i "password\|secret\|key.*=" --include="*.py" --include="*.js" --include="*.go" --include="*.rs" tools/; then
+        # Exclude test vector generation and known safe patterns
+        if grep -r -i "password\|secret\|key.*=" --include="*.py" --include="*.js" --include="*.go" --include="*.rs" tools/ | grep -v "test_vectors\|secrets.token\|os.urandom\|serde.*skip_serializing"; then
           echo "⚠️  Potential hardcoded secrets found"
           exit 1
         else
@@ -358,7 +359,7 @@ jobs:
         
         # Check for insecure random usage
         echo "Checking for secure random usage..."
-        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto"; then
+        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom"; then
           echo "⚠️  Insecure random usage detected"
           exit 1
         else
@@ -397,7 +398,7 @@ jobs:
     
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       
     - name: Generate Final Report
       run: |
@@ -439,7 +440,7 @@ jobs:
         EOF
         
     - name: Upload Final Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: final-validation-report
         path: FINAL_VALIDATION_REPORT.md
