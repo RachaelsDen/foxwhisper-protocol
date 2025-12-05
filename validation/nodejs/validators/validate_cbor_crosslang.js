@@ -12,7 +12,7 @@ function runPythonValidation() {
         console.log('Running Python CBOR validation...');
         const pythonOutput = execSync('python3 validate_cbor_python.py', { 
             encoding: 'utf8',
-            cwd: __dirname 
+            cwd: '../python/validators/'
         });
         
         // Extract hex outputs from Python script
