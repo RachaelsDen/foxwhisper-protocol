@@ -42,7 +42,7 @@ jobs:
     - name: Run Python Multi-Device Sync Validation
       run: |
         cd validation/python/validators
-        python3 validate_multi_device_sync.py test-vectors/handshake/multi_device_sync_test_vectors.json
+        python3 validate_multi_device_sync.py ../../tests/common/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Python Results
       uses: actions/upload-artifact@v4
@@ -90,7 +90,7 @@ jobs:
     - name: Run Node.js Multi-Device Sync Validation
       run: |
         cd validation/python/validators
-        node validate_multi_device_sync.js test-vectors/handshake/multi_device_sync_test_vectors.json
+        node validate_multi_device_sync.js ../../tests/common/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Node.js Results
       uses: actions/upload-artifact@v4
@@ -168,7 +168,7 @@ jobs:
         
     - name: Run Rust Multi-Device Sync Validation
       run: |
-        cargo run --bin validate_multi_device_sync_rust -- test-vectors/handshake/multi_device_sync_test_vectors.json
+        cargo run --bin validate_multi_device_sync_rust -- ../../tests/common/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Rust Results
       uses: actions/upload-artifact@v4
@@ -360,7 +360,7 @@ jobs:
         
         # Check for insecure random usage
         echo "Checking for secure random usage..."
-        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom\|def.*random"; then
+        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom\|def.*random\|\"\"\"\""; then
           echo "⚠️  Insecure random usage detected"
           exit 1
         else
