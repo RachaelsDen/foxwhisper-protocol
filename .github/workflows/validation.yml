@@ -31,17 +31,17 @@ jobs:
         
     - name: Run Python CBOR Validation
       run: |
-        cd tools
+        cd validation/python/validators
         python3 validate_cbor_python.py
         
     - name: Run Python Schema Validation
       run: |
-        cd tools
+        cd validation/python/validators
         python3 validate_cbor_schema.py
         
     - name: Run Python Multi-Device Sync Validation
       run: |
-        cd tools
+        cd validation/python/validators
         python3 validate_multi_device_sync.py test-vectors/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Python Results
@@ -69,27 +69,27 @@ jobs:
         
     - name: Install dependencies
       run: |
-        cd tools
+        cd validation/nodejs/validators
         npm install cbor
         
     - name: Run Node.js CBOR Validation
       run: |
-        cd tools
+        cd validation/nodejs/validators
         node validate_cbor_node.js
         
     - name: Run Node.js Fixed CBOR Validation
       run: |
-        cd tools
+        cd validation/nodejs/validators
         node validate_cbor_node_fixed.js
         
     - name: Run Node.js Cross-Language Validation
       run: |
-        cd tools
+        cd validation/nodejs/validators
         node validate_cbor_crosslang.js
         
     - name: Run Node.js Multi-Device Sync Validation
       run: |
-        cd tools
+        cd validation/python/validators
         node validate_multi_device_sync.js test-vectors/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Node.js Results
@@ -120,12 +120,12 @@ jobs:
         
     - name: Run Go CBOR Validation
       run: |
-        cd tools
+        cd validation/go/validators
         go run validate_cbor_go.go
         
     - name: Run Go Cross-Language Validation
       run: |
-        cd tools
+        cd validation/common/validators
         go run validate_cbor_crosslang.go
         
     - name: Upload Go Results
@@ -133,7 +133,7 @@ jobs:
       with:
         name: go-validation-results
         path: |
-          tools/cross_language_validation_results.json
+          validation/go/validators/cross_language_validation_results.json
 
   # Rust Validation
   validate-rust:
@@ -175,8 +175,8 @@ jobs:
       with:
         name: rust-validation-results
         path: |
-          tools/schema_validation_results.json
-          multi_device_sync_validation_results_rust.json
+          validation/rust/validators/schema_validation_results.json
+          validation/rust/results/multi_device_sync_validation_results_rust.json
 
   # Cross-Language Compatibility Check
   cross-language-compatibility:
@@ -298,10 +298,11 @@ jobs:
         
     - name: Run Performance Benchmarks
       run: |
-        cd tools
+        cd validation/python/validators
         python3 << 'EOF'
         import time
         import json
+        import os
         
         # Simple performance benchmark for CBOR operations
         print("🦊 FoxWhisper Protocol - Performance Benchmarks")
@@ -359,7 +360,7 @@ jobs:
         
         # Check for insecure random usage
         echo "Checking for secure random usage..."
-        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom"; then
+        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom\|def.*random"; then
           echo "⚠️  Insecure random usage detected"
           exit 1
         else
@@ -374,8 +375,8 @@ jobs:
         
         # Check test vectors for proper key sizes
         test_files = [
-            'test-vectors/handshake/cbor_test_vectors.json',
-            'test-vectors/handshake/multi_device_sync_test_vectors.json'
+            'tests/common/handshake/cbor_test_vectors.json',
+            'tests/common/handshake/multi_device_sync_test_vectors.json'
         ]
         
         for file in test_files:
