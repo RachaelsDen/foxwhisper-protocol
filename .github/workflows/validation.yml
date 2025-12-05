@@ -199,6 +199,7 @@ jobs:
         
     - name: Analyze Cross-Language Compatibility
       run: |
+        cd validation/common/validators
         python3 << 'EOF'
         import json
         import os
