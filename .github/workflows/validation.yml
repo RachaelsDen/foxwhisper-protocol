@@ -32,12 +32,12 @@ jobs:
     - name: Run Python CBOR Validation
       run: |
         cd validation/python/validators
-        python3 validate_cbor_python.py
+        python3 validate_cbor_python.py ../../../tests/common/handshake/cbor_test_vectors_fixed.json
         
     - name: Run Python Schema Validation
       run: |
         cd validation/python/validators
-        python3 validate_cbor_schema.py
+        python3 validate_cbor_schema.py ../../../tests/common/handshake/cbor_test_vectors_fixed.json
         
     - name: Run Python Multi-Device Sync Validation
       run: |
@@ -156,7 +156,8 @@ jobs:
         
     - name: Run Rust CBOR Validation
       run: |
-        cargo run --bin validate_cbor_rust
+        cd validation/rust/validators
+        cargo run --bin validate_cbor_rust ../../../tests/common/handshake/cbor_test_vectors_fixed.json
         
     - name: Run Rust Cross-Language Validation
       run: |
