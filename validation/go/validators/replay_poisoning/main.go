@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -211,20 +212,27 @@ func (v *Validator) validateMalformedEARE() {
 			}
 		}
 		hashBytes := 0
+		hashDecodeError := false
 		if record.HashBytes != nil {
 			hashBytes = *record.HashBytes
 		} else if value, ok := record.Fields["hash"].(string); ok {
-			hashBytes = len(decodeHex(value))
+			decoded, err := decodeHex(value)
+			if err != nil {
+				hashDecodeError = true
+			} else {
+				hashBytes = len(decoded)
+			}
 		}
 		minHash := 32
 		if record.MinHashBytes != nil {
 			minHash = *record.MinHashBytes
 		}
-		valid := len(missing) == 0 && hashBytes >= minHash
+		valid := len(missing) == 0 && !hashDecodeError && hashBytes >= minHash
 		details := []string{
 			fmt.Sprintf("missing_fields=%v", missing),
 			fmt.Sprintf("hash_bytes=%d", hashBytes),
 			fmt.Sprintf("min_hash_bytes=%d", minHash),
+			fmt.Sprintf("hash_decode_error=%t", hashDecodeError),
 			fmt.Sprintf("expected_valid=%t", record.ExpectedValid),
 		}
 		v.record("eare::"+record.RecordID, valid == record.ExpectedValid, details)
@@ -278,14 +286,8 @@ func (v *Validator) validateReplayStorm() {
 	}
 }
 
-func decodeHex(value string) []byte {
-	data := []byte{}
-	for i := 0; i+2 <= len(value); i += 2 {
-		var b byte
-		fmt.Sscanf(value[i:i+2], "%02X", &b)
-		data = append(data, b)
-	}
-	return data
+func decodeHex(value string) ([]byte, error) {
+	return hex.DecodeString(value)
 }
 
 func num(value interface{}) float64 {

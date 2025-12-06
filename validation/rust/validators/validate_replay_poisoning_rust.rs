@@ -1,3 +1,4 @@
+use hex;
 use serde::{Deserialize, Serialize};
 use serde_json::{self, Value};
 use std::collections::HashMap;
@@ -117,7 +118,10 @@ struct Validator {
 
 impl Validator {
     fn new(vectors: ReplayVectors) -> Self {
-        Self { vectors, results: Vec::new() }
+        Self {
+            vectors,
+            results: Vec::new(),
+        }
     }
 
     fn run(mut self) -> Vec<ScenarioResult> {
@@ -132,7 +136,11 @@ impl Validator {
     }
 
     fn record(&mut self, name: String, valid: bool, details: Vec<String>) {
-        self.results.push(ScenarioResult { scenario: name, valid, details });
+        self.results.push(ScenarioResult {
+            scenario: name,
+            valid,
+            details,
+        });
     }
 
     fn detect_replay(&self, sequence_numbers: &[i64], window: i64) -> bool {
@@ -258,17 +266,22 @@ impl Validator {
                 }
             }
             let mut hash_bytes = record.hash_bytes.unwrap_or(0);
+            let mut hash_decode_error = false;
             if hash_bytes == 0 {
                 if let Some(Value::String(hex_str)) = record.fields.get("hash") {
-                    hash_bytes = (hex_str.len() / 2) as i64;
+                    match hex::decode(hex_str) {
+                        Ok(bytes) => hash_bytes = bytes.len() as i64,
+                        Err(_) => hash_decode_error = true,
+                    }
                 }
             }
             let min_hash = record.min_hash_bytes.unwrap_or(32);
-            let valid = missing.is_empty() && hash_bytes >= min_hash;
+            let valid = missing.is_empty() && !hash_decode_error && hash_bytes >= min_hash;
             let details = vec![
                 format!("missing_fields={:?}", missing),
                 format!("hash_bytes={}", hash_bytes),
                 format!("min_hash_bytes={}", min_hash),
+                format!("hash_decode_error={}", hash_decode_error),
                 format!("expected_valid={}", record.expected_valid),
             ];
             self.record(
@@ -287,13 +300,15 @@ impl Validator {
             let mut enforced = true;
 
             if let Some(value) = conditions.get("max_drift") {
-                let drift = get_int(sample.get("nonce_counter")) - get_int(sample.get("last_nonce_counter"));
+                let drift = get_int(sample.get("nonce_counter"))
+                    - get_int(sample.get("last_nonce_counter"));
                 let limit = get_float(Some(value));
                 enforced = (drift as f64) <= limit;
             } else if matches!(conditions.get("require_binding"), Some(Value::Bool(true))) {
                 enforced = sample.get("sender_id") == sample.get("aad_sender");
             } else if matches!(conditions.get("allow_missing_aad"), Some(Value::Bool(true))) {
-                enforced = !sample.contains_key("aad") || sample.get("aad").map(|v| v.is_null()).unwrap_or(true);
+                enforced = !sample.contains_key("aad")
+                    || sample.get("aad").map(|v| v.is_null()).unwrap_or(true);
             }
 
             let details = vec![
@@ -317,7 +332,11 @@ impl Validator {
             let total = profile.burst_rate * profile.duration_ms;
             let capacity = capacity_rate * profile.duration_ms + window as f64;
             let drops = (total - capacity).max(0.0);
-            let drop_ratio = if total == 0.0 { 0.0 } else { (drops / total).min(1.0) };
+            let drop_ratio = if total == 0.0 {
+                0.0
+            } else {
+                (drops / total).min(1.0)
+            };
             let valid = (drop_ratio - profile.expected_drop_ratio).abs() <= tolerance;
             let details = vec![
                 format!("window={}", window),
@@ -338,7 +357,13 @@ impl Validator {
 fn get_int(value: Option<&Value>) -> i64 {
     match value {
         Some(Value::Number(num)) => num.as_i64().unwrap_or(0),
-        Some(Value::Bool(flag)) => if *flag { 1 } else { 0 },
+        Some(Value::Bool(flag)) => {
+            if *flag {
+                1
+            } else {
+                0
+            }
+        }
         _ => 0,
     }
 }
@@ -346,7 +371,13 @@ fn get_int(value: Option<&Value>) -> i64 {
 fn get_float(value: Option<&Value>) -> f64 {
     match value {
         Some(Value::Number(num)) => num.as_f64().unwrap_or(0.0),
-        Some(Value::Bool(flag)) => if *flag { 1.0 } else { 0.0 },
+        Some(Value::Bool(flag)) => {
+            if *flag {
+                1.0
+            } else {
+                0.0
+            }
+        }
         _ => 0.0,
     }
 }
