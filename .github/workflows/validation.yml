@@ -305,7 +305,7 @@ jobs:
         
     - name: Generate Validation Summary
       run: |
-        cat > validation-summary.md << 'EOF'
+        cat > validation-summary.md <<EOF
         # FoxWhisper Protocol Validation Summary
         
         ## Languages Validated
@@ -458,7 +458,7 @@ jobs:
       
     - name: Generate Final Report
       run: |
-        cat > FINAL_VALIDATION_REPORT.md << 'EOF'
+        cat > FINAL_VALIDATION_REPORT.md <<EOF
         # FoxWhisper Protocol - CI/CD Validation Report
         
         ## Executive Summary
