@@ -99,7 +99,7 @@ func (cv *CrossLanguageValidator) runLanguageValidator(language string) Language
 		workingDir = "../../go/validators/"
 	case "rust":
 		cmd = exec.Command("cargo", "run", "--bin", "validate_cbor_rust")
-		workingDir = "../../.."
+		workingDir = "../../../"
 	default:
 		return LanguageResult{
 			Language: language,
@@ -123,8 +123,19 @@ func (cv *CrossLanguageValidator) runLanguageValidator(language string) Language
 
 	// Parse output for validation results
 	if strings.Contains(result.Output, "All messages passed") ||
-		strings.Contains(result.Output, "All messages passed CBOR validation") {
+		strings.Contains(result.Output, "All messages passed CBOR validation") ||
+		strings.Contains(result.Output, "All Rust CBOR validation tests passed") {
 		result.Success = true
+	}
+
+	if !result.Success {
+		trimmedOutput := strings.TrimSpace(result.Output)
+		if trimmedOutput != "" {
+			result.Errors = append(result.Errors, trimmedOutput)
+		}
+		if len(result.Errors) == 0 {
+			result.Errors = append(result.Errors, "Validation output did not indicate success")
+		}
 	}
 
 	return result
