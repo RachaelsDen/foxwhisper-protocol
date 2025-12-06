@@ -9,6 +9,7 @@
 - **Node.js**: `cd validation/nodejs/validators && node validate_cbor_node.js`
 - **Go**: `cd validation/go/validators && go run validate_cbor_go.go`
 - **Rust**: `cargo run --bin validate_cbor_rust`
+- **Git workflow rules**: See `agent_git_workflow.md`
 
 ## Code Style Guidelines
 - **Python**: Use type hints, snake_case, docstrings, PEP 8 formatting
