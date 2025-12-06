@@ -16,7 +16,7 @@
 
 **Usage**:
 ```bash
-cd src/
+cd validation/go/validators
 go run validate_cbor_go.go
 ```
 
@@ -32,7 +32,8 @@ go run validate_cbor_go.go
 
 **Usage**:
 ```bash
-go run src/validate_cbor_crosslang.go
+cd validation/go/validators
+go run ../common/validators/validate_cbor_crosslang.go
 ```
 
 **Results**: ✅ All 3/3 languages successful
@@ -86,21 +87,25 @@ All three implementations (Python, Node.js, Go) produce consistent results:
 ### Basic Validation
 ```bash
 # Run Go validator
-cd src/
+cd validation/go/validators
 go run validate_cbor_go.go
 
 # Run cross-language validation
-go run src/validate_cbor_crosslang.go
+go run ../common/validators/validate_cbor_crosslang.go
 ```
 
 ### Integration Testing
 ```bash
 # Test all validators
-cd src/
+cd validation/python/validators
 python3 validate_cbor_python_fixed.py
+
+cd ../nodejs/validators
 node validate_cbor_node_fixed.js
+
+cd ../go/validators
 go run validate_cbor_go.go
-go run validate_cbor_crosslang.go
+go run ../common/validators/validate_cbor_crosslang.go
 ```
 
 ## 📋 **Test Data**
