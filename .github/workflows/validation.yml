@@ -150,9 +150,19 @@ jobs:
         toolchain: stable
         override: true
         
+    - name: Set up Node.js (for cross-language tests)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '25'
+        
     - name: Install dependencies
       run: |
         cargo fetch
+        
+    - name: Install Node.js dependencies
+      run: |
+        cd validation/nodejs/validators
+        npm install cbor
         
     - name: Run Rust CBOR Validation
       run: |
