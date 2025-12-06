@@ -23,6 +23,10 @@ path = "validation/rust/validators/validate_cbor_schema.rs"
 name = "validate_multi_device_sync_rust"
 path = "validation/rust/validators/validate_multi_device_sync_rust.rs"
 
+[[bin]]
+name = "validate_replay_poisoning_rust"
+path = "validation/rust/validators/validate_replay_poisoning_rust.rs"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11"
