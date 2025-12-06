@@ -133,7 +133,7 @@ func validateMessage(messageData map[string]interface{}) ValidationResult {
 				result.Errors = append(result.Errors, err.Error())
 			}
 		default:
-			// Unknown field - could be an error or just ignore
+			// Unknown fields are rejected to prevent schema drift
 			result.Errors = append(result.Errors, fmt.Sprintf("Unknown field: %s", fieldName))
 		}
 	}

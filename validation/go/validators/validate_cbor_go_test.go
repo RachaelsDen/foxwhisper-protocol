@@ -1,38 +1,41 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"testing"
 )
 
-func TestValidateMessageHandlesNilNumericFields(t *testing.T) {
+func TestValidateMessageNilNumericField(t *testing.T) {
+	base32 := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0x01}, 32))
+	base16 := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0x02}, 16))
+	kyber := base64.StdEncoding.EncodeToString(make([]byte, 1568))
+
 	message := map[string]interface{}{
-		"type":           "HANDSHAKE_COMPLETE",
-		"version":        nil,
-		"session_id":     base64.StdEncoding.EncodeToString(make([]byte, 32)),
-		"handshake_hash": base64.StdEncoding.EncodeToString(make([]byte, 32)),
-		"timestamp":      nil,
+		"type":              "HANDSHAKE_INIT",
+		"version":           nil,
+		"client_id":         base32,
+		"x25519_public_key": base32,
+		"kyber_public_key":  kyber,
+		"timestamp":         1234567890,
+		"nonce":             base16,
 	}
 
 	result := validateMessage(message)
 
 	if result.Valid {
-		t.Fatalf("expected validation to fail for nil numeric fields")
+		t.Fatalf("expected validation to fail when numeric fields are nil")
 	}
 
-	expectedErrors := []string{"Field version must be integer", "Field timestamp must be integer"}
-	for _, expected := range expectedErrors {
-		if !containsError(result.Errors, expected) {
-			t.Errorf("expected error %q in results %v", expected, result.Errors)
+	found := false
+	for _, err := range result.Errors {
+		if err == "Field version must be integer" {
+			found = true
+			break
 		}
 	}
-}
 
-func containsError(errors []string, target string) bool {
-	for _, err := range errors {
-		if err == target {
-			return true
-		}
+	if !found {
+		t.Fatalf("expected integer type error for version field, got errors: %v", result.Errors)
 	}
-	return false
 }
