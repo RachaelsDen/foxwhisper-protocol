@@ -1,0 +1,18 @@
+{
+  "message_type": "HANDSHAKE_INIT",
+  "vector": {
+    "tag": 209,
+    "data": {
+      "nonce": "ABERhnd4uJrq67z7MTIzNDU=",
+      "timestamp": 1701763200000,
+      "kyber_public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "x25519_public_key": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Oj8xMjM0NTY3ODkwMTIzNDU=",
+      "client_id": "ABCDEFGHijklmnopqrstuvwxyz1234567890MTIzNDU=",
+      "version": 1,
+      "type": "HANDSHAKE_INIT"
+    }
+  },
+  "mutations": [
+    "shuffle_map:data"
+  ]
+}

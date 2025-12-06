@@ -63,6 +63,18 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
+    # Replay/Poisoning Validation
+    total_tests=$((total_tests + 1))
+    if run_python_validation "replay_poisoning" "validate_replay_poisoning.py" ""; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # Malformed Packet Fuzz Harness
+    total_tests=$((total_tests + 1))
+    if run_python_validation "malformed_fuzz" "fuzz_harness.py" ""; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
     # Generate job summary
     echo ""
     echo "Python Validation Summary:"
@@ -85,7 +97,9 @@ main() {
   "logs": [
     "python_cbor_validation_results.log",
     "python_schema_validation_results.log", 
-    "python_multi_device_sync_results.log"
+    "python_multi_device_sync_results.log",
+    "python_replay_poisoning_results.log",
+    "python_malformed_fuzz_results.log"
   ]
 }
 EOF

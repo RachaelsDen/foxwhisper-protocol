@@ -1,0 +1,41 @@
+{
+  "generated": 9,
+  "seeds": [
+    {
+      "seed_id": "handshake_init_missing_nonce",
+      "path": "handshake_init_missing_nonce.json"
+    },
+    {
+      "seed_id": "handshake_init_shuffle_fields",
+      "path": "handshake_init_shuffle_fields.json"
+    },
+    {
+      "seed_id": "handshake_response_invalid_version",
+      "path": "handshake_response_invalid_version.json"
+    },
+    {
+      "seed_id": "handshake_response_nonce_bloat",
+      "path": "handshake_response_nonce_bloat.json"
+    },
+    {
+      "seed_id": "handshake_complete_future_timestamp",
+      "path": "handshake_complete_future_timestamp.json"
+    },
+    {
+      "seed_id": "handshake_response_wrong_tag",
+      "path": "handshake_response_wrong_tag.json"
+    },
+    {
+      "seed_id": "handshake_init_invalid_pubkey",
+      "path": "handshake_init_invalid_pubkey.json"
+    },
+    {
+      "seed_id": "handshake_response_missing_server_id",
+      "path": "handshake_response_missing_server_id.json"
+    },
+    {
+      "seed_id": "handshake_init_kyber_truncation",
+      "path": "handshake_init_kyber_truncation.json"
+    }
+  ]
+}

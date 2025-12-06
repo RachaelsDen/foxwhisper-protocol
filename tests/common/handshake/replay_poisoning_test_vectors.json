@@ -1,0 +1,176 @@
+{
+  "replay_attack_detection": {
+    "description": "Detect duplicates and near-duplicates within the replay protection window",
+    "window_size": 32,
+    "test_cases": [
+      {
+        "case": "immediate_duplicate",
+        "sequence_numbers": [1001, 1002, 1002],
+        "expected_detection": true,
+        "notes": "Second 1002 should be flagged because it is still inside the sliding window"
+      },
+      {
+        "case": "delayed_duplicate",
+        "sequence_numbers": [2000, 2005, 1999, 2005],
+        "expected_detection": true,
+        "notes": "Duplicate arrives after different message but still in-range"
+      },
+      {
+        "case": "unique_flow",
+        "sequence_numbers": [3001, 3002, 3003, 3004],
+        "expected_detection": false,
+        "notes": "No duplicates should keep the replay detector silent"
+      }
+    ]
+  },
+  "replay_window_boundaries": {
+    "description": "Exercise the replay detector at the edge of the sliding window",
+    "window_size": 64,
+    "test_cases": [
+      {
+        "case": "outside_window_duplicate",
+        "sequence_numbers": [4000, 4001, 4065, 4000],
+        "expected_detection": false,
+        "notes": "Old 4000 should have decayed out of the 64-message window so the replay is ignored"
+      },
+      {
+        "case": "boundary_duplicate",
+        "sequence_numbers": [5000, 5059, 5060, 5000],
+        "expected_detection": true,
+        "notes": "Exactly window_size apart should still trigger detection"
+      }
+    ]
+  },
+  "poisoning_injection": {
+    "description": "Message poisoning patterns that mutate authenticated data",
+    "attack_vectors": [
+      {
+        "attack_name": "nonce_truncation",
+        "malicious_fields": [
+          { "field": "nonce", "expected_bytes": 16, "actual_bytes": 8 }
+        ],
+        "expected_defense": "reject"
+      },
+      {
+        "attack_name": "aad_modification",
+        "malicious_fields": [
+          { "field": "aad", "expected_digest": "d9fe...", "actual_digest": "7b12..." }
+        ],
+        "expected_defense": "rekey"
+      },
+      {
+        "attack_name": "metadata_injection",
+        "malicious_fields": [
+          { "field": "sender_id", "expected_format": "base64url-32", "actual_format": "hex-raw" }
+        ],
+        "expected_defense": "reject"
+      }
+    ]
+  },
+  "epoch_fork_detection": {
+    "description": "Epoch timelines that diverge",
+    "scenarios": [
+      {
+        "scenario": "clean_chain",
+        "timeline": [
+          { "epoch_id": "E1", "parent": null },
+          { "epoch_id": "E2", "parent": "E1" },
+          { "epoch_id": "E3", "parent": "E2" }
+        ],
+        "expected_fork_detected": false
+      },
+      {
+        "scenario": "double_sign",
+        "timeline": [
+          { "epoch_id": "F1", "parent": null },
+          { "epoch_id": "F2A", "parent": "F1" },
+          { "epoch_id": "F2B", "parent": "F1" }
+        ],
+        "expected_fork_detected": true
+      },
+      {
+        "scenario": "late_fork",
+        "timeline": [
+          { "epoch_id": "G1", "parent": null },
+          { "epoch_id": "G2", "parent": "G1" },
+          { "epoch_id": "G3A", "parent": "G2" },
+          { "epoch_id": "G3B", "parent": "G2" }
+        ],
+        "expected_fork_detected": true
+      }
+    ]
+  },
+  "malformed_eare": {
+    "description": "Epoch Authenticity Records with corruption",
+    "records": [
+      {
+        "record_id": "missing_signature",
+        "fields": { "epoch_id": "H1", "hash": "abc" },
+        "required_fields": ["epoch_id", "hash", "signature"],
+        "expected_valid": false
+      },
+      {
+        "record_id": "short_hash",
+        "fields": { "epoch_id": "H2", "hash": "00ff", "signature": "deadbeef" },
+        "hash_bytes": 2,
+        "min_hash_bytes": 32,
+        "expected_valid": false
+      },
+      {
+        "record_id": "fully_valid",
+        "fields": { "epoch_id": "H3", "hash": "cd" , "signature": "abcd" },
+        "hash_bytes": 32,
+        "min_hash_bytes": 32,
+        "expected_valid": true
+      }
+    ]
+  },
+  "anti_poisoning_rules": {
+    "description": "Rules that must hold for poisoned payload rejection",
+    "rules": [
+      {
+        "rule_id": "nonce_monotonic",
+        "conditions": { "max_drift": 5 },
+        "sample_message": { "nonce_counter": 105, "last_nonce_counter": 100 },
+        "expected_enforced": true
+      },
+      {
+        "rule_id": "sender_binding",
+        "conditions": { "require_binding": true },
+        "sample_message": { "sender_id": "alice", "aad_sender": "alice" },
+        "expected_enforced": true
+      },
+      {
+        "rule_id": "aad_optional",
+        "conditions": { "allow_missing_aad": true },
+        "sample_message": { "aad": null },
+        "expected_enforced": true
+      }
+    ]
+  },
+  "replay_storm_simulation": {
+    "description": "Replay storm traffic profiles",
+    "window_size": 32,
+    "capacity_per_ms": 0.5,
+    "profiles": [
+      {
+        "profile_id": "short_burst",
+        "burst_rate": 10,
+        "duration_ms": 20,
+        "expected_drop_ratio": 0.8
+      },
+      {
+        "profile_id": "sustained",
+        "burst_rate": 2,
+        "duration_ms": 500,
+        "expected_drop_ratio": 0.72
+      },
+      {
+        "profile_id": "under_capacity",
+        "burst_rate": 0.2,
+        "duration_ms": 100,
+        "expected_drop_ratio": 0.0
+      }
+    ]
+  }
+}

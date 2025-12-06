@@ -1,0 +1,122 @@
+{
+  "metadata": {
+    "schema": "foxwhisper.malformed_packets.v1",
+    "description": "Seed corpus for malformed CBOR handshake packets"
+  },
+  "seeds": [
+    {
+      "seed_id": "handshake_init_missing_nonce",
+      "message_type": "HANDSHAKE_INIT",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_INIT",
+      "mutations": [
+        {
+          "op": "remove_field",
+          "field": "data.nonce",
+          "expected_outcome": "reject"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_init_shuffle_fields",
+      "message_type": "HANDSHAKE_INIT",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_INIT",
+      "mutations": [
+        {
+          "op": "shuffle_map",
+          "field": "data",
+          "expected_outcome": "recover"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_response_invalid_version",
+      "message_type": "HANDSHAKE_RESPONSE",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_RESPONSE",
+      "mutations": [
+        {
+          "op": "set_value",
+          "field": "data.version",
+          "value": -1,
+          "expected_outcome": "reject"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_response_nonce_bloat",
+      "message_type": "HANDSHAKE_RESPONSE",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_RESPONSE",
+      "mutations": [
+        {
+          "op": "expand_bytes",
+          "field": "data.nonce",
+          "factor": 3,
+          "expected_outcome": "reject"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_complete_future_timestamp",
+      "message_type": "HANDSHAKE_COMPLETE",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_COMPLETE",
+      "mutations": [
+        {
+          "op": "set_value",
+          "field": "data.timestamp",
+          "value": 4701763202000,
+          "expected_outcome": "reject"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_response_wrong_tag",
+      "message_type": "HANDSHAKE_RESPONSE",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_RESPONSE",
+      "mutations": [
+        {
+          "op": "set_value",
+          "field": "tag",
+          "value": 999,
+          "expected_outcome": "reject"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_init_invalid_pubkey",
+      "message_type": "HANDSHAKE_INIT",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_INIT",
+      "mutations": [
+        {
+          "op": "set_value",
+          "field": "data.x25519_public_key",
+          "value": "AA==",
+          "expected_outcome": "reject"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_response_missing_server_id",
+      "message_type": "HANDSHAKE_RESPONSE",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_RESPONSE",
+      "mutations": [
+        {
+          "op": "remove_field",
+          "field": "data.server_id",
+          "expected_outcome": "reject"
+        }
+      ]
+    },
+    {
+      "seed_id": "handshake_init_kyber_truncation",
+      "message_type": "HANDSHAKE_INIT",
+      "base_vector": "tests/common/handshake/cbor_test_vectors.json#HANDSHAKE_INIT",
+      "mutations": [
+        {
+          "op": "set_value",
+          "field": "data.kyber_public_key",
+          "value": "AQ==",
+          "expected_outcome": "reject"
+        }
+      ]
+    }
+  ]
+}

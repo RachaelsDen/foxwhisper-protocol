@@ -1,0 +1,17 @@
+{
+  "message_type": "HANDSHAKE_RESPONSE",
+  "vector": {
+    "tag": 210,
+    "data": {
+      "type": "HANDSHAKE_RESPONSE",
+      "version": 1,
+      "x25519_public_key": "ISIjJCUmJygpKissLS4vMTIzNDU2Nzg5Oj8-PjEyMzQ1Njc4OTAxMjM0NQ==",
+      "kyber_ciphertext": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "timestamp": 1701763201000,
+      "nonce": "ESIzJCVSMVqLMTIzNDU="
+    }
+  },
+  "mutations": [
+    "remove_field:data.server_id"
+  ]
+}

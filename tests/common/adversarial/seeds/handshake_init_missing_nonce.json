@@ -1,0 +1,17 @@
+{
+  "message_type": "HANDSHAKE_INIT",
+  "vector": {
+    "tag": 209,
+    "data": {
+      "type": "HANDSHAKE_INIT",
+      "version": 1,
+      "client_id": "ABCDEFGHijklmnopqrstuvwxyz1234567890MTIzNDU=",
+      "x25519_public_key": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Oj8xMjM0NTY3ODkwMTIzNDU=",
+      "kyber_public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "timestamp": 1701763200000
+    }
+  },
+  "mutations": [
+    "remove_field:data.nonce"
+  ]
+}

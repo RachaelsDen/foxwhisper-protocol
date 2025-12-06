@@ -1,0 +1,16 @@
+{
+  "message_type": "HANDSHAKE_COMPLETE",
+  "vector": {
+    "tag": 209,
+    "data": {
+      "type": "HANDSHAKE_COMPLETE",
+      "version": 1,
+      "session_id": "YWJjZGVmZ2hpamsxMjM0NTY3ODkwMTIzNDU=",
+      "handshake_hash": "ODlBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY2RlZDEyMzQ1Njc4OTAxMjM0NQ==",
+      "timestamp": 4701763202000
+    }
+  },
+  "mutations": [
+    "set_value:data.timestamp=4701763202000"
+  ]
+}
