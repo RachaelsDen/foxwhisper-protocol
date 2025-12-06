@@ -6,15 +6,26 @@
 
 const cbor = require('cbor');
 const fs = require('fs');
+const path = require('path');
+
+const REPO_ROOT = path.resolve(__dirname, '../../..');
+const RESULTS_DIR = path.join(REPO_ROOT, 'results');
 
 // Load test data from JSON file for consistency
 function loadTestData() {
-    try {
-        const jsonContent = fs.readFileSync('../../../tests/common/handshake/cbor_test_vectors_fixed.json', 'utf8');
-        return JSON.parse(jsonContent);
-    } catch (error) {
-        console.error('Failed to load test data:', error.message);
-        process.exit(1);
+    const testFiles = [
+        path.join(REPO_ROOT, 'tests', 'common', 'handshake', 'cbor_test_vectors_fixed.json'),
+        path.join(REPO_ROOT, 'tests', 'common', 'handshake', 'cbor_test_vectors.json')
+    ];
+    
+    for (const testFile of testFiles) {
+        try {
+            const jsonContent = fs.readFileSync(testFile, 'utf8');
+            return JSON.parse(jsonContent);
+        } catch (error) {
+            console.error(`Failed to load test data from ${testFile}:`, error.message);
+            process.exit(1);
+        }
     }
 }
 
@@ -121,8 +132,12 @@ function main() {
         }
     }
     
-    fs.writeFileSync('nodejs_cbor_results.json', JSON.stringify(hexResults, null, 2));
-    console.log('📄 Results saved to nodejs_cbor_results.json');
+    if (!fs.existsSync(RESULTS_DIR)) {
+        fs.mkdirSync(RESULTS_DIR, { recursive: true });
+    }
+    const outputFile = path.join(RESULTS_DIR, 'nodejs_cbor_results.json');
+    fs.writeFileSync(outputFile, JSON.stringify(hexResults, null, 2));
+    console.log(`📄 Results saved to ${outputFile}`);
 }
 
 if (require.main === module) {

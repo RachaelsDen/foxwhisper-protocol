@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
+use std::path::PathBuf;
 use base64::{Engine as _, engine::general_purpose};
 
 // FoxWhisper CBOR Schema Validator (Rust)
@@ -367,8 +368,23 @@ impl SchemaValidator {
         Ok(())
     }
 
-    pub fn validate_test_vectors(&self, filename: &str) -> Result<Vec<SchemaValidationResult>, Box<dyn Error>> {
-        let data = fs::read_to_string(filename)?;
+    pub fn validate_test_vectors(&self) -> Result<Vec<SchemaValidationResult>, Box<dyn Error>> {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let possible_paths = [
+            "tests/common/handshake/cbor_test_vectors_fixed.json",
+            "tests/common/handshake/cbor_test_vectors.json",
+        ];
+
+        let mut loaded_data: Option<String> = None;
+        for relative in &possible_paths {
+            let candidate = manifest_dir.join(relative);
+            if candidate.exists() {
+                loaded_data = Some(fs::read_to_string(candidate)?);
+                break;
+            }
+        }
+
+        let data = loaded_data.ok_or("Could not find test vectors file")?;
         let test_vectors: HashMap<String, serde_json::Value> = serde_json::from_str(&data)?;
         
         let mut results = Vec::new();
@@ -448,7 +464,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let validator = SchemaValidator::new();
 
     // Validate test vectors
-    let results = validator.validate_test_vectors("test-vectors/handshake/cbor_test_vectors_fixed.json")?;
+    let results = validator.validate_test_vectors()?;
 
     // Print summary
     SchemaValidator::print_summary(&results);

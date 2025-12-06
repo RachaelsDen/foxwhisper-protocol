@@ -22,8 +22,8 @@ type LanguageResult struct {
 }
 
 func main() {
-	fmt.Println("FoxWhisper CBOR Cross-Language Validation")
-	fmt.Println(strings.Repeat("=", 50))
+	log.Println("FoxWhisper CBOR Cross-Language Validation")
+	log.Println(strings.Repeat("=", 50))
 
 	validator := &CrossLanguageValidator{
 		Results: make(map[string]LanguageResult),
@@ -37,8 +37,8 @@ func main() {
 	}
 
 	for _, lang := range languages {
-		fmt.Printf("\nRunning %s validator...\n", strings.Title(lang))
-		fmt.Println(strings.Repeat("-", 30))
+		log.Printf("\nRunning %s validator...\n", strings.Title(lang))
+		log.Println(strings.Repeat("-", 30))
 
 		result := validator.runLanguageValidator(lang)
 		validator.Results[lang] = result
@@ -91,7 +91,7 @@ func (cv *CrossLanguageValidator) runLanguageValidator(language string) Language
 		cmd = exec.Command("python3", "validate_cbor_python.py")
 		workingDir = "../../python/validators/"
 	case "node":
-		cmd = exec.Command("node", "validate_cbor_node_fixed.js")
+		cmd = exec.Command("node", "validate_cbor_node.js")
 		workingDir = "../../nodejs/validators/"
 	case "go":
 		cmd = exec.Command("go", "run", "validate_cbor_go.go")
@@ -133,11 +133,11 @@ func (cv *CrossLanguageValidator) saveResults() {
 		return
 	}
 
-	err = os.WriteFile("cross_language_validation_results.json", resultsJSON, 0644)
+	err = os.WriteFile("../../../results/cross_language_validation_results.json", resultsJSON, 0644)
 	if err != nil {
 		log.Printf("Failed to save results: %v", err)
 		return
 	}
 
-	fmt.Println("\n📄 Results saved to tests/cross_language_validation_results.json")
+	fmt.Println("\n📄 Results saved to results/cross_language_validation_results.json")
 }

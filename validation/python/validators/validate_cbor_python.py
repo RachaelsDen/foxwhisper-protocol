@@ -7,7 +7,12 @@ Validates canonical CBOR encoding examples across multiple message types
 import hashlib
 import base64
 import struct
+import json
+import os
+from pathlib import Path
 from typing import Dict, Any, List, Tuple
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 class SimpleCBOR:
     """Simple CBOR encoder for validation purposes"""
@@ -155,49 +160,48 @@ class SimpleCBOR:
         
         return tag_header + SimpleCBOR.encode_canonical(data)
 
-# Test data from CBOR examples
-TEST_VECTORS = {
-    "HANDSHAKE_INIT": {
-        "tag": 0xD1,
-        "data": {
-            "type": "HANDSHAKE_INIT",
-            "version": 1,
-            "client_id": base64.urlsafe_b64decode("ABCDEFGHijklmnopqrstuvwxyz1234567890"),
-            "x25519_public_key": base64.urlsafe_b64decode("AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Oj8="),
-            "kyber_public_key": b'\x00' * 1568,  # Simplified for testing
-            "timestamp": 1701763200000,
-            "nonce": b'\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff'
-        }
-    },
-    "HANDSHAKE_RESPONSE": {
-        "tag": 0xD2,
-        "data": {
-            "type": "HANDSHAKE_RESPONSE",
-            "version": 1,
-            "server_id": base64.urlsafe_b64decode("UVVXV1lZYWJjZGVmZ2hpams="),
-            "x25519_public_key": base64.urlsafe_b64decode("ISIjJCUmJygpKissLS4vMTIzNDU2Nzg5Oj8+Pw=="),
-            "kyber_ciphertext": b'\x00' * 1568,  # Simplified for testing
-            "timestamp": 1701763201000,
-            "nonce": b'\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff\x00'
-        }
-    },
-    "HANDSHAKE_COMPLETE": {
-        "tag": 0xD3,
-        "data": {
-            "type": "HANDSHAKE_COMPLETE",
-            "version": 1,
-            "session_id": base64.urlsafe_b64decode("YWJjZGVmZ2hpams="),
-            "handshake_hash": base64.urlsafe_b64decode("ODlBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY2RlZQ=="),
-            "timestamp": 1701763202000
-        }
-    }
-}
+def load_test_vectors():
+    """Load test vectors from JSON file"""
+    # Try to find test vectors file
+    possible_paths = [
+        "../../../tests/common/handshake/cbor_test_vectors_fixed.json",
+        "../../../tests/common/handshake/cbor_test_vectors.json",
+        "../../tests/common/handshake/cbor_test_vectors_fixed.json",
+        "../../tests/common/handshake/cbor_test_vectors.json",
+        "tests/common/handshake/cbor_test_vectors_fixed.json",
+        "tests/common/handshake/cbor_test_vectors.json"
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return json.load(f)
+    
+    raise FileNotFoundError("Could not find test vectors file")
+
+# Load test vectors
+TEST_VECTORS = load_test_vectors()
 
 def validate_message(message_name: str, test_vector: Dict[str, Any]) -> Tuple[bool, str]:
     """Validate a single message"""
     try:
+        # Convert base64 strings to bytes for binary fields
+        data = test_vector["data"].copy()
+        for field, value in data.items():
+            if field in ["client_id", "server_id", "session_id", "handshake_hash", "x25519_public_key", "nonce", "kyber_public_key", "kyber_ciphertext"]:
+                if isinstance(value, str):
+                    try:
+                        # Try URL-safe base64 first, then standard base64
+                        try:
+                            data[field] = base64.urlsafe_b64decode(value)
+                        except:
+                            data[field] = base64.b64decode(value)
+                    except:
+                        # If decoding fails, keep as string
+                        pass
+        
         # Encode with our implementation
-        encoded = SimpleCBOR.encode_tagged(test_vector["tag"], test_vector["data"])
+        encoded = SimpleCBOR.encode_tagged(test_vector["tag"], data)
         
         # Convert to hex for comparison
         actual_hex = encoded.hex().upper()
@@ -212,6 +216,30 @@ def validate_message(message_name: str, test_vector: Dict[str, Any]) -> Tuple[bo
         error_msg = f"✗ {message_name} Python validation failed: {str(e)}"
         print(error_msg)
         return False, error_msg
+
+def save_results(results: List[Tuple[str, bool, str]]):
+    """Save validation results to JSON file"""
+    output_dir = ROOT_DIR / "results"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    results_data = {
+        "language": "python",
+        "timestamp": 1701763202000,
+        "results": []
+    }
+    
+    for message_name, success, result in results:
+        results_data["results"].append({
+            "message": message_name,
+            "success": success,
+            "output": result
+        })
+    
+    output_file = output_dir / "python_cbor_status.json"
+    with open(output_file, 'w') as f:
+        json.dump(results_data, f, indent=2)
+    
+    print(f"📄 Results saved to {output_file}")
 
 def main():
     """Run all CBOR validation tests"""
@@ -241,6 +269,9 @@ def main():
         print("🎉 All Python CBOR validation tests passed!")
     else:
         print("❌ Some tests failed. Check implementation.")
+    
+    # Save results
+    save_results(results)
 
 if __name__ == "__main__":
     main()

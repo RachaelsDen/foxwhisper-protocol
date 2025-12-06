@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/RachaelsDen/foxwhisper-protocol#readme",
   "dependencies": {
-    "cbor": "^10.0.11"
+    "cbor": "^10.0.11",
+    "cjs": "^0.0.11"
   }
 }

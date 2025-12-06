@@ -6,78 +6,92 @@
 
 const { execSync } = require('child_process');
 const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { validateMessage, TEST_VECTORS } = require('./validate_cbor_node.js');
+
+const REPO_ROOT = path.resolve(__dirname, '../../..');
+const MESSAGE_NAMES = ['HANDSHAKE_INIT', 'HANDSHAKE_RESPONSE', 'HANDSHAKE_COMPLETE'];
 
 function runPythonValidation() {
     try {
         console.log('Running Python CBOR validation...');
-        const pythonOutput = execSync('python3 validate_cbor_python.py', { 
-            encoding: 'utf8',
-            cwd: '../../python/validators/'
-        });
-        
-        // Extract hex outputs from Python script
-        const hexMatches = pythonOutput.match(/Hex: ([A-F0-9]+)/g);
-        const pythonHexes = hexMatches ? hexMatches.map(match => match.replace('Hex: ', '')) : [];
-        
+        const pythonScript = path.join(REPO_ROOT, 'validation/python/validators/validate_cbor_python.py');
+        execSync(`python3 "${pythonScript}"`, { encoding: 'utf8' });
+
+        const resultsPath = path.join(REPO_ROOT, 'results/python_cbor_status.json');
+        const pythonResults = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+        const pythonHexes = {};
+        for (const entry of pythonResults.results || []) {
+            if (entry.message && entry.output) {
+                pythonHexes[entry.message] = entry.output.toUpperCase();
+            }
+        }
+
+        if (Object.keys(pythonHexes).length === 0) {
+            throw new Error('No Python CBOR output captured');
+        }
+
         console.log('✓ Python validation completed');
         return pythonHexes;
     } catch (error) {
         console.error('✗ Python validation failed:', error.message);
-        return [];
+        throw error;
     }
 }
 
 function runNodeValidation() {
     try {
-        console.log('Running Node.js CBOR validation...');
-        
-        // Import Node.js validation
-        const { validateMessage } = require('./validate_cbor_node.js');
-        
-const nodeHexes = [];
-        for (const messageName of Object.keys(pythonHexes)) {
-            const result = validateMessage(messageName, null);
-            if (result.success) {
-                const hex = pythonHexes[messageName];
-                nodeHexes.push(hex);
+        console.log('Running Node.js validation...');
+        const nodeHexes = {};
+
+        for (const messageName of MESSAGE_NAMES) {
+            const testVector = TEST_VECTORS[messageName];
+            if (!testVector) {
+                throw new Error(`Missing test vector for ${messageName}`);
             }
+
+            const result = validateMessage(messageName, testVector);
+            if (!result.success) {
+                throw new Error(`Node.js validation failed for ${messageName}`);
+            }
+
+            nodeHexes[messageName] = result.hex;
         }
-        }
-        
+
         console.log('✓ Node.js validation completed');
         return nodeHexes;
     } catch (error) {
         console.error('✗ Node.js validation failed:', error.message);
-        return [];
+        throw error;
     }
 }
 
 function compareImplementations(pythonHexes, nodeHexes) {
     console.log('\nCross-Language Comparison:');
     console.log('='.repeat(50));
-    
-    const messageNames = ['HANDSHAKE_INIT', 'HANDSHAKE_RESPONSE', 'HANDSHAKE_COMPLETE'];
+
     let allMatch = true;
-    
-    for (let i = 0; i < messageNames.length; i++) {
-        const messageName = messageNames[i];
-        const pythonHex = pythonHexes[i];
-        const nodeHex = nodeHexes[i];
-        
+
+    for (const messageName of MESSAGE_NAMES) {
+        const pythonHex = pythonHexes[messageName];
+        const nodeHex = nodeHexes[messageName];
+
         if (pythonHex && nodeHex) {
             const match = pythonHex === nodeHex;
             const status = match ? '✓ MATCH' : '✗ MISMATCH';
-            
+
             console.log(`${status} ${messageName}`);
-            
+
             if (!match) {
                 allMatch = false;
                 console.log(`  Python: ${pythonHex.substring(0, 64)}...`);
                 console.log(`  Node.js: ${nodeHex.substring(0, 64)}...`);
-                console.log(`  Length difference: ${Math.abs(pythonHex.length - nodeHex.length)} bytes`);
+                console.log(`  Length difference: ${Math.abs(pythonHex.length - nodeHex.length) / 2} bytes`);
             } else {
                 console.log(`  Length: ${pythonHex.length / 2} bytes`);
-                console.log(`  Hash: ${require('crypto').createHash('sha256').update(pythonHex, 'hex').digest('hex').substring(0, 16)}...`);
+                console.log(`  Hash: ${crypto.createHash('sha256').update(pythonHex, 'hex').digest('hex').substring(0, 16)}...`);
+
             }
         } else {
             console.log(`✗ ${messageName}: Missing data from one implementation`);
@@ -141,8 +155,12 @@ ${allMatch ?
 *This report validates cross-platform compatibility of FoxWhisper CBOR encoding implementations.*
 `;
 
-    fs.writeFileSync('cbor_validation_report.md', report);
-    console.log('📄 Validation report saved to cbor_validation_report.md');
+    const reportPath = path.join(REPO_ROOT, 'results', 'cbor_validation_report.md');
+    if (!fs.existsSync(path.dirname(reportPath))) {
+        fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+    }
+    fs.writeFileSync(reportPath, report);
+    console.log(`📄 Validation report saved to ${reportPath}`);
 }
 
 function main() {
@@ -151,14 +169,9 @@ function main() {
     
     const pythonHexes = runPythonValidation();
     const nodeHexes = runNodeValidation();
-    
-    if (pythonHexes.length === 0 || nodeHexes.length === 0) {
-        console.error('❌ Cannot proceed with comparison - missing validation data');
-        process.exit(1);
-    }
-    
+
     const allMatch = compareImplementations(pythonHexes, nodeHexes);
-    
+
     console.log('Final Result:');
     console.log('-'.repeat(30));
     if (allMatch) {

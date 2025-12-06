@@ -10,10 +10,16 @@ import struct
 from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 # Import our CBOR encoder
 import sys
 import os
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
+
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Simple CBOR encoder (copy from validate_cbor_python_fixed.py)
@@ -536,10 +542,13 @@ def main():
         print("⚠️  Some messages failed validation")
     
     # Save results
-    with open('schema_validation_results.json', 'w') as f:
+    output_dir = ROOT_DIR / "results"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "schema_validation_results.json"
+    with open(output_file, 'w') as f:
         json.dump(results, f, indent=2)
     
-    print("\n📄 Results saved to schema_validation_results.json")
+    print(f"\n📄 Results saved to {output_file}")
 
 if __name__ == "__main__":
     main()

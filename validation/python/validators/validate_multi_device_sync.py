@@ -4,7 +4,10 @@ import json
 import base64
 import hashlib
 import sys
+from pathlib import Path
 from typing import Dict, List, Any
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 class MultiDeviceSyncValidator:
     """
@@ -330,9 +333,12 @@ class MultiDeviceSyncValidator:
     
     def save_results(self, results: Dict[str, Any], filename: str):
         """Save validation results to JSON file"""
-        with open(filename, 'w') as f:
+        output_dir = ROOT_DIR / "results"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = output_dir / filename
+        with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
-        print(f"\n📄 Results saved to {filename}")
+        print(f"\n📄 Results saved to {output_file}")
 
 def main():
     if len(sys.argv) != 2:

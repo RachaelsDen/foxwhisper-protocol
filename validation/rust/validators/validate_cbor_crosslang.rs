@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 
 // FoxWhisper CBOR Cross-Language Validator (Rust)
@@ -28,11 +29,12 @@ impl CrossLanguageValidator {
     }
 
     pub fn run_language_validator(&mut self, language: &str) -> LanguageResult {
+        let repo_root = env!("CARGO_MANIFEST_DIR");
         let (cmd, args, working_dir) = match language {
-            "python" => ("python3", vec!["validate_cbor_python_fixed.py"], Some("tools/")),
-            "node" => ("node", vec!["validate_cbor_node_fixed.js"], Some("tools/")),
-            "go" => ("go", vec!["run", "validate_cbor_go.go"], Some("tools/")),
-            "rust" => ("cargo", vec!["run", "--bin", "validate_cbor_rust"], Some("./")),
+            "python" => ("python3", vec!["validation/python/validators/validate_cbor_python.py"], Some(repo_root)),
+            "node" => ("node", vec!["validation/nodejs/validators/validate_cbor_node.js"], Some(repo_root)),
+            "go" => ("go", vec!["run", "validation/go/validators/validate_cbor_go.go"], Some(repo_root)),
+            "rust" => ("cargo", vec!["run", "--bin", "validate_cbor_rust"], Some(repo_root)),
             _ => {
                 return LanguageResult {
                     language: language.to_string(),
@@ -134,8 +136,14 @@ impl CrossLanguageValidator {
 
     pub fn save_results(&self) -> Result<(), Box<dyn Error>> {
         let results_json = serde_json::to_string_pretty(&self.results)?;
-        fs::write("cross_language_validation_results.json", results_json)?;
-        println!("\n📄 Results saved to cross_language_validation_results.json");
+
+        let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let results_dir = repo_root.join("results");
+        fs::create_dir_all(&results_dir)?;
+        let output_path = results_dir.join("cross_language_validation_results.json");
+
+        fs::write(&output_path, results_json)?;
+        println!("\n📄 Results saved to {}", output_path.display());
         Ok(())
     }
 }

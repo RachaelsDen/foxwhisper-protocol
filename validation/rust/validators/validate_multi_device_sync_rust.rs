@@ -2,6 +2,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
+use std::path::PathBuf;
 
 // FoxWhisper Multi-Device Sync Validator (Rust) - Simple Version
 // Validates multi-device synchronization test vectors for FoxWhisper v0.9
@@ -142,9 +143,15 @@ impl MultiDeviceSyncValidator {
     }
 
     pub fn save_results(results: &HashMap<String, ValidationResult>, filename: &str) -> Result<(), Box<dyn Error>> {
+        let mut output_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        output_dir.push("results");
+        if !output_dir.exists() {
+            fs::create_dir_all(&output_dir)?;
+        }
+        let file_path = output_dir.join(filename);
         let results_json = serde_json::to_string_pretty(results)?;
-        fs::write(filename, results_json)?;
-        println!("\n📄 Results saved to {}", filename);
+        fs::write(&file_path, results_json)?;
+        println!("\n📄 Results saved to {}", file_path.display());
         Ok(())
     }
 }

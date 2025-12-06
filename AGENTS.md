@@ -1,8 +1,10 @@
 # FoxWhisper Protocol - Agent Development Guide
 
 ## Build/Test Commands
+- **Nested CI workflow**: `./scripts/validate-ci-nested.sh` (replicates GitHub workflow exactly)
 - **Full validation**: `./scripts/validate-ci.sh` (runs all language tests)
 - **Quick validation**: `./scripts/validate-ci-simple.sh` (core tests only)
+- **Individual jobs**: `./scripts/jobs/validate-{python,nodejs,go,rust}.sh`
 - **Python**: `cd validation/python/validators && python3 validate_cbor_python.py`
 - **Node.js**: `cd validation/nodejs/validators && node validate_cbor_node.js`
 - **Go**: `cd validation/go/validators && go run validate_cbor_go.go`

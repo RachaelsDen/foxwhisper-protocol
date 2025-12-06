@@ -32,12 +32,12 @@ jobs:
     - name: Run Python CBOR Validation
       run: |
         cd validation/python/validators
-        python3 validate_cbor_python.py ../../../tests/common/handshake/cbor_test_vectors_fixed.json
+        python3 validate_cbor_python.py
         
     - name: Run Python Schema Validation
       run: |
         cd validation/python/validators
-        python3 validate_cbor_schema.py ../../../tests/common/handshake/cbor_test_vectors_fixed.json
+        python3 validate_cbor_schema.py
         
     - name: Run Python Multi-Device Sync Validation
       run: |
@@ -65,7 +65,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '25'
         
     - name: Install dependencies
       run: |
@@ -156,8 +156,7 @@ jobs:
         
     - name: Run Rust CBOR Validation
       run: |
-        cd validation/rust/validators
-        cargo run --bin validate_cbor_rust ../../../tests/common/handshake/cbor_test_vectors_fixed.json
+        cargo run --bin validate_cbor_rust
         
     - name: Run Rust Cross-Language Validation
       run: |
@@ -199,7 +198,6 @@ jobs:
         
     - name: Analyze Cross-Language Compatibility
       run: |
-        cd validation/common/validators
         python3 << 'EOF'
         import json
         import os
@@ -259,7 +257,7 @@ jobs:
         
         ## Languages Validated
         - ✅ Python 3.11
-        - ✅ Node.js 20
+        - ✅ Node.js 25
         - ✅ Go 1.21
         - ✅ Rust (stable)
         

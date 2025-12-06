@@ -74,6 +74,11 @@ tests/*_results.json
 validation/**/*_results.json
 !tests/*_vectors.json
 
+# Validation artifacts
+results/
+cross_language_validation_results.json
+cbor_validation_report.md
+
 # Python
 .mypy_cache/
 .dmypy.json

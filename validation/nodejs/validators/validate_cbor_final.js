@@ -6,11 +6,31 @@
 
 const fs = require('fs');
 const crypto = require('crypto');
+const path = require('path');
+
+const REPO_ROOT = path.resolve(__dirname, '../../..');
+const RESULTS_DIR = path.join(REPO_ROOT, 'results');
+
+function ensureResultsDir() {
+    if (!fs.existsSync(RESULTS_DIR)) {
+        fs.mkdirSync(RESULTS_DIR, { recursive: true });
+    }
+}
 
 function loadResults(filename) {
     try {
-        const content = fs.readFileSync(filename, 'utf8');
-        return JSON.parse(content);
+        const filePath = path.join(RESULTS_DIR, filename);
+        const content = fs.readFileSync(filePath, 'utf8');
+        const parsed = JSON.parse(content);
+        const resultMap = {};
+        if (Array.isArray(parsed.results)) {
+            for (const entry of parsed.results) {
+                if (entry.message && entry.output) {
+                    resultMap[entry.message] = entry.output.toUpperCase();
+                }
+            }
+        }
+        return resultMap;
     } catch (error) {
         console.error(`Failed to load ${filename}:`, error.message);
         return {};
@@ -38,18 +58,19 @@ function compareHexValues(pythonHex, nodeHex, messageName) {
 }
 
 function main() {
+    ensureResultsDir();
     console.log('FoxWhisper CBOR Cross-Language Validation - Final Comparison');
     console.log('='.repeat(60));
     
     // Load results from both implementations
-    const pythonResults = loadResults('python_cbor_results.json');
-    const nodeResults = loadResults('nodejs_cbor_results.json');
+    const pythonResults = loadResults('python_cbor_status.json');
+    const nodeResults = loadResults('nodejs_cbor_status.json');
     
     if (Object.keys(pythonResults).length === 0 || Object.keys(nodeResults).length === 0) {
         console.error('❌ Cannot proceed - missing validation results');
         console.log('Please run both validation scripts first:');
-        console.log('  python3 validate_cbor_python_fixed.py');
-        console.log('  node validate_cbor_node_fixed.js');
+        console.log('  python3 validation/python/validators/validate_cbor_python.py');
+        console.log('  node validation/nodejs/validators/validate_cbor_node.js');
         process.exit(1);
     }
     
@@ -215,8 +236,10 @@ ${allMatch ? `
 *This report validates the cross-platform compatibility of FoxWhisper CBOR encoding implementations and provides recommendations for production deployment.*
 `;
 
-    fs.writeFileSync('cbor_validation_report.md', report);
-    console.log('📄 Detailed validation report saved to cbor_validation_report.md');
+    ensureResultsDir();
+    const reportPath = path.join(RESULTS_DIR, 'cbor_validation_report.md');
+    fs.writeFileSync(reportPath, report);
+    console.log(`📄 Detailed validation report saved to ${reportPath}`);
 }
 
 if (require.main === module) {

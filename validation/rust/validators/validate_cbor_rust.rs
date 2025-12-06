@@ -3,6 +3,7 @@ use serde_cbor;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
+use std::path::PathBuf;
 use base64::{Engine as _, engine::general_purpose};
 
 // FoxWhisper CBOR Validator (Rust)
@@ -63,11 +64,26 @@ impl CborValidator {
         }
     }
 
-    pub fn load_test_vectors(&mut self, filename: &str) -> Result<(), Box<dyn Error>> {
-        let data = fs::read_to_string(filename)?;
-        let vectors: HashMap<String, TestVector> = serde_json::from_str(&data)?;
-        self.test_vectors = TestVectors(vectors);
-        Ok(())
+    pub fn load_test_vectors(&mut self) -> Result<(), Box<dyn Error>> {
+        let possible_paths = vec![
+            "../../../tests/common/handshake/cbor_test_vectors_fixed.json",
+            "../../../tests/common/handshake/cbor_test_vectors.json",
+            "../../tests/common/handshake/cbor_test_vectors_fixed.json",
+            "../../tests/common/handshake/cbor_test_vectors.json",
+            "tests/common/handshake/cbor_test_vectors_fixed.json",
+            "tests/common/handshake/cbor_test_vectors.json",
+        ];
+        
+        for path in possible_paths {
+            if fs::metadata(path).is_ok() {
+                let data = fs::read_to_string(path)?;
+                let vectors: HashMap<String, TestVector> = serde_json::from_str(&data)?;
+                self.test_vectors = TestVectors(vectors);
+                return Ok(());
+            }
+        }
+        
+        Err("Could not find test vectors file".into())
     }
 
     pub fn validate_message(&self, message_data: &HashMap<String, serde_json::Value>) -> ValidationResult {
@@ -268,6 +284,42 @@ impl CborValidator {
         results
     }
 
+    pub fn save_results(&self, results: &HashMap<String, ValidationResult>) -> Result<(), Box<dyn Error>> {
+        let mut output_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        output_dir.push("results");
+        if !output_dir.exists() {
+            fs::create_dir_all(&output_dir)?;
+        }
+
+        
+        let mut results_data = serde_json::json!({
+            "language": "rust",
+            "timestamp": 1701763202000i64,
+            "results": []
+        });
+        
+        for (message_name, result) in results {
+            let result_data = serde_json::json!({
+                "message": message_name,
+                "success": result.valid,
+                "output": if result.valid {
+                    result.message_type.clone().unwrap_or_default()
+                } else {
+                    result.errors.join("; ")
+                }
+            });
+            results_data["results"].as_array_mut()
+                .unwrap()
+                .push(result_data);
+        }
+        
+        let output_file = output_dir.join("rust_cbor_status.json");
+        fs::write(&output_file, serde_json::to_string_pretty(&results_data)?)?;
+        
+        println!("📄 Results saved to {}", output_file.display());
+        Ok(())
+    }
+
     pub fn print_summary(results: &HashMap<String, ValidationResult>) {
         println!("\n{}", "=".repeat(40));
         println!("VALIDATION SUMMARY");
@@ -299,13 +351,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut validator = CborValidator::new();
 
     // Load test vectors
-    validator.load_test_vectors("../../../tests/common/handshake/cbor_test_vectors_fixed.json")?;
+    validator.load_test_vectors()?;
 
     // Validate all messages
     let results = validator.validate_all();
 
     // Print summary
     CborValidator::print_summary(&results);
+    
+    // Save results
+    validator.save_results(&results)?;
 
     println!("\n📄 Rust validation completed successfully");
     println!("📝 Note: Using serde_cbor for CBOR operations");

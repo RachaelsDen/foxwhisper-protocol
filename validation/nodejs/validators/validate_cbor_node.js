@@ -6,49 +6,59 @@
 
 const cbor = require('cbor');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
-// Test data from CBOR examples
-const TEST_VECTORS = {
-    "HANDSHAKE_INIT": {
-        tag: 0xD1,
-        data: {
-            type: "HANDSHAKE_INIT",
-            version: 1,
-            client_id: Buffer.from("ABCDEFGHijklmnopqrstuvwxyz1234567890", 'base64url'),
-            x25519_public_key: Buffer.from("AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Oj8=", 'base64url'),
-            kyber_public_key: Buffer.alloc(1568, 0), // Simplified for testing
-            timestamp: 1701763200000,
-            nonce: Buffer.from("ABERhnd4uJrq67z7", 'base64url')
-        }
-    },
-    "HANDSHAKE_RESPONSE": {
-        tag: 0xD2,
-        data: {
-            type: "HANDSHAKE_RESPONSE",
-            version: 1,
-            server_id: Buffer.from("UVVXV1lZYWJjZGVmZ2hpams=", 'base64url'),
-            x25519_public_key: Buffer.from("ISIjJCUmJygpKissLS4vMTIzNDU2Nzg5Oj8+Pw==", 'base64url'),
-            kyber_ciphertext: Buffer.alloc(1568, 0), // Simplified for testing
-            timestamp: 1701763201000,
-            nonce: Buffer.from("ESIzJCVSMVqL", 'base64url')
-        }
-    },
-    "HANDSHAKE_COMPLETE": {
-        tag: 0xD3,
-        data: {
-            type: "HANDSHAKE_COMPLETE",
-            version: 1,
-            session_id: Buffer.from("YWJjZGVmZ2hpams=", 'base64url'),
-            handshake_hash: Buffer.from("ODlBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY2RlZQ==", 'base64url'),
-            timestamp: 1701763202000
+const REPO_ROOT = path.resolve(__dirname, '../../..');
+const RESULTS_DIR = path.join(REPO_ROOT, 'results');
+
+function loadTestVectors() {
+    // Try to find test vectors file
+    const possiblePaths = [
+        '../../../tests/common/handshake/cbor_test_vectors_fixed.json',
+        '../../../tests/common/handshake/cbor_test_vectors.json',
+        '../../tests/common/handshake/cbor_test_vectors_fixed.json',
+        '../../tests/common/handshake/cbor_test_vectors.json',
+        'tests/common/handshake/cbor_test_vectors_fixed.json',
+        'tests/common/handshake/cbor_test_vectors.json'
+    ];
+    
+    for (const filePath of possiblePaths) {
+        if (fs.existsSync(filePath)) {
+            const data = fs.readFileSync(filePath, 'utf8');
+            return JSON.parse(data);
         }
     }
-};
+    
+    throw new Error('Could not find test vectors file');
+}
+
+// Load test vectors
+const TEST_VECTORS = loadTestVectors();
 
 function validateMessage(messageName, testVector) {
     try {
+        // Convert base64 strings to buffers for binary fields
+        const data = { ...testVector.data };
+        const binaryFields = ['client_id', 'server_id', 'session_id', 'handshake_hash', 'x25519_public_key', 'nonce', 'kyber_public_key', 'kyber_ciphertext'];
+        
+        for (const field of binaryFields) {
+            if (data[field] && typeof data[field] === 'string') {
+                try {
+                    // Try URL-safe base64 first, then standard base64
+                    data[field] = Buffer.from(data[field], 'base64url');
+                } catch {
+                    try {
+                        data[field] = Buffer.from(data[field], 'base64');
+                    } catch {
+                        // If decoding fails, keep as string
+                    }
+                }
+            }
+        }
+        
         // Create tagged CBOR
-        const tagged = new cbor.Tagged(testVector.tag, testVector.data);
+        const tagged = new cbor.Tagged(testVector.tag, data);
         
         // Encode with canonical options
         const encoded = cbor.encodeCanonical(tagged);
@@ -76,6 +86,27 @@ function compareImplementations() {
     // This would require running Python script first
     // For now, just validate Node.js implementation
     console.log('Note: Cross-language comparison requires running Python script first');
+}
+
+function saveResults(results) {
+    if (!fs.existsSync(RESULTS_DIR)) {
+        fs.mkdirSync(RESULTS_DIR, { recursive: true });
+    }
+    
+    const resultsData = {
+        language: 'nodejs',
+        timestamp: 1701763202000,
+        results: results.map(([messageName, result]) => ({
+            message: messageName,
+            success: result.success,
+            output: result.success ? result.hex : result.error
+        }))
+    };
+    
+    const outputFile = path.join(RESULTS_DIR, 'nodejs_cbor_status.json');
+    fs.writeFileSync(outputFile, JSON.stringify(resultsData, null, 2));
+    
+    console.log(`📄 Results saved to ${outputFile}`);
 }
 
 function main() {
@@ -108,6 +139,9 @@ function main() {
     } else {
         console.log('❌ Some tests failed. Check implementation.');
     }
+    
+    // Save results
+    saveResults(results);
     
     // Compare implementations if possible
     console.log();

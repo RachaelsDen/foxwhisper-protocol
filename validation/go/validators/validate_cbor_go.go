@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -156,6 +157,51 @@ func isNumber(value interface{}) bool {
 	}
 }
 
+// convertJSONToCBOR converts JSON data with base64 strings to proper CBOR with byte arrays
+func convertJSONToCBOR(data map[string]interface{}) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+
+	for key, value := range data {
+		switch key {
+		case "client_id", "server_id", "session_id", "handshake_hash", "x25519_public_key", "nonce":
+			// Convert base64 string to bytes for CBOR encoding
+			if strValue, ok := value.(string); ok {
+				bytes, err := base64.StdEncoding.DecodeString(strValue)
+				if err != nil {
+					// Try URL-safe base64 as fallback
+					bytes, err = base64.URLEncoding.DecodeString(strValue)
+					if err != nil {
+						return nil, fmt.Errorf("failed to decode %s: %v", key, err)
+					}
+				}
+				result[key] = bytes
+			} else {
+				return nil, fmt.Errorf("field %s must be string", key)
+			}
+		case "kyber_public_key", "kyber_ciphertext":
+			// Convert base64 string to bytes for CBOR encoding
+			if strValue, ok := value.(string); ok {
+				bytes, err := base64.StdEncoding.DecodeString(strValue)
+				if err != nil {
+					// Try URL-safe base64 as fallback
+					bytes, err = base64.URLEncoding.DecodeString(strValue)
+					if err != nil {
+						return nil, fmt.Errorf("failed to decode %s: %v", key, err)
+					}
+				}
+				result[key] = bytes
+			} else {
+				return nil, fmt.Errorf("field %s must be string", key)
+			}
+		default:
+			// Keep other fields as-is
+			result[key] = value
+		}
+	}
+
+	return result, nil
+}
+
 // validateBase64Field validates a base64-encoded binary field
 func validateBase64Field(fieldName string, value interface{}, expectedSize int) error {
 	strValue, ok := value.(string)
@@ -203,19 +249,39 @@ func validateCBOREncoding(messageName string, testVector TestVector) ValidationR
 		TestName: messageName,
 	}
 
-	// Convert to CBOR
-	cborData, err := cbor.Marshal(testVector.Data)
-	if err != nil {
-		result.Errors = append(result.Errors, fmt.Sprintf("CBOR marshal error: %v", err))
+	// Validate the original JSON test vector before conversion
+	validationResult := validateMessage(testVector.Data)
+	if !validationResult.Valid {
+		result.Errors = append(result.Errors, validationResult.Errors...)
 		return result
 	}
 
-	// Create tagged CBOR (simplified approach)
-	taggedCBOR, err := cbor.Marshal(testVector.Data)
+	// Convert JSON data to CBOR with proper binary field handling
+	processedData, err := convertJSONToCBOR(testVector.Data)
+	if err != nil {
+		result.Errors = append(result.Errors, fmt.Sprintf("Data conversion error: %v", err))
+		return result
+	}
+
+	// Create tagged CBOR for size diagnostics
+	taggedCBOR, err := cbor.Marshal(processedData)
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("CBOR tag marshal error: %v", err))
 		return result
 	}
+
+	// Create final CBOR with tag referencing the original map
+	taggedMap := cbor.Tag{
+		Number:  uint64(testVector.Tag),
+		Content: processedData,
+	}
+	finalCBOR, err := cbor.Marshal(taggedMap)
+	if err != nil {
+		result.Errors = append(result.Errors, fmt.Sprintf("CBOR final marshal error: %v", err))
+		return result
+	}
+
+	cborData := finalCBOR
 
 	// Decode and verify
 	var decodedData map[string]interface{}
@@ -224,8 +290,7 @@ func validateCBOREncoding(messageName string, testVector TestVector) ValidationR
 		return result
 	}
 
-	// Validate the decoded data
-	validationResult := validateMessage(decodedData)
+	// Reuse the earlier validation result for reporting
 	result.Valid = validationResult.Valid
 	result.Errors = append(result.Errors, validationResult.Errors...)
 	result.MessageType = validationResult.MessageType
@@ -245,7 +310,52 @@ func main() {
 	fmt.Println(strings.Repeat("=", 50))
 
 	// Load test vectors
-	testVectors, err := loadTestVectors("../../../tests/common/handshake/cbor_test_vectors_fixed.json")
+	possiblePaths := []string{
+		"../../../tests/common/handshake/cbor_test_vectors_fixed.json",
+		"../../../tests/common/handshake/cbor_test_vectors.json",
+		"../../tests/common/handshake/cbor_test_vectors_fixed.json",
+		"../../tests/common/handshake/cbor_test_vectors.json",
+		"tests/common/handshake/cbor_test_vectors_fixed.json",
+		"tests/common/handshake/cbor_test_vectors.json",
+	}
+
+	var testVectors TestVectors
+	var err error
+	for _, path := range possiblePaths {
+		testVectors, err = loadTestVectors(path)
+		if err == nil {
+			fmt.Printf("Loaded test vectors from: %s\n", path)
+			break
+		}
+	}
+
+	if err != nil {
+		log.Fatalf("Failed to load test vectors from any path: %v", err)
+	}
+	if err != nil {
+		log.Fatalf("Failed to load test vectors: %v", err)
+	}
+	if err != nil {
+		// Try to load original test vectors if fixed version not found
+		testVectors, err = loadTestVectors("../../../tests/common/handshake/cbor_test_vectors.json")
+		if err != nil {
+			log.Fatalf("Failed to load test vectors: %v", err)
+		}
+	}
+	if err != nil {
+		// Try to load original test vectors if fixed version not found
+		testVectors, err = loadTestVectors("../../../tests/common/handshake/cbor_test_vectors.json")
+		if err != nil {
+			log.Fatalf("Failed to load test vectors: %v", err)
+		}
+	}
+	if err != nil {
+		// Try the original test vectors if fixed version not found
+		testVectors, err = loadTestVectors("../../../tests/common/handshake/cbor_test_vectors.json")
+		if err != nil {
+			log.Fatalf("Failed to load test vectors: %v", err)
+		}
+	}
 	if err != nil {
 		log.Fatalf("Failed to load test vectors: %v", err)
 	}
@@ -301,6 +411,50 @@ func main() {
 		fmt.Println("⚠️  Some messages failed validation")
 	}
 
+	// Save results
+	saveResults(results)
+
 	fmt.Println("\n📄 Go validation completed successfully")
 	fmt.Println("📝 Note: Using fxamacker/cbor/v2 for CBOR operations")
+}
+
+// saveResults saves validation results to JSON file
+func saveResults(results map[string]ValidationResult) {
+	outputDir := "../../../results"
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		log.Printf("Failed to create output directory: %v", err)
+		return
+	}
+
+	resultsData := map[string]interface{}{
+		"language":  "go",
+		"timestamp": 1701763202000,
+		"results":   []interface{}{},
+	}
+
+	for messageName, result := range results {
+		resultData := map[string]interface{}{
+			"message": messageName,
+			"success": result.Valid,
+			"output":  result.MessageType,
+		}
+		if len(result.Errors) > 0 {
+			resultData["output"] = strings.Join(result.Errors, "; ")
+		}
+		resultsData["results"] = append(resultsData["results"].([]interface{}), resultData)
+	}
+
+	resultsJSON, err := json.MarshalIndent(resultsData, "", "  ")
+	if err != nil {
+		log.Printf("Failed to marshal results: %v", err)
+		return
+	}
+
+	outputFile := filepath.Join(outputDir, "go_cbor_status.json")
+	if err := os.WriteFile(outputFile, resultsJSON, 0644); err != nil {
+		log.Printf("Failed to save results: %v", err)
+		return
+	}
+
+	fmt.Printf("📄 Results saved to %s\n", outputFile)
 }

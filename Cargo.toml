@@ -13,7 +13,7 @@ path = "validation/rust/validators/validate_cbor_rust.rs"
 
 [[bin]]
 name = "validate_cbor_crosslang"
-path = "validation/common/validators/validate_cbor_crosslang.rs"
+path = "validation/rust/validators/validate_cbor_crosslang.rs"
 
 [[bin]]
 name = "validate_cbor_schema"

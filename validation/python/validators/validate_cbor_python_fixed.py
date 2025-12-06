@@ -8,7 +8,11 @@ import hashlib
 import base64
 import struct
 import json
+import os
+from pathlib import Path
 from typing import Dict, Any, List, Tuple
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 class SimpleCBOR:
     """Simple CBOR encoder for validation purposes"""
@@ -160,13 +164,13 @@ class SimpleCBOR:
 def load_test_data():
     """Load test data from JSON file for consistency"""
     try:
-        with open('cbor_test_vectors.json', 'r') as f:
+        with open('../../../tests/common/handshake/cbor_test_vectors_fixed.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
         # Create minimal test data if file doesn't exist
         return {
             "HANDSHAKE_COMPLETE": {
-                "tag": 0xD3,
+                "tag": 19,
                 "data": {
                     "type": "HANDSHAKE_COMPLETE",
                     "version": 1,
@@ -256,7 +260,10 @@ def main():
         if success:
             hex_results[message_name] = result
     
-    with open('python_cbor_results.json', 'w') as f:
+    output_dir = ROOT_DIR / "results"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "python_cbor_results.json"
+    with open(output_file, 'w') as f:
         json.dump(hex_results, f)
 
 if __name__ == "__main__":
