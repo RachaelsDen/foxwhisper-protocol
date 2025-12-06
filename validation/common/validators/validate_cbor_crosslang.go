@@ -34,6 +34,7 @@ func main() {
 		"python",
 		"node",
 		"go",
+		"rust",
 	}
 
 	for _, lang := range languages {
@@ -96,6 +97,9 @@ func (cv *CrossLanguageValidator) runLanguageValidator(language string) Language
 	case "go":
 		cmd = exec.Command("go", "run", "validate_cbor_go.go")
 		workingDir = "../../go/validators/"
+	case "rust":
+		cmd = exec.Command("cargo", "run", "--bin", "validate_cbor_rust")
+		workingDir = "../../.."
 	default:
 		return LanguageResult{
 			Language: language,
