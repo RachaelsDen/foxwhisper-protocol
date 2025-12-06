@@ -147,6 +147,10 @@ func validateMessage(messageData map[string]interface{}) ValidationResult {
 
 // isNumber checks if a value is a number (int or float)
 func isNumber(value interface{}) bool {
+	if value == nil {
+		return false
+	}
+
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
