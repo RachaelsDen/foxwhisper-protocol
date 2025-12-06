@@ -16,14 +16,14 @@
 
 **Usage**:
 ```bash
-cd src/
+cd validation/go/validators
 go run validate_cbor_go.go
 ```
 
 **Results**: ✅ All 3/3 messages valid (179-2325 bytes each)
 
 #### 2. `validate_cbor_crosslang.go` - Cross-Language Validator
-**Purpose**: Runs validators in Python, Node.js, and Go for compatibility testing
+**Purpose**: Runs validators in Python, Node.js, Go, and Rust for compatibility testing
 **Features**:
 - ✅ Executes all language validators automatically
 - ✅ Collects and compares results
@@ -32,10 +32,11 @@ go run validate_cbor_go.go
 
 **Usage**:
 ```bash
-go run src/validate_cbor_crosslang.go
+cd validation/common/validators
+go run validate_cbor_crosslang.go
 ```
 
-**Results**: ✅ All 3/3 languages successful
+**Results**: ✅ All 4/4 languages successful
 
 ## 🔧 **Technical Implementation**
 
@@ -73,34 +74,35 @@ go run src/validate_cbor_crosslang.go
 
 ## 🔄 **Cross-Language Compatibility**
 
-All three implementations (Python, Node.js, Go) produce consistent results:
+All four implementations (Python, Node.js, Go, Rust) produce consistent results:
 
 | Language | Status | CBOR Library |
 |----------|---------|--------------|
 | Python | ✅ SUCCESS | Custom SimpleCBOR |
 | Node.js | ✅ SUCCESS | npm/cbor |
 | Go | ✅ SUCCESS | fxamacker/cbor/v2 |
+| Rust | ✅ SUCCESS | serde_cbor |
 
 ## 🎯 **Usage Examples**
 
 ### Basic Validation
 ```bash
 # Run Go validator
-cd src/
+cd validation/go/validators
 go run validate_cbor_go.go
 
 # Run cross-language validation
-go run src/validate_cbor_crosslang.go
+cd ../common/validators
+go run validate_cbor_crosslang.go
 ```
 
 ### Integration Testing
 ```bash
 # Test all validators
-cd src/
-python3 validate_cbor_python_fixed.py
-node validate_cbor_node_fixed.js
-go run validate_cbor_go.go
-go run validate_cbor_crosslang.go
+cd validation/python/validators && python3 validate_cbor_python_fixed.py
+cd ../nodejs/validators && node validate_cbor_node_fixed.js
+cd ../go/validators && go run validate_cbor_go.go
+cd ../common/validators && go run validate_cbor_crosslang.go
 ```
 
 ## 📋 **Test Data**
@@ -122,9 +124,9 @@ The Go validators provide comprehensive error reporting:
 
 The FoxWhisper Go CBOR validators provide:
 - ✅ **Complete protocol coverage** - All message types supported
-- ✅ **Cross-language compatibility** - Consistent with Python/Node.js
+- ✅ **Cross-language compatibility** - Consistent with Python/Node.js/Rust
 - ✅ **Production ready** - Robust error handling and validation
 - ✅ **Performance optimized** - Efficient CBOR operations
 - ✅ **Well documented** - Clear error messages and usage
 
-The Go implementation successfully validates all FoxWhisper protocol messages and maintains compatibility with existing Python and JavaScript validators.
+The Go implementation successfully validates all FoxWhisper protocol messages and maintains compatibility with existing Python, JavaScript, and Rust validators.
