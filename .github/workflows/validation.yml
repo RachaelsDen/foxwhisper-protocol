@@ -211,12 +211,24 @@ jobs:
         python3 << 'EOF'
         import json
         import os
+        from pathlib import Path
         
         def load_results(artifact_name, filename):
-            path = os.path.join(artifact_name, 'results', filename)
-            if os.path.exists(path):
-                with open(path, 'r') as f:
-                    return json.load(f)
+            base = Path(artifact_name)
+            if not base.exists():
+                return None
+            candidates = [
+                base / filename,
+                base / "results" / filename,
+            ]
+            for candidate in candidates:
+                if candidate.exists():
+                    with candidate.open('r') as f:
+                        return json.load(f)
+            for candidate in base.rglob(filename):
+                if candidate.is_file():
+                    with candidate.open('r') as f:
+                        return json.load(f)
             return None
         
         def all_passed(payload):
