@@ -5,7 +5,7 @@ edition = "2021"
 
 [[bin]]
 name = "generate_e2e_test_vectors"
-path = "tools/generate_e2e_test_vectors.rs"
+path = "tools/generators/generate_e2e_test_vectors.rs"
 
 [[bin]]
 name = "validate_cbor_rust"
