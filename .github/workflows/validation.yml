@@ -45,13 +45,12 @@ jobs:
         python3 validate_multi_device_sync.py ../../../tests/common/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Python Results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: python-validation-results
-        path: |
-          tools/python_cbor_results.json
-          tools/schema_validation_results.json
-          multi_device_sync_validation_results.json
+        path: results/
+        if-no-files-found: warn
 
   # Node.js Validation
   validate-nodejs:
@@ -93,12 +92,12 @@ jobs:
         node validate_multi_device_sync.js ../../../tests/common/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Node.js Results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: nodejs-validation-results
-        path: |
-          tools/nodejs_cbor_results.json
-          tools/cbor_validation_report.md
+        path: results/
+        if-no-files-found: warn
 
   # Go Validation
   validate-go:
@@ -129,11 +128,12 @@ jobs:
         go run validate_cbor_crosslang.go
         
     - name: Upload Go Results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: go-validation-results
-        path: |
-          validation/go/validators/cross_language_validation_results.json
+        path: results/
+        if-no-files-found: warn
 
   # Rust Validation
   validate-rust:
@@ -178,15 +178,15 @@ jobs:
         
     - name: Run Rust Multi-Device Sync Validation
       run: |
-        cargo run --bin validate_multi_device_sync_rust -- ../../../tests/common/handshake/multi_device_sync_test_vectors.json
+        cargo run --bin validate_multi_device_sync_rust -- tests/common/handshake/multi_device_sync_test_vectors.json
         
     - name: Upload Rust Results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: rust-validation-results
-        path: |
-          validation/rust/validators/schema_validation_results.json
-          validation/rust/results/multi_device_sync_validation_results_rust.json
+        path: results/
+        if-no-files-found: warn
 
   # Cross-Language Compatibility Check
   cross-language-compatibility:
@@ -212,46 +212,62 @@ jobs:
         import json
         import os
         
-        # Load all validation results
-        results = {}
+        def load_results(artifact_name, filename):
+            path = os.path.join(artifact_name, 'results', filename)
+            if os.path.exists(path):
+                with open(path, 'r') as f:
+                    return json.load(f)
+            return None
         
-        # Load Python results
-        if os.path.exists('python-validation-results/python_cbor_results.json'):
-            with open('python-validation-results/python_cbor_results.json', 'r') as f:
-                results['python'] = json.load(f)
-                
-        # Load Node.js results  
-        if os.path.exists('nodejs-validation-results/nodejs_cbor_results.json'):
-            with open('nodejs-validation-results/nodejs_cbor_results.json', 'r') as f:
-                results['nodejs'] = json.load(f)
-                
-        # Load Go results
-        if os.path.exists('go-validation-results/cross_language_validation_results.json'):
-            with open('go-validation-results/cross_language_validation_results.json', 'r') as f:
-                results['go'] = json.load(f)
-                
-        # Load Rust results
-        if os.path.exists('rust-validation-results/schema_validation_results.json'):
-            with open('rust-validation-results/schema_validation_results.json', 'r') as f:
-                results['rust'] = json.load(f)
+        def all_passed(payload):
+            if not payload:
+                return False
+            entries = payload.get('results')
+            if isinstance(entries, list):
+                if not entries:
+                    return True
+                return all(item.get('success', False) for item in entries)
+            return bool(payload.get('success', True))
         
-        # Generate compatibility report
+        artifacts = {
+            'python': ('python-validation-results', 'python_cbor_status.json'),
+            'nodejs': ('nodejs-validation-results', 'nodejs_cbor_status.json'),
+            'go': ('go-validation-results', 'go_cbor_status.json'),
+            'rust': ('rust-validation-results', 'rust_cbor_status.json'),
+        }
+        
+        results = []
+        missing = []
+        for language, (artifact_name, filename) in artifacts.items():
+            data = load_results(artifact_name, filename)
+            if data is None:
+                missing.append(language)
+                results.append((language, False))
+            else:
+                results.append((language, all_passed(data)))
+        
         print("🦊 FoxWhisper Protocol - Cross-Language Compatibility Report")
         print("=" * 60)
         
+        if missing:
+            print(f"⚠️  Missing artifacts for: {', '.join(missing)}")
+        
         total_languages = len(results)
-        successful_languages = sum(1 for r in results.values() if r.get('success', True))
+        successful_languages = sum(1 for _, ok in results if ok)
+        
+        if total_languages == 0:
+            print("❌ No language results available")
+            exit(1)
         
         print(f"Languages Tested: {total_languages}")
         print(f"Successful Validations: {successful_languages}")
         print(f"Success Rate: {successful_languages/total_languages*100:.1f}%")
         print()
         
-        for lang, result in results.items():
-            status = "✅ PASS" if result.get('success', True) else "❌ FAIL"
+        for lang, ok in results:
+            status = "✅ PASS" if ok else "❌ FAIL"
             print(f"{lang.upper():<8} : {status}")
-            
-        # Check if all passed
+        
         if successful_languages == total_languages:
             print("\n🎉 ALL LANGUAGES PASSED - Cross-language compatibility verified!")
             exit(0)
@@ -339,10 +355,12 @@ jobs:
         EOF
         
     - name: Upload Benchmark Results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: performance-benchmarks
-        path: tools/benchmark-results.json
+        path: validation/python/validators/benchmark-results.json
+        if-no-files-found: warn
 
   # Security Validation
   security-validation:
@@ -427,7 +445,7 @@ jobs:
         
         ## Languages Tested
         - ✅ Python 3.11
-        - ✅ Node.js 20  
+        - ✅ Node.js 25  
         - ✅ Go 1.21
         - ✅ Rust (stable)
         
