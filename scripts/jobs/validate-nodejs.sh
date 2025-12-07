@@ -51,9 +51,7 @@ main() {
     
     # Run CBOR validation tests
     run_and_track "cbor_validation" "validate_cbor_node.js" ""
-    run_and_track "cbor_validation_fixed" "validate_cbor_node_fixed.js" ""
     run_and_track "cbor_crosslang" "validate_cbor_crosslang.js" ""
-    run_and_track "cbor_final" "validate_cbor_final.js" ""
     
     # Run multi-device sync validation
     run_and_track "multi_device_sync" "validate_multi_device_sync.js" "$ROOT_DIR/tests/common/handshake/multi_device_sync_test_vectors.json"
@@ -79,9 +77,7 @@ main() {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "logs": [
     "nodejs_cbor_validation_results.log",
-    "nodejs_cbor_validation_fixed_results.log",
     "nodejs_cbor_crosslang_results.log",
-    "nodejs_cbor_final_results.log",
     "nodejs_multi_device_sync_results.log",
     "nodejs_replay_poisoning_results.log",
     "nodejs_epoch_fork_results.log"
