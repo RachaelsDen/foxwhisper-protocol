@@ -112,6 +112,11 @@ if ! command_exists cargo; then
     missing_prereqs=true
 fi
 
+if ! command_exists elixir; then
+    echo "❌ Elixir not found"
+    missing_prereqs=true
+fi
+
 if [ "$missing_prereqs" = "true" ]; then
     echo ""
     echo "❌ Missing prerequisites. Please install the required tools and try again."
@@ -131,8 +136,9 @@ declare -A JOB_SUMMARY_FILES=(
     ["validate-nodejs"]="results/nodejs_validation_job.json"
     ["validate-go"]="results/go_validation_job.json"
     ["validate-rust"]="results/rust_validation_job.json"
+    ["validate-erlang"]="results/validate_erlang_job.json"
 )
-DETAILED_JOBS=("validate-python" "validate-nodejs" "validate-go" "validate-rust")
+DETAILED_JOBS=("validate-python" "validate-nodejs" "validate-go" "validate-rust" "validate-erlang")
 
 # Execute jobs in the same order as GitHub workflow
 echo "📋 Executing workflow jobs..."
@@ -156,31 +162,37 @@ if run_job "validate-go" "validate-go.sh"; then
     successful_jobs=$((successful_jobs + 1))
 fi
 
-# Job 4: Rust Validation
+# Job 4: Elixir/Erlang Validation
+total_jobs=$((total_jobs + 1))
+if run_job "validate-erlang" "validate-erlang.sh"; then
+    successful_jobs=$((successful_jobs + 1))
+fi
+
+# Job 5: Rust Validation
 total_jobs=$((total_jobs + 1))
 if run_job "validate-rust" "validate-rust.sh"; then
     successful_jobs=$((successful_jobs + 1))
 fi
 
-# Job 5: Cross-Language Compatibility (depends on previous jobs)
+# Job 6: Cross-Language Compatibility (depends on previous jobs)
 total_jobs=$((total_jobs + 1))
 if run_job "cross-language-compatibility" "cross-language-compatibility.sh"; then
     successful_jobs=$((successful_jobs + 1))
 fi
 
-# Job 6: Performance Benchmarks
+# Job 7: Performance Benchmarks
 total_jobs=$((total_jobs + 1))
 if run_job "performance-benchmarks" "performance-benchmarks.sh"; then
     successful_jobs=$((successful_jobs + 1))
 fi
 
-# Job 7: Security Validation
+# Job 8: Security Validation
 total_jobs=$((total_jobs + 1))
 if run_job "security-validation" "security-validation.sh"; then
     successful_jobs=$((successful_jobs + 1))
 fi
 
-# Job 8: Final Report (always runs, like in GitHub workflow with if: always())
+# Job 9: Final Report (always runs, like in GitHub workflow with if: always())
 total_jobs=$((total_jobs + 1))
 echo ""
 echo "🚀 Starting job: final-report"
@@ -215,7 +227,7 @@ echo ""
 # Show job status summary
 echo "Job Status Summary:"
 echo "------------------"
-for job in validate-python validate-nodejs validate-go validate-rust cross-language-compatibility performance-benchmarks security-validation final-report; do
+for job in validate-python validate-nodejs validate-go validate-erlang validate-rust cross-language-compatibility performance-benchmarks security-validation final-report; do
     if [ -f "results/${job}_status.txt" ]; then
         status=$(cat "results/${job}_status.txt")
         case $status in

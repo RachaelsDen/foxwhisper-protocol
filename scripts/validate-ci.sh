@@ -61,6 +61,11 @@ if ! command_exists cargo; then
     exit 1
 fi
 
+if ! command_exists elixir; then
+    echo "❌ Elixir not found"
+    exit 1
+fi
+
 echo "✅ All prerequisites found"
 
 # Install Python dependencies
@@ -80,6 +85,12 @@ go mod tidy 2>/dev/null || echo "⚠️  Go mod tidy failed"
 # Install Rust dependencies
 echo "Installing Rust dependencies..."
 cargo fetch 2>/dev/null || echo "⚠️  Cargo fetch failed"
+
+# Install Elixir dependencies
+if [ -d "validation/erlang" ]; then
+    echo "Installing Elixir dependencies..."
+    (cd validation/erlang && mix deps.get 2>/dev/null) || echo "⚠️  Mix deps.get failed"
+fi
 
 echo ""
 echo "Running validations..."
@@ -173,6 +184,15 @@ fi
 
 total_validations=$((total_validations + 1))
 if run_validation "Rust Multi-Device" "cargo run --bin validate_multi_device_sync_rust -- test-vectors/handshake/multi_device_sync_test_vectors.json" "rust_multidevice"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
+# Elixir validations
+echo "💧 Elixir Validations"
+echo "------------------"
+
+total_validations=$((total_validations + 1))
+if run_validation "Elixir" "bash scripts/jobs/validate-erlang.sh" "elixir"; then
     successful_validations=$((successful_validations + 1))
 fi
 

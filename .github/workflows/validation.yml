@@ -203,11 +203,44 @@ jobs:
         path: results/
         if-no-files-found: warn
 
+  # Elixir/Erlang Validation
+  validate-erlang:
+    runs-on: ubuntu-latest
+    name: Elixir/Erlang Validation
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Beam
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.18.3'
+        otp-version: '27'
+        version-type: strict
+      
+    - name: Install dependencies
+      run: |
+        cd validation/erlang
+        mix deps.get
+      
+    - name: Run Elixir Validation Job
+      run: |
+        bash scripts/jobs/validate-erlang.sh
+      
+    - name: Upload Elixir Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: erlang-validation-results
+        path: results/
+        if-no-files-found: warn
+
   # Cross-Language Compatibility Check
   cross-language-compatibility:
     runs-on: ubuntu-latest
     name: Cross-Language Compatibility
-    needs: [validate-python, validate-nodejs, validate-go, validate-rust]
+    needs: [validate-python, validate-nodejs, validate-go, validate-rust, validate-erlang]
     
     steps:
     - name: Checkout code
@@ -261,6 +294,7 @@ jobs:
             'nodejs': ('nodejs-validation-results', 'nodejs_cbor_status.json'),
             'go': ('go-validation-results', 'go_cbor_status.json'),
             'rust': ('rust-validation-results', 'rust_cbor_status.json'),
+            'elixir': ('erlang-validation-results', 'elixir_cbor_status.json'),
         }
         
         results = []
@@ -313,6 +347,7 @@ jobs:
         - ✅ Node.js 25
         - ✅ Go 1.21
         - ✅ Rust (stable)
+        - ✅ Elixir/Erlang (OTP 27, Elixir 1.18.3)
         
         ## Test Categories
         - ✅ CBOR Encoding/Decoding

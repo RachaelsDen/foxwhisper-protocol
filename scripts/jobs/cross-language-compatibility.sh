@@ -18,16 +18,22 @@ echo ""
 # Function to check job status
 check_job_status() {
     local job=$1
-    local result_file="results/${job}_validation_job.json"
-    
-    if [ -f "$result_file" ]; then
-        local status=$(python3 -c "import json; print(json.load(open('$result_file'))['status'])" 2>/dev/null || echo "unknown")
-        echo "$job: $status"
-        return $([ "$status" = "success" ] && echo 0 || echo 1)
-    else
-        echo "$job: not found"
-        return 1
+    local candidates=("results/${job}_validation_job.json")
+
+    if [ "$job" = "validate_erlang" ] || [ "$job" = "erlang" ]; then
+        candidates+=("results/validate_erlang_job.json" "results/erlang_validation_job.json")
     fi
+
+    for result_file in "${candidates[@]}"; do
+        if [ -f "$result_file" ]; then
+            local status=$(python3 -c "import json; print(json.load(open('$result_file'))['status'])" 2>/dev/null || echo "unknown")
+            echo "$job: $status"
+            return $([ "$status" = "success" ] && echo 0 || echo 1)
+        fi
+    done
+
+    echo "$job: not found"
+    return 1
 }
 
 # Check all language validation jobs
@@ -35,11 +41,13 @@ python_status=1
 nodejs_status=1
 go_status=1
 rust_status=1
+erlang_status=1
 
 check_job_status "python" && python_status=0 || python_status=1
 check_job_status "nodejs" && nodejs_status=0 || nodejs_status=1
 check_job_status "go" && go_status=0 || go_status=1
 check_job_status "rust" && rust_status=0 || rust_status=1
+check_job_status "validate_erlang" && erlang_status=0 || erlang_status=1
 
 echo ""
 
@@ -112,6 +120,18 @@ for result_file in glob.glob('results/rust_*_status.json'):
             if status != 'success':
                 results['rust']['success'] = False
 
+# Load Elixir results (single status file with results array)
+elixir_path = 'results/elixir_cbor_status.json'
+if os.path.exists(elixir_path):
+    with open(elixir_path, 'r') as f:
+        data = json.load(f)
+    entries = data.get('results') or []
+    success = all(entry.get('success') for entry in entries) if entries else True
+    results['elixir'] = {
+        'tests': entries,
+        'success': success
+    }
+
 # Generate compatibility report
 print("🦊 FoxWhisper Protocol - Cross-Language Compatibility Report")
 print("=" * 60)
@@ -126,8 +146,13 @@ print()
 
 for lang, result in results.items():
     status = "✅ PASS" if result.get('success', True) else "❌ FAIL"
-    test_count = len(result.get('tests', []))
-    passed_count = sum(1 for t in result.get('tests', []) if t.get('status') == 'success')
+    tests = result.get('tests', [])
+    test_count = len(tests)
+    passed_count = sum(
+        1
+        for t in tests
+        if t.get('status') == 'success' or t.get('success') is True
+    )
     print(f"{lang.upper():<8} : {status} ({passed_count}/{test_count} tests)")
 
 # Check if all passed
@@ -166,6 +191,7 @@ cat > results/validation-summary.md << 'EOF'
 - ✅ Node.js 25
 - ✅ Go 1.21
 - ✅ Rust (stable)
+- ✅ Elixir/Erlang (OTP 27, Elixir 1.18.3)
 
 ## Test Categories
 - ✅ CBOR Encoding/Decoding
