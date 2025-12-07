@@ -227,10 +227,8 @@ echo ""
 # Build a grid of test results (tests as columns, languages as rows)
 python3 - <<'PY'
 import json
-import glob
 from pathlib import Path
 
-# Define matrix
 languages = [
     ('validate-python', 'python'),
     ('validate-nodejs', 'nodejs'),
@@ -238,85 +236,59 @@ languages = [
     ('validate-rust', 'rust'),
     ('validate-erlang', 'elixir'),
 ]
-# Canonical test order
-tests = [
-    'cbor_validation',
-    'cbor_schema',
-    'cbor_crosslang',
-    'multi_device_sync',
-    'replay_poisoning',
-    'malformed_fuzz',
-    'replay_storm',
-    'epoch_fork',
-]
-
-# Map language -> status file glob
-status_glob = {
-    'python': 'results/python_*_status.json',
-    'nodejs': 'results/nodejs_*_status.json',
-    'go': 'results/go_*_status.json',
-    'rust': 'results/rust_*_status.json',
-    'elixir': 'results/elixir_*_status.json',
+# Canonical tests by language (aligned with job scripts)
+tests_by_lang = {
+    'python': ['cbor_validation', 'cbor_schema', 'multi_device_sync', 'replay_poisoning', 'malformed_fuzz', 'replay_storm', 'epoch_fork'],
+    'nodejs': ['cbor_validation', 'cbor_schema', 'cbor_crosslang', 'multi_device_sync', 'replay_poisoning', 'malformed_fuzz', 'replay_storm', 'epoch_fork'],
+    'go': ['cbor_validation', 'cbor_schema', 'multi_device_sync', 'replay_poisoning', 'malformed_fuzz', 'replay_storm', 'epoch_fork'],
+    'rust': ['cbor_validation', 'cbor_schema', 'multi_device_sync', 'replay_poisoning', 'malformed_fuzz', 'replay_storm', 'epoch_fork'],
+    'elixir': ['cbor_validation', 'cbor_schema', 'multi_device_sync', 'replay_poisoning', 'malformed_fuzz', 'replay_storm', 'epoch_fork'],
 }
 
-ALIASES = {
-    'schema_validation': 'cbor_schema',
-    'cbor_validation': 'cbor_validation',
-    'cbor_schema': 'cbor_schema',
+summary_files = {
+    'python': Path('results/python_validation_job.json'),
+    'nodejs': Path('results/nodejs_validation_job.json'),
+    'go': Path('results/go_validation_job.json'),
+    'rust': Path('results/rust_validation_job.json'),
+    'elixir': Path('results/validate_erlang_job.json'),
 }
 
-def load_status(language):
-    entries = {}
-    for path in glob.glob(status_glob.get(language, '')):
-        try:
-            data = json.load(open(path))
-            items = data.get('results') if isinstance(data, dict) else None
-            if items:
-                for item in items:
-                    name = item.get('test') or item.get('name')
-                    status = item.get('status') or ('success' if item.get('success') else 'failed')
-                    if not name:
-                        continue
-                    norm = ALIASES.get(name, name)
-                    entries[norm] = status
-                continue
-            name = data.get('test') or data.get('name') or Path(path).stem
-            status = data.get('status') or ('success' if data.get('success') else 'failed')
-            if name.startswith(f"{language}_"):
-                name = name[len(language)+1:]
-            norm = ALIASES.get(name, name)
-            entries[norm] = status
-        except Exception:
-            continue
-    return entries
+def job_status(lang):
+    sf = summary_files.get(lang)
+    if not sf or not sf.exists():
+        return 'unknown'
+    try:
+        data = json.load(sf.open())
+        return data.get('status', 'unknown')
+    except Exception:
+        return 'unknown'
+
+# Build unified header
+all_tests = []
+for lst in tests_by_lang.values():
+    for t in lst:
+        if t not in all_tests:
+            all_tests.append(t)
 
 rows = []
-for job, lang in languages:
-    statuses = load_status(lang)
+for _job, lang in languages:
+    status = job_status(lang)
+    tests = tests_by_lang.get(lang, [])
     row = [lang]
-    for t in tests:
-        st = statuses.get(t, '')
-        if st == 'success':
-            row.append('✅')
-        elif st == 'failed':
-            row.append('❌')
-        else:
+    for t in all_tests:
+        if t not in tests:
             row.append('')
+        else:
+            row.append('✅' if status == 'success' else ('❌' if status == 'failed' else ''))
     rows.append(row)
 
-# Print grid
-def format_row(cells):
-    return ' | '.join(cells)
-
-def separator(n):
-    return '---+' + '+'.join(['---'] * (n-1))
-
-header = ['lang'] + tests
+header = ['lang'] + all_tests
+line = ' | '.join(header)
 print("Test Grid (lang vs tests):")
-print(format_row(header))
-print('-' * len(format_row(header)))
+print(line)
+print('-' * len(line))
 for r in rows:
-    print(format_row(r))
+    print(' | '.join(r))
 PY
 
 echo ""
