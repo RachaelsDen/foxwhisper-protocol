@@ -49,6 +49,38 @@ run_job() {
     fi
 }
 
+print_validation_details() {
+    local job_name=$1
+    local summary_file=$2
+    if [ -f "$summary_file" ]; then
+        python3 - "$job_name" "$summary_file" <<'PY'
+import json, sys
+job, path = sys.argv[1:3]
+try:
+    with open(path, 'r', encoding='utf-8') as handle:
+        data = json.load(handle)
+except Exception as exc:  # pragma: no cover - runtime guard
+    print(f" - {job}: unable to read summary ({exc})")
+    raise SystemExit
+
+status = data.get('status', 'unknown')
+total = data.get('total_tests')
+passed = data.get('passed_tests')
+failed = data.get('failed_tests')
+rate = data.get('success_rate')
+rate_str = f"{rate}%" if isinstance(rate, (int, float)) else ""
+if None in (total, passed, failed):
+    print(f" - {job}: status={status}")
+else:
+    print(f" - {job}: {passed}/{total} tests passed ({status}{(' ' + rate_str) if rate_str else ''})")
+logs = data.get('logs') or []
+if logs:
+    log_list = ', '.join(logs)
+    print(f"   logs: {log_list}")
+PY
+    fi
+}
+
 # Function to check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -93,6 +125,14 @@ echo ""
 workflow_start_time=$(date +%s)
 total_jobs=0
 successful_jobs=0
+
+declare -A JOB_SUMMARY_FILES=(
+    ["validate-python"]="results/python_validation_job.json"
+    ["validate-nodejs"]="results/nodejs_validation_job.json"
+    ["validate-go"]="results/go_validation_job.json"
+    ["validate-rust"]="results/rust_validation_job.json"
+)
+DETAILED_JOBS=("validate-python" "validate-nodejs" "validate-go" "validate-rust")
 
 # Execute jobs in the same order as GitHub workflow
 echo "📋 Executing workflow jobs..."
@@ -196,6 +236,16 @@ for job in validate-python validate-nodejs validate-go validate-rust cross-langu
         echo "❓ $job: NO STATUS"
     fi
 done
+
+if [ ${#DETAILED_JOBS[@]} -gt 0 ]; then
+    echo ""
+    echo "Detailed Test Breakdown:"
+    echo "------------------------"
+    for job in "${DETAILED_JOBS[@]}"; do
+        summary_file=${JOB_SUMMARY_FILES[$job]}
+        print_validation_details "$job" "$summary_file"
+    done
+fi
 
 echo ""
 echo "📁 All results saved to: results/"

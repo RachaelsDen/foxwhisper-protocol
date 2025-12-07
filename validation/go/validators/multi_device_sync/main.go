@@ -6,7 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
+
+	validatorsutil "foxwhisper-protocol/validation/go/validators/util"
 )
 
 type ScenarioResult struct {
@@ -386,27 +387,14 @@ func buildResult(name string, errors []string) ScenarioResult {
 }
 
 func saveResults(results map[string]ScenarioResult) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	outputDir := filepath.Join(cwd, "results")
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return err
-	}
-	outputPath := filepath.Join(outputDir, "multi_device_sync_validation_results_go.json")
 	payload := map[string]interface{}{
 		"language": "go",
 		"results":  results,
 	}
-	encoded, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
+	if err := validatorsutil.SaveJSON("multi_device_sync_validation_results_go.json", payload); err != nil {
 		return err
 	}
-	if err := os.WriteFile(outputPath, encoded, 0o644); err != nil {
-		return err
-	}
-	fmt.Printf("\n📄 Results saved to %s\n", outputPath)
+	fmt.Println("\n📄 Results saved to results/multi_device_sync_validation_results_go.json")
 	return nil
 }
 

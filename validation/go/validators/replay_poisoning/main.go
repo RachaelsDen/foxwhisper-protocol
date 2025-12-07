@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"path/filepath"
+
+	validatorsutil "foxwhisper-protocol/validation/go/validators/util"
 )
 
 type ReplayVectors struct {
@@ -317,29 +318,17 @@ func intFrom(value interface{}) int {
 }
 
 func saveResults(results []ScenarioResult) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	outputDir := filepath.Join(cwd, "results")
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return err
-	}
 	payload := map[string]interface{}{
 		"language":       "go",
+		"test":           "replay_poisoning",
 		"scenario_count": len(results),
 		"success":        allValid(results),
 		"results":        results,
 	}
-	data, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
+	if err := validatorsutil.SaveJSON("replay_poisoning_validation_results_go.json", payload); err != nil {
 		return err
 	}
-	outputPath := filepath.Join(outputDir, "replay_poisoning_validation_results_go.json")
-	if err := os.WriteFile(outputPath, data, 0o644); err != nil {
-		return err
-	}
-	fmt.Printf("\n📄 Results saved to %s\n", outputPath)
+	fmt.Println("\n📄 Results saved to results/replay_poisoning_validation_results_go.json")
 	return nil
 }
 

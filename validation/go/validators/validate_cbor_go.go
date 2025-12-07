@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	cbor "github.com/fxamacker/cbor/v2"
+
+	validatorsutil "foxwhisper-protocol/validation/go/validators/util"
 )
 
 // MessageType represents FoxWhisper message types
@@ -313,55 +315,29 @@ func main() {
 	fmt.Println("FoxWhisper CBOR Validator - Go Implementation")
 	fmt.Println(strings.Repeat("=", 50))
 
+	root, err := validatorsutil.RepoRoot()
+	if err != nil {
+		log.Fatalf("Failed to locate repository root: %v", err)
+	}
+
 	// Load test vectors
 	possiblePaths := []string{
-		"../../../tests/common/handshake/cbor_test_vectors_fixed.json",
-		"../../../tests/common/handshake/cbor_test_vectors.json",
-		"../../tests/common/handshake/cbor_test_vectors_fixed.json",
-		"../../tests/common/handshake/cbor_test_vectors.json",
-		"tests/common/handshake/cbor_test_vectors_fixed.json",
-		"tests/common/handshake/cbor_test_vectors.json",
+		filepath.Join(root, "tests/common/handshake/cbor_test_vectors_fixed.json"),
+		filepath.Join(root, "tests/common/handshake/cbor_test_vectors.json"),
 	}
 
 	var testVectors TestVectors
-	var err error
+	var loadErr error
 	for _, path := range possiblePaths {
-		testVectors, err = loadTestVectors(path)
-		if err == nil {
+		testVectors, loadErr = loadTestVectors(path)
+		if loadErr == nil {
 			fmt.Printf("Loaded test vectors from: %s\n", path)
 			break
 		}
 	}
 
-	if err != nil {
-		log.Fatalf("Failed to load test vectors from any path: %v", err)
-	}
-	if err != nil {
-		log.Fatalf("Failed to load test vectors: %v", err)
-	}
-	if err != nil {
-		// Try to load original test vectors if fixed version not found
-		testVectors, err = loadTestVectors("../../../tests/common/handshake/cbor_test_vectors.json")
-		if err != nil {
-			log.Fatalf("Failed to load test vectors: %v", err)
-		}
-	}
-	if err != nil {
-		// Try to load original test vectors if fixed version not found
-		testVectors, err = loadTestVectors("../../../tests/common/handshake/cbor_test_vectors.json")
-		if err != nil {
-			log.Fatalf("Failed to load test vectors: %v", err)
-		}
-	}
-	if err != nil {
-		// Try the original test vectors if fixed version not found
-		testVectors, err = loadTestVectors("../../../tests/common/handshake/cbor_test_vectors.json")
-		if err != nil {
-			log.Fatalf("Failed to load test vectors: %v", err)
-		}
-	}
-	if err != nil {
-		log.Fatalf("Failed to load test vectors: %v", err)
+	if loadErr != nil {
+		log.Fatalf("Failed to load test vectors: %v", loadErr)
 	}
 
 	results := make(map[string]ValidationResult)
@@ -424,41 +400,30 @@ func main() {
 
 // saveResults saves validation results to JSON file
 func saveResults(results map[string]ValidationResult) {
-	outputDir := "../../../results"
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		log.Printf("Failed to create output directory: %v", err)
-		return
-	}
-
-	resultsData := map[string]interface{}{
-		"language":  "go",
-		"timestamp": 1701763202000,
-		"results":   []interface{}{},
-	}
-
+	entries := make([]map[string]interface{}, 0, len(results))
 	for messageName, result := range results {
-		resultData := map[string]interface{}{
+		entry := map[string]interface{}{
 			"message": messageName,
 			"success": result.Valid,
-			"output":  result.MessageType,
 		}
-		if len(result.Errors) > 0 {
-			resultData["output"] = strings.Join(result.Errors, "; ")
+		if result.Valid {
+			entry["output"] = result.MessageType
+		} else {
+			entry["output"] = strings.Join(result.Errors, "; ")
 		}
-		resultsData["results"] = append(resultsData["results"].([]interface{}), resultData)
+		entries = append(entries, entry)
 	}
 
-	resultsJSON, err := json.MarshalIndent(resultsData, "", "  ")
-	if err != nil {
-		log.Printf("Failed to marshal results: %v", err)
-		return
+	payload := map[string]interface{}{
+		"language": "go",
+		"test":     "cbor_validation",
+		"results":  entries,
 	}
 
-	outputFile := filepath.Join(outputDir, "go_cbor_status.json")
-	if err := os.WriteFile(outputFile, resultsJSON, 0644); err != nil {
+	if err := validatorsutil.SaveJSON("go_cbor_status.json", payload); err != nil {
 		log.Printf("Failed to save results: %v", err)
 		return
 	}
 
-	fmt.Printf("📄 Results saved to %s\n", outputFile)
+	fmt.Println("📄 Results saved to results/go_cbor_status.json")
 }

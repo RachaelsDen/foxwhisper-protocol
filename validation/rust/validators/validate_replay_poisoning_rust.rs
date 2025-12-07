@@ -4,7 +4,9 @@ use serde_json::{self, Value};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+
+mod util;
+use util::write_json;
 
 #[derive(Deserialize)]
 struct ReplayVectors {
@@ -383,18 +385,14 @@ fn get_float(value: Option<&Value>) -> f64 {
 }
 
 fn save_results(results: &[ScenarioResult]) -> Result<(), Box<dyn std::error::Error>> {
-    let mut output_dir = PathBuf::from(env::current_dir()?);
-    output_dir.push("results");
-    fs::create_dir_all(&output_dir)?;
-    let output_path = output_dir.join("replay_poisoning_validation_results_rust.json");
     let payload = serde_json::json!({
         "language": "rust",
         "scenario_count": results.len(),
         "success": results.iter().all(|r| r.valid),
         "results": results,
     });
-    fs::write(&output_path, serde_json::to_string_pretty(&payload)?)?;
-    println!("\n📄 Results saved to {}", output_path.display());
+    write_json("replay_poisoning_validation_results_rust.json", &payload)?;
+    println!("\n📄 Results saved to results/replay_poisoning_validation_results_rust.json");
     Ok(())
 }
 

@@ -50,12 +50,6 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
-    # Cross-Language Validation
-    total_tests=$((total_tests + 1))
-    if run_rust_validation "cross_language" "validate_cbor_crosslang" ""; then
-        passed_tests=$((passed_tests + 1))
-    fi
-
     # Schema Validation
     total_tests=$((total_tests + 1))
     if run_rust_validation "schema_validation" "validate_cbor_schema" ""; then
@@ -65,6 +59,24 @@ main() {
     # Multi-Device Sync Validation
     total_tests=$((total_tests + 1))
     if run_rust_validation "multi_device_sync" "validate_multi_device_sync_rust" "$ROOT_DIR/tests/common/handshake/multi_device_sync_test_vectors.json"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # Replay & Poisoning Validation
+    total_tests=$((total_tests + 1))
+    if run_rust_validation "replay_poisoning" "validate_replay_poisoning_rust" "$ROOT_DIR/tests/common/handshake/replay_poisoning_test_vectors.json"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # Malformed Packet Fuzz Harness
+    total_tests=$((total_tests + 1))
+    if run_rust_validation "malformed_fuzz" "validate_malformed_fuzz_rust" ""; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # Replay Storm Simulation
+    total_tests=$((total_tests + 1))
+    if run_rust_validation "replay_storm" "validate_replay_storm_rust" ""; then
         passed_tests=$((passed_tests + 1))
     fi
 
@@ -89,9 +101,11 @@ main() {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "logs": [
     "rust_cbor_validation_results.log",
-    "rust_cross_language_results.log",
     "rust_schema_validation_results.log",
-    "rust_multi_device_sync_results.log"
+    "rust_multi_device_sync_results.log",
+    "rust_replay_poisoning_results.log",
+    "rust_malformed_fuzz_results.log",
+    "rust_replay_storm_results.log"
   ]
 }
 EOF

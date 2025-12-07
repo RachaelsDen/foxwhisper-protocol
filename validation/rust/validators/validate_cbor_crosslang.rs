@@ -31,10 +31,26 @@ impl CrossLanguageValidator {
     pub fn run_language_validator(&mut self, language: &str) -> LanguageResult {
         let repo_root = env!("CARGO_MANIFEST_DIR");
         let (cmd, args, working_dir) = match language {
-            "python" => ("python3", vec!["validation/python/validators/validate_cbor_python.py"], Some(repo_root)),
-            "node" => ("node", vec!["validation/nodejs/validators/validate_cbor_node.js"], Some(repo_root)),
-            "go" => ("go", vec!["run", "validation/go/validators/validate_cbor_go.go"], Some(repo_root)),
-            "rust" => ("cargo", vec!["run", "--bin", "validate_cbor_rust"], Some(repo_root)),
+            "python" => (
+                "python3",
+                vec!["validation/python/validators/validate_cbor_python.py"],
+                Some(repo_root),
+            ),
+            "node" => (
+                "node",
+                vec!["validation/nodejs/validators/validate_cbor_node.js"],
+                Some(repo_root),
+            ),
+            "go" => (
+                "go",
+                vec!["run", "validation/go/validators/validate_cbor_go.go"],
+                Some(repo_root),
+            ),
+            "rust" => (
+                "cargo",
+                vec!["run", "--bin", "validate_cbor_rust"],
+                Some(repo_root),
+            ),
             _ => {
                 return LanguageResult {
                     language: language.to_string(),
@@ -57,12 +73,12 @@ impl CrossLanguageValidator {
                 let stdout = String::from_utf8_lossy(&output.stdout).to_string();
                 let stderr = String::from_utf8_lossy(&output.stderr).to_string();
                 let combined_output = format!("{}\n{}", stdout, stderr);
-                
-                let success = output.status.success() && 
-                    (combined_output.contains("All messages passed") || 
-                     combined_output.contains("All messages passed CBOR validation") ||
-                     combined_output.contains("All Python CBOR validation tests passed") ||
-                     combined_output.contains("All Node.js CBOR validation tests passed"));
+
+                let success = output.status.success()
+                    && (combined_output.contains("All messages passed")
+                        || combined_output.contains("All messages passed CBOR validation")
+                        || combined_output.contains("All Python CBOR validation tests passed")
+                        || combined_output.contains("All Node.js CBOR validation tests passed"));
 
                 let mut errors = Vec::new();
                 if !output.status.success() {
@@ -121,11 +137,19 @@ impl CrossLanguageValidator {
             if result.success {
                 success_count += 1;
             }
-            let status = if result.success { "✅ SUCCESS" } else { "❌ FAILED" };
+            let status = if result.success {
+                "✅ SUCCESS"
+            } else {
+                "❌ FAILED"
+            };
             println!("{} {}", status, lang.to_uppercase());
         }
 
-        println!("\nOverall: {}/{} languages successful", success_count, self.results.len());
+        println!(
+            "\nOverall: {}/{} languages successful",
+            success_count,
+            self.results.len()
+        );
 
         if success_count == self.results.len() {
             println!("🎉 All validators passed!");

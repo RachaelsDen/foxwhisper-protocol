@@ -4,10 +4,8 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
-const RESULTS_DIR = path.join(REPO_ROOT, 'results');
+const { writeJson } = require('../util/reporting');
 
 class ReplayPoisoningValidator {
   constructor(vectors) {
@@ -227,17 +225,13 @@ class ReplayPoisoningValidator {
 }
 
 function saveResults(results) {
-  if (!fs.existsSync(RESULTS_DIR)) {
-    fs.mkdirSync(RESULTS_DIR, { recursive: true });
-  }
   const payload = {
     language: 'nodejs',
     scenario_count: results.length,
     success: results.every(result => result.valid),
     results,
   };
-  const outputPath = path.join(RESULTS_DIR, 'replay_poisoning_validation_results_nodejs.json');
-  fs.writeFileSync(outputPath, JSON.stringify(payload, null, 2));
+  const outputPath = writeJson('replay_poisoning_validation_results_nodejs.json', payload);
   console.log(`\n📄 Results saved to ${outputPath}`);
 }
 

@@ -9,10 +9,15 @@ import base64
 import struct
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from validation.python.util.reporting import write_json  # type: ignore[import]
 
 class SimpleCBOR:
     """Simple CBOR encoder for validation purposes"""
@@ -260,11 +265,8 @@ def main():
         if success:
             hex_results[message_name] = result
     
-    output_dir = ROOT_DIR / "results"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / "python_cbor_results.json"
-    with open(output_file, 'w') as f:
-        json.dump(hex_results, f)
+    output_path = write_json("python_cbor_results.json", hex_results)
+    print(f"📄 Hex results saved to {output_path}")
 
 if __name__ == "__main__":
     main()

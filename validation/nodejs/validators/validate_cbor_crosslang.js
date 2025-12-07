@@ -9,17 +9,17 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { validateMessage, TEST_VECTORS } = require('./validate_cbor_node.js');
+const { ROOT_DIR, RESULTS_DIR } = require('../util/reporting');
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
 const MESSAGE_NAMES = ['HANDSHAKE_INIT', 'HANDSHAKE_RESPONSE', 'HANDSHAKE_COMPLETE'];
 
 function runPythonValidation() {
     try {
         console.log('Running Python CBOR validation...');
-        const pythonScript = path.join(REPO_ROOT, 'validation/python/validators/validate_cbor_python.py');
+        const pythonScript = path.join(ROOT_DIR, 'validation/python/validators/validate_cbor_python.py');
         execSync(`python3 "${pythonScript}"`, { encoding: 'utf8' });
 
-        const resultsPath = path.join(REPO_ROOT, 'results/python_cbor_status.json');
+        const resultsPath = path.join(RESULTS_DIR, 'python_cbor_status.json');
         const pythonResults = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
         const pythonHexes = {};
         for (const entry of pythonResults.results || []) {
@@ -155,7 +155,7 @@ ${allMatch ?
 *This report validates cross-platform compatibility of FoxWhisper CBOR encoding implementations.*
 `;
 
-    const reportPath = path.join(REPO_ROOT, 'results', 'cbor_validation_report.md');
+    const reportPath = path.join(RESULTS_DIR, 'cbor_validation_report.md');
     if (!fs.existsSync(path.dirname(reportPath))) {
         fs.mkdirSync(path.dirname(reportPath), { recursive: true });
     }

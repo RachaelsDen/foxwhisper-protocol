@@ -3,7 +3,7 @@
 This document defines mandatory rules for how AI agents interact with Git and GitHub in this repository.
 
 The goals:
-- Protect long-lived branches (`main`, `develop`, `epic/*`, etc.).
+- Protect long-lived branches (`main`, `dev`, `epic/*`, etc.).
 - Enforce short-lived, well-named branches for all work.
 - Use consistent commit messages.
 - Automatically open a GitHub Pull Request using GitHub MCP if available, or `gh` CLI as a fallback.
@@ -12,7 +12,7 @@ The goals:
 You must treat the following branches as protected:
 - `main`
 - `master`
-- `develop`
+- `dev`
 - Any branch matching: `epic/*`
 - Any branch matching: `release/*`
 
@@ -62,7 +62,7 @@ git checkout -b <branch-name>
 ```
 
 ### 4.4. Apply changes
-Keep scope small and coherent.
+Keep scope small and coherent. Before staging anything, you **must** run the concrete validators/tests that cover the code you changed (e.g., Python validators → `python3 validation/python/validators/<script>.py`, Node validators → `node validation/nodejs/validators/<script>.js`, etc.) and capture their output in the transcript. Skipping these commands is not allowed.
 
 ### 4.5. Stage only relevant files
 Avoid `git add .`.
@@ -101,7 +101,7 @@ Include PR URL in output.
 Output instructions for a human with suggested PR details.
 
 ## 8. Safety & Sanity Checks
-Run tests; report failures honestly.
+Run the exact validators/tests touched by your changes **before every commit**. Record the command(s) and output in the log, fix any failures, and only proceed once they pass. Reporting "not run" is only acceptable when the change is documentation-only.
 
 ## 9. Quick Summary Algorithm
 1. Sync main.

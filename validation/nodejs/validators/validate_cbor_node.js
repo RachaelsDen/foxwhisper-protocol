@@ -9,27 +9,22 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
-const RESULTS_DIR = path.join(REPO_ROOT, 'results');
+const { ROOT_DIR, RESULTS_DIR, writeJson } = require('../util/reporting');
 
 function loadTestVectors() {
     // Try to find test vectors file
     const possiblePaths = [
-        '../../../tests/common/handshake/cbor_test_vectors_fixed.json',
-        '../../../tests/common/handshake/cbor_test_vectors.json',
-        '../../tests/common/handshake/cbor_test_vectors_fixed.json',
-        '../../tests/common/handshake/cbor_test_vectors.json',
-        'tests/common/handshake/cbor_test_vectors_fixed.json',
-        'tests/common/handshake/cbor_test_vectors.json'
+        path.join(ROOT_DIR, 'tests/common/handshake/cbor_test_vectors_fixed.json'),
+        path.join(ROOT_DIR, 'tests/common/handshake/cbor_test_vectors.json'),
     ];
-    
+
     for (const filePath of possiblePaths) {
         if (fs.existsSync(filePath)) {
             const data = fs.readFileSync(filePath, 'utf8');
             return JSON.parse(data);
         }
     }
-    
+
     throw new Error('Could not find test vectors file');
 }
 
@@ -89,24 +84,18 @@ function compareImplementations() {
 }
 
 function saveResults(results) {
-    if (!fs.existsSync(RESULTS_DIR)) {
-        fs.mkdirSync(RESULTS_DIR, { recursive: true });
-    }
-    
     const resultsData = {
         language: 'nodejs',
         timestamp: 1701763202000,
         results: results.map(([messageName, result]) => ({
             message: messageName,
             success: result.success,
-            output: result.success ? result.hex : result.error
-        }))
+            output: result.success ? result.hex : result.error,
+        })),
     };
-    
-    const outputFile = path.join(RESULTS_DIR, 'nodejs_cbor_status.json');
-    fs.writeFileSync(outputFile, JSON.stringify(resultsData, null, 2));
-    
-    console.log(`📄 Results saved to ${outputFile}`);
+
+    const outputPath = writeJson('nodejs_cbor_status.json', resultsData);
+    console.log(`📄 Results saved to ${outputPath}`);
 }
 
 function main() {

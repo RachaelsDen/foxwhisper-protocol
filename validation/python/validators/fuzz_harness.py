@@ -6,14 +6,19 @@ from __future__ import annotations
 import base64
 import copy
 import json
+import sys
 from importlib import util as importlib_util
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union, cast
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from validation.python.util.reporting import write_json  # type: ignore[import]
+
 CORPUS_PATH = ROOT_DIR / "tests/common/handshake/cbor_test_vectors.json"
 MALFORMED_CORPUS = ROOT_DIR / "tests/common/adversarial/malformed_packets.json"
-RESULTS_DIR = ROOT_DIR / "results"
 
 JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 
@@ -210,7 +215,6 @@ def main() -> None:
     with MALFORMED_CORPUS.open('r', encoding='utf-8') as corpus_file:
         corpus = json.load(corpus_file)
     seeds = corpus.get("seeds", [])
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     results: List[Dict[str, Any]] = []
 
     for seed in seeds:
@@ -234,14 +238,12 @@ def main() -> None:
         observed_str = "success" if invariants_ok else "failure"
         print(f"{status} {seed['seed_id']} (expected {outcome_hint}, observed={observed_str})")
 
-    output_path = RESULTS_DIR / "malformed_packet_fuzz_results.json"
     payload = {
         "total_seeds": len(results),
         "passed": sum(1 for result in results if result["passed"]),
-        "results": results
+        "results": results,
     }
-    with output_path.open('w', encoding='utf-8') as handle:
-        json.dump(payload, handle, indent=2)
+    output_path = write_json("malformed_packet_fuzz_results.json", payload)
     print(f"\n📄 Fuzz harness results saved to {output_path}")
 
     if payload["passed"] != len(results):

@@ -1,0 +1,36 @@
+{
+  "description": "Deterministic replay storm profiles for Section 4.2.2",
+  "window_size": 32,
+  "capacity_per_ms": 0.5,
+  "queue_limit": 32,
+  "tolerance": 0.05,
+  "profiles": [
+    {
+      "profile_id": "short_burst",
+      "burst_rate": 10.0,
+      "duration_ms": 20,
+      "expected_drop_ratio": 0.8,
+      "alert_threshold": 0.5,
+      "expected_alert": true,
+      "notes": "Aggressive burst far exceeding the detector window"
+    },
+    {
+      "profile_id": "sustained",
+      "burst_rate": 2.0,
+      "duration_ms": 500,
+      "expected_drop_ratio": 0.72,
+      "alert_threshold": 0.4,
+      "expected_alert": true,
+      "notes": "Longer replay wave meant to overflow buffers progressively"
+    },
+    {
+      "profile_id": "under_capacity",
+      "burst_rate": 0.2,
+      "duration_ms": 100,
+      "expected_drop_ratio": 0.0,
+      "alert_threshold": 0.3,
+      "expected_alert": false,
+      "notes": "Traffic well below the allowed throughput"
+    }
+  ]
+}

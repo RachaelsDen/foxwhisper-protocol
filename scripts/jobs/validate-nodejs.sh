@@ -56,7 +56,8 @@ main() {
     run_and_track "cbor_final" "validate_cbor_final.js" ""
     
     # Run multi-device sync validation
-    run_and_track "multi_device_sync" "validate_multi_device_sync.js" "../../../tests/common/handshake/multi_device_sync_test_vectors.json"
+    run_and_track "multi_device_sync" "validate_multi_device_sync.js" "$ROOT_DIR/tests/common/handshake/multi_device_sync_test_vectors.json"
+    run_and_track "replay_poisoning" "validate_replay_poisoning.js" "$ROOT_DIR/tests/common/handshake/replay_poisoning_test_vectors.json"
     
     echo ""
     echo "Node.js Validation Summary:"
@@ -80,7 +81,8 @@ main() {
     "nodejs_cbor_validation_fixed_results.log",
     "nodejs_cbor_crosslang_results.log",
     "nodejs_cbor_final_results.log",
-    "nodejs_multi_device_sync_results.log"
+    "nodejs_multi_device_sync_results.log",
+    "nodejs_replay_poisoning_results.log"
   ]
 }
 EOF

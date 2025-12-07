@@ -17,9 +17,11 @@ import sys
 import os
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
 
+from validation.python.util.reporting import write_json  # type: ignore[import]
 
-ROOT_DIR = Path(__file__).resolve().parents[3]
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Simple CBOR encoder (copy from validate_cbor_python_fixed.py)
@@ -487,12 +489,12 @@ def main():
     print("=" * 40)
     
     # Load test vectors
-    try:
-        with open('../../../tests/common/handshake/cbor_test_vectors_fixed.json', 'r') as f:
-            test_vectors = json.load(f)
-    except FileNotFoundError:
+    vectors_path = ROOT_DIR / "tests/common/handshake/cbor_test_vectors_fixed.json"
+    if not vectors_path.exists():
         print("Error: cbor_test_vectors_fixed.json not found")
         return
+    with vectors_path.open('r', encoding='utf-8') as f:
+        test_vectors = json.load(f)
     
     results = []
     
@@ -542,13 +544,8 @@ def main():
         print("⚠️  Some messages failed validation")
     
     # Save results
-    output_dir = ROOT_DIR / "results"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / "schema_validation_results.json"
-    with open(output_file, 'w') as f:
-        json.dump(results, f, indent=2)
-    
-    print(f"\n📄 Results saved to {output_file}")
+    output_path = write_json("schema_validation_results.json", results)
+    print(f"📄 Schema validation results saved to {output_path}")
 
 if __name__ == "__main__":
     main()

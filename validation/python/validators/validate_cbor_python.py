@@ -9,10 +9,15 @@ import base64
 import struct
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from validation.python.util.reporting import write_json  # type: ignore[import]
 
 class SimpleCBOR:
     """Simple CBOR encoder for validation purposes"""
@@ -219,27 +224,21 @@ def validate_message(message_name: str, test_vector: Dict[str, Any]) -> Tuple[bo
 
 def save_results(results: List[Tuple[str, bool, str]]):
     """Save validation results to JSON file"""
-    output_dir = ROOT_DIR / "results"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    results_data = {
+    payload = {
         "language": "python",
         "timestamp": 1701763202000,
-        "results": []
+        "results": [
+            {
+                "message": message_name,
+                "success": success,
+                "output": result,
+            }
+            for message_name, success, result in results
+        ],
     }
-    
-    for message_name, success, result in results:
-        results_data["results"].append({
-            "message": message_name,
-            "success": success,
-            "output": result
-        })
-    
-    output_file = output_dir / "python_cbor_status.json"
-    with open(output_file, 'w') as f:
-        json.dump(results_data, f, indent=2)
-    
-    print(f"📄 Results saved to {output_file}")
+
+    output_path = write_json("python_cbor_status.json", payload)
+    print(f"📄 Results saved to {output_path}")
 
 def main():
     """Run all CBOR validation tests"""
