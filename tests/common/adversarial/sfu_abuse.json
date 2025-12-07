@@ -1,0 +1,104 @@
+[
+  {
+    "scenario_id": "ghost_subscribe_and_impersonate",
+    "tags": ["ghost", "impersonate", "sfu"],
+    "sfu_context": {
+      "sfu_id": "sfu-1",
+      "room_id": "room-123",
+      "expected_participants": ["alice", "bob"],
+      "auth_mode": "token"
+    },
+    "participants": [
+      {"id": "alice", "role": "publisher", "authz_tokens": ["token-alice"], "tracks": [{"id": "a-v", "kind": "video", "layers": ["low", "mid"]}]},
+      {"id": "bob", "role": "subscriber", "authz_tokens": ["token-bob"], "tracks": []}
+    ],
+    "timeline": [
+      {"t": 0, "event": "join", "participant": "alice", "token": "token-alice"},
+      {"t": 10, "event": "publish", "participant": "alice", "track_id": "a-v", "layers": ["low", "mid"]},
+      {"t": 20, "event": "subscribe", "participant": "bob", "token": "token-bob", "track_id": "a-v"},
+      {"t": 30, "event": "ghost_subscribe", "participant": "ghost1", "token": "bad-token", "track_id": "a-v"},
+      {"t": 40, "event": "impersonate", "participant": "alice", "token": "wrong-token", "track_id": "a-v"}
+    ],
+    "expectations": {
+      "should_detect": true,
+      "expected_errors": ["UNAUTHORIZED_SUBSCRIBE", "IMPERSONATION"],
+      "max_detection_ms": 250,
+      "allow_partial_accept": true,
+      "residual_routing_allowed": false,
+      "max_hijacked_tracks": 0,
+      "max_unauthorized_tracks": 2,
+      "max_key_leak_attempts": 0,
+      "max_extra_latency_ms": 50,
+      "max_false_positive_blocks": 0,
+      "max_false_negative_leaks": 0
+    }
+  },
+  {
+    "scenario_id": "simulcast_spoof_and_bitrate_abuse",
+    "tags": ["simulcast", "bitrate", "sfu"],
+    "sfu_context": {
+      "sfu_id": "sfu-2",
+      "room_id": "room-456",
+      "expected_participants": ["charlie", "dana"],
+      "auth_mode": "token"
+    },
+    "participants": [
+      {"id": "charlie", "role": "publisher", "authz_tokens": ["token-charlie"], "tracks": [{"id": "c-v", "kind": "video", "layers": ["low", "mid"]}]},
+      {"id": "dana", "role": "subscriber", "authz_tokens": ["token-dana"], "tracks": []}
+    ],
+    "timeline": [
+      {"t": 0, "event": "join", "participant": "charlie", "token": "token-charlie"},
+      {"t": 10, "event": "publish", "participant": "charlie", "track_id": "c-v", "layers": ["low", "mid"]},
+      {"t": 20, "event": "subscribe", "participant": "dana", "token": "token-dana", "track_id": "c-v"},
+      {"t": 30, "event": "simulcast_spoof", "participant": "dana", "track_id": "c-v", "requested_layers": ["high"]},
+      {"t": 40, "event": "bitrate_abuse", "participant": "charlie", "track_id": "c-v", "reported_bitrate": 9000}
+    ],
+    "expectations": {
+      "should_detect": true,
+      "expected_errors": ["SIMULCAST_SPOOF", "BITRATE_ABUSE"],
+      "max_detection_ms": 250,
+      "allow_partial_accept": true,
+      "residual_routing_allowed": false,
+      "max_hijacked_tracks": 0,
+      "max_unauthorized_tracks": 1,
+      "max_key_leak_attempts": 0,
+      "max_extra_latency_ms": 100,
+      "max_false_positive_blocks": 1,
+      "max_false_negative_leaks": 0
+    }
+  },
+  {
+    "scenario_id": "key_rotation_skip_and_replay_track",
+    "tags": ["key-rotation", "replay", "sfu"],
+    "sfu_context": {
+      "sfu_id": "sfu-3",
+      "room_id": "room-789",
+      "expected_participants": ["eve", "frank"],
+      "auth_mode": "token"
+    },
+    "participants": [
+      {"id": "eve", "role": "publisher", "authz_tokens": ["token-eve"], "tracks": [{"id": "e-v", "kind": "video", "layers": ["low"]}]},
+      {"id": "frank", "role": "subscriber", "authz_tokens": ["token-frank"], "tracks": []}
+    ],
+    "timeline": [
+      {"t": 0, "event": "join", "participant": "eve", "token": "token-eve"},
+      {"t": 10, "event": "publish", "participant": "eve", "track_id": "e-v", "layers": ["low"]},
+      {"t": 20, "event": "subscribe", "participant": "frank", "token": "token-frank", "track_id": "e-v"},
+      {"t": 30, "event": "key_rotation_skip", "participant": "frank", "track_id": "e-v"},
+      {"t": 40, "event": "replay_track", "participant": "frank", "track_id": "e-v"}
+    ],
+    "expectations": {
+      "should_detect": true,
+      "expected_errors": ["STALE_KEY_REUSE", "REPLAY_TRACK"],
+      "max_detection_ms": 250,
+      "allow_partial_accept": true,
+      "residual_routing_allowed": false,
+      "max_hijacked_tracks": 0,
+      "max_unauthorized_tracks": 1,
+      "max_key_leak_attempts": 1,
+      "max_extra_latency_ms": 50,
+      "max_false_positive_blocks": 0,
+      "max_false_negative_leaks": 0
+    }
+  }
+]
