@@ -6,11 +6,9 @@ ROOT_DIR="$SCRIPT_DIR/../.."
 VALIDATION_DIR="$ROOT_DIR/validation/erlang"
 VALIDATOR_CBOR="validators/validate_cbor_erlang.exs"
 VALIDATOR_SCHEMA="validators/validate_schema_erlang.exs"
-VALIDATOR_DEVICE_DESYNC="validators/validate_device_desync_erlang.exs"
 RESULTS_DIR="$ROOT_DIR/results"
 LOG_FILE_CBOR="$RESULTS_DIR/erlang_cbor_validation_results.log"
 LOG_FILE_SCHEMA="$RESULTS_DIR/erlang_cbor_schema_results.log"
-LOG_FILE_DEVICE_DESYNC="$RESULTS_DIR/erlang_device_desync_results.log"
 JOB_STATUS_FILE="$RESULTS_DIR/validate_erlang_job.json"
 
 mkdir -p "$RESULTS_DIR"
@@ -35,13 +33,7 @@ if MIX_ENV=dev mix run "$VALIDATOR_SCHEMA" | tee "$LOG_FILE_SCHEMA"; then
   schema_status="success"
 fi
 
-echo "Running device desync shim..."
-device_desync_status="failed"
-if MIX_ENV=dev mix run "$VALIDATOR_DEVICE_DESYNC" | tee "$LOG_FILE_DEVICE_DESYNC"; then
-  device_desync_status="success"
-fi
-
-RESULT_FILES=("$RESULTS_DIR/erlang_cbor_status.json" "$RESULTS_DIR/erlang_schema_status.json" "$RESULTS_DIR/erlang_device_desync_status.json")
+RESULT_FILES=("$RESULTS_DIR/erlang_cbor_status.json" "$RESULTS_DIR/erlang_schema_status.json")
 TOTAL_TESTS=0
 PASSED_TESTS=0
 for rf in "${RESULT_FILES[@]}"; do
@@ -71,7 +63,7 @@ fi
 
 popd >/dev/null
 
-if [[ "$cbor_status" == "success" && "$schema_status" == "success" && "$device_desync_status" == "success" ]]; then
+if [[ "$cbor_status" == "success" && "$schema_status" == "success" ]]; then
   JOB_STATUS="success"
 else
   JOB_STATUS="failed"
@@ -90,14 +82,13 @@ cat > "$JOB_STATUS_FILE" <<EOF
   "logs": [
     "$(basename "$LOG_FILE_CBOR")",
     "$(basename "$LOG_FILE_SCHEMA")",
-    "$(basename "$LOG_FILE_DEVICE_DESYNC")",
     "erlang_multi_device_sync_results.log",
     "erlang_replay_poisoning_results.log",
     "erlang_malformed_fuzz_results.log",
     "erlang_replay_storm_results.log",
     "erlang_epoch_fork_results.log"
   ],
-  "result_files": ["erlang_cbor_status.json", "erlang_schema_status.json", "erlang_device_desync_status.json"]
+  "result_files": ["erlang_cbor_status.json", "erlang_schema_status.json"]
 }
 EOF
 

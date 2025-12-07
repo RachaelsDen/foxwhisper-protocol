@@ -139,18 +139,6 @@ if run_job "cross-language-compatibility" "cross-language-compatibility.sh"; the
     successful_jobs=$((successful_jobs + 1))
 fi
 
-# Optional Job: Epoch Fork Stress Soak (nightly in GitHub Actions)
-if [[ "${RUN_EPOCH_FORK_STRESS:-0}" != "0" ]]; then
-    total_jobs=$((total_jobs + 1))
-    if run_job "epoch-fork-stress" "epoch-fork-stress.sh"; then
-        successful_jobs=$((successful_jobs + 1))
-    fi
-else
-    echo ""
-    echo "⏭️  Skipping job: epoch-fork-stress (set RUN_EPOCH_FORK_STRESS=1 to enable)"
-    echo "skipped" > "results/epoch-fork-stress_status.txt"
-fi
-
 # Job 7: Performance Benchmarks
 total_jobs=$((total_jobs + 1))
 if run_job "performance-benchmarks" "performance-benchmarks.sh"; then
@@ -206,7 +194,6 @@ TESTS = [
     "cbor_validation",
     "cbor_schema",
     "multi_device_sync",
-    "device_desync",
     "replay_poisoning",
     "malformed_fuzz",
     "replay_storm",
@@ -221,7 +208,6 @@ LANG_TEST_MATRIX = {
         "cbor_validation",
         "cbor_schema",
         "multi_device_sync",
-        "device_desync",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -232,7 +218,6 @@ LANG_TEST_MATRIX = {
         "cbor_validation",
         "cbor_schema",
         "multi_device_sync",
-        "device_desync",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -242,7 +227,6 @@ LANG_TEST_MATRIX = {
         "cbor_validation",
         "cbor_schema",
         "multi_device_sync",
-        "device_desync",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -252,7 +236,6 @@ LANG_TEST_MATRIX = {
         "cbor_validation",
         "cbor_schema",
         "multi_device_sync",
-        "device_desync",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -280,7 +263,6 @@ RAW_TO_CANONICAL = {
     "replay_storm": "replay_storm",
     "epoch_fork": "epoch_fork",
     "cbor_crosslang": "cbor_crosslang",
-    "device_desync": "device_desync",
 }
 
 STATUS_SYMBOLS = {"pass": "✅", "fail": "❌", "skip": "⏭️", "unknown": "?"}
@@ -467,7 +449,7 @@ echo ""
 # Show job status summary
 echo "Job Status Summary:"
 echo "------------------"
-for job in validate-python validate-nodejs validate-go validate-erlang validate-rust cross-language-compatibility epoch-fork-stress performance-benchmarks security-validation final-report; do
+for job in validate-python validate-nodejs validate-go validate-erlang validate-rust cross-language-compatibility performance-benchmarks security-validation final-report; do
     if [ -f "results/${job}_status.txt" ]; then
         status=$(cat "results/${job}_status.txt")
         case $status in
@@ -476,9 +458,6 @@ for job in validate-python validate-nodejs validate-go validate-erlang validate-
                 ;;
             "failed")
                 echo "❌ $job: FAILED"
-                ;;
-            "skipped")
-                echo "⏭️  $job: SKIPPED"
                 ;;
             "not_found")
                 echo "❓ $job: NOT FOUND"

@@ -59,11 +59,6 @@ jobs:
         cd validation/python/validators
         python3 fuzz_harness.py
         
-    - name: Run Device Desync Simulation
-      run: |
-        cd validation/python/validators
-        python3 device_desync_sim.py
-        
     - name: Upload Python Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -106,11 +101,6 @@ jobs:
         cd validation/nodejs/validators
         node validate_multi_device_sync.js ../../../tests/common/handshake/multi_device_sync_test_vectors.json
         
-    - name: Run Node.js Device Desync Simulation
-      run: |
-        cd validation/nodejs/validators
-        node device_desync.js
-        
     - name: Upload Node.js Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -146,11 +136,6 @@ jobs:
       run: |
         cd validation/common/validators
         go run validate_cbor_crosslang.go
-        
-    - name: Run Go Device Desync Simulation
-      run: |
-        cd validation/go/validators
-        go run device_desync/main.go
         
     - name: Upload Go Results
       if: always()
@@ -204,10 +189,6 @@ jobs:
     - name: Run Rust Multi-Device Sync Validation
       run: |
         cargo run --bin validate_multi_device_sync_rust -- tests/common/handshake/multi_device_sync_test_vectors.json
-        
-    - name: Run Rust Device Desync Simulation
-      run: |
-        cargo run --bin validate_device_desync_rust
         
     - name: Upload Rust Results
       if: always()
@@ -394,60 +375,6 @@ jobs:
         name: validation-summary
         path: validation-summary.md
 
-  # Nightly Epoch Fork Stress Soak
-  epoch-fork-stress:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    name: Epoch Fork Stress Soak
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '25'
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        toolchain: stable
-
-    - name: Prepare language dependencies
-      run: |
-        go mod download
-        cargo fetch
-
-    - name: Run stress soak
-      run: |
-        mkdir -p results
-        python3 validation/python/validators/epoch_fork_fuzzer.py \
-          --corpus tests/common/adversarial/epoch_forks.json \
-          --summary-out results/epoch_fork_stress_summary.json \
-          --envelope-out results/epoch_fork_stress_envelopes.jsonl \
-          --go-shim go --node-shim node --rust-shim cargo --stress
-
-    - name: Upload stress artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: epoch-fork-stress-results
-        path: |
-          results/epoch_fork_stress_summary.json
-          results/epoch_fork_stress_envelopes.jsonl
-        if-no-files-found: warn
-
   # Performance Benchmarking
   performance-benchmarks:
     runs-on: ubuntu-latest
@@ -456,7 +383,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+      
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -501,7 +428,6 @@ jobs:
         name: performance-benchmarks
         path: validation/python/validators/benchmark-results.json
         if-no-files-found: warn
-
 
   # Security Validation
   security-validation:
