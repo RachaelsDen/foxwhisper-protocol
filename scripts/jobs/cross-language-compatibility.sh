@@ -120,17 +120,18 @@ for result_file in glob.glob('results/rust_*_status.json'):
             if status != 'success':
                 results['rust']['success'] = False
 
-# Load Elixir results (single status file with results array)
-elixir_path = 'results/elixir_cbor_status.json'
-if os.path.exists(elixir_path):
-    with open(elixir_path, 'r') as f:
-        data = json.load(f)
-    entries = data.get('results') or []
-    success = all(entry.get('success') for entry in entries) if entries else True
-    results['elixir'] = {
-        'tests': entries,
-        'success': success
-    }
+# Load Erlang results (single status file with results array)
+for erlang_path in ['results/erlang_cbor_status.json', 'results/elixir_cbor_status.json']:
+    if os.path.exists(erlang_path):
+        with open(erlang_path, 'r') as f:
+            data = json.load(f)
+        entries = data.get('results') or []
+        success = all(entry.get('success') for entry in entries) if entries else True
+        results['erlang'] = {
+            'tests': entries,
+            'success': success
+        }
+        break
 
 # Generate compatibility report
 print("🦊 FoxWhisper Protocol - Cross-Language Compatibility Report")

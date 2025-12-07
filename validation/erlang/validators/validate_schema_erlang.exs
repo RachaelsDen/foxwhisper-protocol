@@ -1,4 +1,4 @@
-# Minimal protocol validators for Elixir/BEAM to keep CI parity with other languages.
+# Minimal protocol validators for Erlang/BEAM to keep CI parity with other languages.
 # These perform structural checks on shared corpora and emit a JSON status file.
 
 alias Foxwhisper.Util.Reporting
@@ -33,10 +33,11 @@ defmodule Foxwhisper.Validators.Schema do
   ]
 
   def main do
-    IO.puts("FoxWhisper Schema/Corpus Validation - Elixir")
+    IO.puts("FoxWhisper Schema/Corpus Validation - Erlang")
     IO.puts(String.duplicate("=", 55))
 
     results = Enum.map(@tests, &run_test/1)
+    write_test_logs(results)
     write_results(results)
     summarize(results)
   end
@@ -92,22 +93,55 @@ defmodule Foxwhisper.Validators.Schema do
   def validate_epoch_fork(_), do: {:error, "expected list of scenarios"}
 
   # Result writers
+  defp write_test_logs(results) do
+    dir = Reporting.ensure_results_dir()
+
+    Enum.each(results, fn res ->
+      status_label = if(res.success, do: "PASS", else: "FAIL")
+      timestamp = DateTime.utc_now() |> DateTime.to_iso8601()
+
+      lines =
+        [
+          "Test: #{res.name}",
+          "Status: #{status_label}",
+          "Timestamp: #{timestamp}"
+        ] ++
+          case Map.get(res, :error) do
+            nil -> []
+            error -> ["Error: #{error}"]
+          end
+
+      File.write!(Path.join(dir, "erlang_#{res.name}_results.log"), Enum.join(lines, "\n"))
+    end)
+  end
+
   defp write_results(results) do
+    summary_success = Enum.all?(results, & &1.success)
+
     payload = %{
-      language: "elixir",
+      language: "erlang",
       timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
       results:
         Enum.map(results, fn res ->
           %{
             name: res.name,
+            test: res.name,
             success: res.success,
             status: if(res.success, do: "success", else: "failed"),
             error: Map.get(res, :error)
           }
-        end)
+        end) ++
+          [
+            %{
+              name: "cbor_schema",
+              test: "cbor_schema",
+              success: summary_success,
+              status: if(summary_success, do: "success", else: "failed")
+            }
+          ]
     }
 
-    path = Reporting.write_json("elixir_schema_status.json", payload)
+    path = Reporting.write_json("erlang_schema_status.json", payload)
     IO.puts("Results written to #{path}")
   end
 
@@ -126,9 +160,9 @@ defmodule Foxwhisper.Validators.Schema do
     IO.puts("\nOverall: #{passed}/#{total} passed")
 
     if passed == total do
-      IO.puts("🎉 All Elixir protocol validations passed")
+      IO.puts("🎉 All Erlang protocol validations passed")
     else
-      IO.puts("❌ Some Elixir protocol validations failed")
+      IO.puts("❌ Some Erlang protocol validations failed")
       System.halt(1)
     end
   end

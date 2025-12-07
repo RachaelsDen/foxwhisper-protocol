@@ -7,13 +7,13 @@ VALIDATION_DIR="$ROOT_DIR/validation/erlang"
 VALIDATOR_CBOR="validators/validate_cbor_erlang.exs"
 VALIDATOR_SCHEMA="validators/validate_schema_erlang.exs"
 RESULTS_DIR="$ROOT_DIR/results"
-LOG_FILE_CBOR="$RESULTS_DIR/elixir_cbor_validation.log"
-LOG_FILE_SCHEMA="$RESULTS_DIR/elixir_schema_validation.log"
+LOG_FILE_CBOR="$RESULTS_DIR/erlang_cbor_validation_results.log"
+LOG_FILE_SCHEMA="$RESULTS_DIR/erlang_cbor_schema_results.log"
 JOB_STATUS_FILE="$RESULTS_DIR/validate_erlang_job.json"
 
 mkdir -p "$RESULTS_DIR"
 
-echo "🧪 Elixir Validation Job"
+echo "🧪 Erlang Validation Job"
 echo "======================="
 
 pushd "$VALIDATION_DIR" >/dev/null
@@ -33,7 +33,7 @@ if MIX_ENV=dev mix run "$VALIDATOR_SCHEMA" | tee "$LOG_FILE_SCHEMA"; then
   schema_status="success"
 fi
 
-RESULT_FILES=("$RESULTS_DIR/elixir_cbor_status.json" "$RESULTS_DIR/elixir_schema_status.json")
+RESULT_FILES=("$RESULTS_DIR/erlang_cbor_status.json" "$RESULTS_DIR/erlang_schema_status.json")
 TOTAL_TESTS=0
 PASSED_TESTS=0
 for rf in "${RESULT_FILES[@]}"; do
@@ -79,8 +79,16 @@ cat > "$JOB_STATUS_FILE" <<EOF
   "failed_tests": $FAILED_TESTS,
   "success_rate": $SUCCESS_RATE,
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "logs": ["$(basename "$LOG_FILE_CBOR")", "$(basename "$LOG_FILE_SCHEMA")"],
-  "result_files": ["elixir_cbor_status.json", "elixir_schema_status.json"]
+  "logs": [
+    "$(basename "$LOG_FILE_CBOR")",
+    "$(basename "$LOG_FILE_SCHEMA")",
+    "erlang_multi_device_sync_results.log",
+    "erlang_replay_poisoning_results.log",
+    "erlang_malformed_fuzz_results.log",
+    "erlang_replay_storm_results.log",
+    "erlang_epoch_fork_results.log"
+  ],
+  "result_files": ["erlang_cbor_status.json", "erlang_schema_status.json"]
 }
 EOF
 

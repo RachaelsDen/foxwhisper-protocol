@@ -1,4 +1,4 @@
-# FoxWhisper CBOR Validation - Elixir Implementation
+# FoxWhisper CBOR Validation - Erlang Implementation
 # Mirrors other language validators by loading shared test vectors,
 # performing canonical CBOR encoding, and writing a JSON status report
 # into the repository-level results directory.
@@ -29,7 +29,7 @@ defmodule Foxwhisper.Validators.CBOR do
   @binary_fields ~w(client_id server_id session_id handshake_hash x25519_public_key nonce kyber_public_key kyber_ciphertext)
 
   def main do
-    IO.puts("FoxWhisper CBOR Validation - Elixir")
+    IO.puts("FoxWhisper CBOR Validation - Erlang")
     IO.puts(String.duplicate("=", 50))
 
     vectors = load_vectors()
@@ -130,7 +130,7 @@ defmodule Foxwhisper.Validators.CBOR do
     summary_success = Enum.all?(results, fn {_msg, res} -> res.success end)
 
     payload = %{
-      language: "elixir",
+      language: "erlang",
       timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
       results:
         Enum.map(results, fn {message, result} ->
@@ -153,7 +153,7 @@ defmodule Foxwhisper.Validators.CBOR do
           ]
     }
 
-    path = Reporting.write_json("elixir_cbor_status.json", payload)
+    path = Reporting.write_json("erlang_cbor_status.json", payload)
     IO.puts("Results written to #{path}")
   end
 
@@ -172,9 +172,9 @@ defmodule Foxwhisper.Validators.CBOR do
     IO.puts("\nOverall: #{passed}/#{total} passed")
 
     if passed == total do
-      IO.puts("🎉 All Elixir CBOR validations passed")
+      IO.puts("🎉 All Erlang CBOR validations passed")
     else
-      IO.puts("❌ Some Elixir CBOR validations failed")
+      IO.puts("❌ Some Erlang CBOR validations failed")
       System.halt(1)
     end
   end
