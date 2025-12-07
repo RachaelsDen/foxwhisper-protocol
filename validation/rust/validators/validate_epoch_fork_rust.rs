@@ -159,6 +159,17 @@ fn depth(node_id: &str, nodes: &HashMap<String, EpochNode>) -> i32 {
     d
 }
 
+fn fault_delay_ms(faults: &[String]) -> i64 {
+    for f in faults {
+        if let Some(rest) = f.strip_prefix("delay_validation:") {
+            if let Ok(ms) = rest.parse::<i64>() {
+                return ms;
+            }
+        }
+    }
+    0
+}
+
 fn simulate(s: &Scenario) -> Envelope {
     let mut nodes = HashMap::new();
     for n in &s.graph.nodes {
@@ -223,7 +234,7 @@ fn simulate(s: &Scenario) -> Envelope {
                     fork_created = Some(ev.t);
                 }
                 if detection_time.is_none() {
-                    detection_time = Some(ev.t);
+                    detection_time = Some(ev.t + fault_delay_ms(&ev.faults));
                     detection = true;
                     if !errors.contains(&"EPOCH_FORK_DETECTED".to_string()) {
                         errors.push("EPOCH_FORK_DETECTED".to_string());

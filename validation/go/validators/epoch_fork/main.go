@@ -416,30 +416,27 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to load corpus: %v\n", err)
 		os.Exit(1)
 	}
-	var target Scenario
-	found := false
-	for _, s := range scenarios {
-		if *scenarioID == "" || s.ScenarioID == *scenarioID {
-			target = s
-			found = true
-			break
-		}
-	}
-	if !found {
-		fmt.Fprintln(os.Stderr, "no matching scenario")
-		os.Exit(1)
-	}
-
-	env, err := simulate(target)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "simulate failed: %v\n", err)
-		os.Exit(1)
-	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "")
-	if err := enc.Encode(env); err != nil {
-		fmt.Fprintf(os.Stderr, "encode failed: %v\n", err)
+	encoded := false
+	for _, s := range scenarios {
+		if *scenarioID != "" && s.ScenarioID != *scenarioID {
+			continue
+		}
+		env, simErr := simulate(s)
+		if simErr != nil {
+			fmt.Fprintf(os.Stderr, "simulate failed: %v\n", simErr)
+			os.Exit(1)
+		}
+		if err := enc.Encode(env); err != nil {
+			fmt.Fprintf(os.Stderr, "encode failed: %v\n", err)
+			os.Exit(1)
+		}
+		encoded = true
+	}
+	if !encoded {
+		fmt.Fprintln(os.Stderr, "no matching scenario")
 		os.Exit(1)
 	}
 	os.Exit(0)

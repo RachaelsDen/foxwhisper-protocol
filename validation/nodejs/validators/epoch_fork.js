@@ -24,6 +24,17 @@ function depth(nodeId, nodes) {
   return d;
 }
 
+function faultDelay(faults = []) {
+  for (const f of faults) {
+    if (typeof f === 'string' && f.startsWith('delay_validation:')) {
+      const parts = f.split(':');
+      const delay = parseInt(parts[1], 10);
+      return Number.isNaN(delay) ? 0 : delay;
+    }
+  }
+  return 0;
+}
+
 function simulate(scenario) {
   const nodes = {};
   for (const n of scenario.graph.nodes) {
@@ -70,7 +81,7 @@ function simulate(scenario) {
       if (forkDetected) {
         if (forkCreated === null) forkCreated = ev.t;
         if (detectionTime === null) {
-          detectionTime = ev.t;
+          detectionTime = ev.t + faultDelay(ev.faults);
           detection = true;
           if (!errors.includes('EPOCH_FORK_DETECTED')) errors.push('EPOCH_FORK_DETECTED');
         }
