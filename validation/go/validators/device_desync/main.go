@@ -266,7 +266,6 @@ func simulate(s Scenario) (SimulationResult, error) {
 			if stateHash != nil {
 				senderState.StateHash = stateHash
 			}
-
 		case "recv":
 			msgId, device := ev.MsgID, ev.Device
 			if _, ok := messages[msgId]; !ok {
@@ -285,31 +284,6 @@ func simulate(s Scenario) (SimulationResult, error) {
 				}
 				envelope.Delivered[device] = struct{}{}
 				delivered++
-				if ev.ApplyDR != nil {
-					if *ev.ApplyDR < dev.DRVersion {
-						rollback := dev.DRVersion - *ev.ApplyDR
-						if rollback > maxRollback {
-							maxRollback = rollback
-						}
-					}
-					dev.DRVersion = *ev.ApplyDR
-				}
-				if ev.StateHash != nil {
-					dev.StateHash = ev.StateHash
-				}
-			}
-
-			if envelope, ok := messages[msgId]; ok && devOK {
-				if _, already := envelope.Delivered[device]; already {
-
-					addError("DUPLICATE_DELIVERY", nil)
-				}
-				if ev.T < envelope.SendTime {
-					outOfOrder++
-				}
-				envelope.Delivered[device] = struct{}{}
-				delivered++
-				dev := devices[device]
 				if ev.ApplyDR != nil {
 					if *ev.ApplyDR < dev.DRVersion {
 						rollback := dev.DRVersion - *ev.ApplyDR
