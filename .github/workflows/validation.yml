@@ -211,9 +211,15 @@ jobs:
       uses: erlef/setup-beam@v1
       with:
         elixir-version: '1.15.7'
-        otp-version: '26'
+        otp-version: '26.2'
         version-type: strict
+        otp-architecture: 64
+        install-hex: true
+        install-rebar: true
+        disable_problem_matchers: false
+        hexpm-mirrors: https://builds.hex.pm
       
+
     - name: Install dependencies
       run: |
         cd validation/erlang

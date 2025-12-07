@@ -192,7 +192,7 @@ cat > results/validation-summary.md << 'EOF'
 - ✅ Node.js 25
 - ✅ Go 1.21
 - ✅ Rust (stable)
-- ✅ Elixir/Erlang (OTP 27, Elixir 1.18.3)
+- ✅ Elixir/Erlang (OTP 26.2, Elixir 1.15.7)
 
 ## Test Categories
 - ✅ CBOR Encoding/Decoding
