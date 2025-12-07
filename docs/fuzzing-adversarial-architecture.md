@@ -42,9 +42,10 @@ Section 4.2 of the v0.9 roadmap covers malformed-packet fuzzing, replay storms, 
 - **Validation logic**: new module `validation/python/validators/epoch_fork_fuzzer.py` that builders can port to Go/Rust once stable. It should detect splits, check reconciliation algorithms, and benchmark detection time.
 
 ### 4.2.4 Multi-Device Desync Simulators
-- **State machine**: representation of each device’s view (epoch, session key, pending events).
-- **Scenario file**: `tests/common/adversarial/device_desync.json` listing sequences like “clock skew”, “partial delivery”, “split-brain restore”.
-- **Simulator**: Python orchestrator updates each device state per event and flags divergence thresholds; outputs go to `results/device_desync_summary.json`.
+- **Schema** (`tests/common/adversarial/device_desync.json`): `devices` (id, `dr_version`, `clock_ms`, optional `state_hash`), `timeline` (events: `send`, `recv`, `drop`, `replay`, `backup_restore`, `clock_skew`, `resync`), and `expectations` (detection/recovery SLAs, `max_dr_version_delta`, `max_clock_skew_ms`, `allow_message_loss_rate`, `allow_out_of_order_rate`, `expected_error_categories`, `max_rollback_events`, `residual_divergence_allowed`).
+- **Events**: `send` registers expected deliveries per target; `recv` applies DR/state; `drop` marks intentional loss; `replay` re-injects a prior message; `backup_restore` can roll a device back; `clock_skew` adjusts local clocks; `resync` attempts recovery (counts success/failure).
+- **Metrics**: `max/avg_dr_version_delta`, message loss + out-of-order rates, `max_clock_skew_ms`, divergence width (`max_diverged_device_count`), recovery attempts/successes, `max_rollback_events`, residual divergence flag, error categories (`DIVERGENCE_DETECTED`, `MESSAGE_LOSS`, `CLOCK_SKEW_VIOLATION`, `ROLLBACK_APPLIED`, `REPLAY_INJECTED`, etc.).
+- **Simulator**: Python oracle (`validation/common/simulators/desync.py`) with CLI `validation/python/validators/device_desync_sim.py --corpus tests/common/adversarial/device_desync.json --summary-out device_desync_summary.json`; writes `results/device_desync_summary.json` for CI.
 
 ### 4.2.5 Corrupted EARE Injection & 4.2.6 SFU Abuse
 - **Corrupted EARE**: reuse the epoch fork DAG structures but add explicit tampering steps; integrate into `epoch_fork_fuzzer.py`.

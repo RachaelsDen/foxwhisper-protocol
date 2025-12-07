@@ -39,6 +39,10 @@ path = "validation/rust/validators/validate_replay_storm_rust.rs"
 name = "validate_epoch_fork_rust"
 path = "validation/rust/validators/validate_epoch_fork_rust.rs"
 
+[[bin]]
+name = "validate_device_desync_rust"
+path = "validation/rust/validators/validate_device_desync_rust.rs"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11"
