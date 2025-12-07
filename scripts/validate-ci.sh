@@ -119,6 +119,11 @@ if run_validation "Python Multi-Device" "cd tools && python3 validate_multi_devi
     successful_validations=$((successful_validations + 1))
 fi
 
+total_validations=$((total_validations + 1))
+if run_validation "Python Device Desync" "cd validation/python/validators && python3 device_desync_sim.py" "python_device_desync"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
 echo ""
 
 # Node.js validations
@@ -140,6 +145,11 @@ if run_validation "Node.js Multi-Device" "cd tools && node validate_multi_device
     successful_validations=$((successful_validations + 1))
 fi
 
+total_validations=$((total_validations + 1))
+if run_validation "Node.js Device Desync" "cd validation/nodejs/validators && node device_desync.js" "nodejs_device_desync"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
 echo ""
 
 # Go validations
@@ -153,6 +163,11 @@ fi
 
 total_validations=$((total_validations + 1))
 if run_validation "Go Cross-Language" "cd tools && go run validate_cbor_crosslang.go" "go_crosslang"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
+total_validations=$((total_validations + 1))
+if run_validation "Go Device Desync" "cd validation/go/validators && go run device_desync/main.go" "go_device_desync"; then
     successful_validations=$((successful_validations + 1))
 fi
 
@@ -179,6 +194,11 @@ fi
 
 total_validations=$((total_validations + 1))
 if run_validation "Rust Multi-Device" "cargo run --bin validate_multi_device_sync_rust -- test-vectors/handshake/multi_device_sync_test_vectors.json" "rust_multidevice"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
+total_validations=$((total_validations + 1))
+if run_validation "Rust Device Desync" "cargo run --bin validate_device_desync_rust" "rust_device_desync"; then
     successful_validations=$((successful_validations + 1))
 fi
 
