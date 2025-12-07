@@ -25,7 +25,7 @@ export function createHandshakeInit(params: {
 }
 
 export function encodeTagged(msg: any, tag: number): Buffer {
-  return cbor.encodeOne(new cbor.Tagged(tag, msg));
+  return cbor.encodeOne(new cbor.Tagged(tag, msg), { canonical: true });
 }
 
 export function encodeHandshakeInit(msg: HandshakeInit): Buffer {
