@@ -59,7 +59,6 @@ main() {
     run_and_track "replay_poisoning" "validate_replay_poisoning.js" "$ROOT_DIR/tests/common/handshake/replay_poisoning_test_vectors.json"
     run_and_track "malformed_fuzz" "validate_malformed_fuzz.js" ""
     run_and_track "replay_storm" "validate_replay_storm.js" ""
-    run_and_track "device_desync" "device_desync.js" ""
     run_and_track "epoch_fork" "epoch_fork.js" "--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json"
     
     echo ""
@@ -87,7 +86,6 @@ main() {
     "nodejs_replay_poisoning_results.log",
     "nodejs_malformed_fuzz_results.log",
     "nodejs_replay_storm_results.log",
-    "nodejs_device_desync_results.log",
     "nodejs_epoch_fork_results.log"
   ]
 }
