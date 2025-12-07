@@ -47,6 +47,10 @@ path = "validation/rust/validators/validate_device_desync_rust.rs"
 name = "validate_corrupted_eare_rust"
 path = "validation/rust/validators/validate_corrupted_eare_rust.rs"
 
+[[bin]]
+name = "validate_sfu_abuse_rust"
+path = "validation/rust/validators/validate_sfu_abuse_rust.rs"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11"
