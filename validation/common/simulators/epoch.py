@@ -54,6 +54,7 @@ class Expectations:
     allow_replay_gap: AllowReplayGap
     expected_error_categories: List[str]
     healing_required: bool
+    max_wall_time_ms: int = 0
 
 
 @dataclass
@@ -167,6 +168,7 @@ def parse_scenario(data: Dict[str, Any]) -> Scenario:
         ),
         expected_error_categories=[str(err) for err in exp_raw.get("expected_error_categories", [])],
         healing_required=bool(exp_raw.get("healing_required", False)),
+        max_wall_time_ms=int(exp_raw.get("max_wall_time_ms", 0)),
     )
 
     # Validate parent references

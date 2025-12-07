@@ -91,11 +91,6 @@ jobs:
         cd validation/nodejs/validators
         node validate_cbor_node.js
         
-    - name: Run Node.js Fixed CBOR Validation
-      run: |
-        cd validation/nodejs/validators
-        node validate_cbor_node_fixed.js
-        
     - name: Run Node.js Cross-Language Validation
       run: |
         cd validation/nodejs/validators
@@ -203,11 +198,50 @@ jobs:
         path: results/
         if-no-files-found: warn
 
+  # Elixir/Erlang Validation
+  validate-erlang:
+    runs-on: ubuntu-latest
+    name: Elixir/Erlang Validation
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Beam
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.15.7'
+        otp-version: '26.2'
+        version-type: strict
+        otp-architecture: 64
+        install-hex: true
+        install-rebar: true
+        disable_problem_matchers: false
+        hexpm-mirrors: https://builds.hex.pm
+      
+
+    - name: Install dependencies
+      run: |
+        cd validation/erlang
+        mix deps.get
+      
+    - name: Run Elixir Validation Job
+      run: |
+        bash scripts/jobs/validate-erlang.sh
+      
+    - name: Upload Elixir Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: erlang-validation-results
+        path: results/
+        if-no-files-found: warn
+
   # Cross-Language Compatibility Check
   cross-language-compatibility:
     runs-on: ubuntu-latest
     name: Cross-Language Compatibility
-    needs: [validate-python, validate-nodejs, validate-go, validate-rust]
+    needs: [validate-python, validate-nodejs, validate-go, validate-rust, validate-erlang]
     
     steps:
     - name: Checkout code
@@ -257,16 +291,21 @@ jobs:
             return bool(payload.get('success', True))
         
         artifacts = {
-            'python': ('python-validation-results', 'python_cbor_status.json'),
-            'nodejs': ('nodejs-validation-results', 'nodejs_cbor_status.json'),
-            'go': ('go-validation-results', 'go_cbor_status.json'),
-            'rust': ('rust-validation-results', 'rust_cbor_status.json'),
+            'python': ('python-validation-results', ['python_cbor_status.json']),
+            'nodejs': ('nodejs-validation-results', ['nodejs_cbor_status.json']),
+            'go': ('go-validation-results', ['go_cbor_status.json']),
+            'rust': ('rust-validation-results', ['rust_cbor_status.json']),
+            'elixir': ('erlang-validation-results', ['erlang_cbor_status.json', 'elixir_cbor_status.json']),
         }
         
         results = []
         missing = []
-        for language, (artifact_name, filename) in artifacts.items():
-            data = load_results(artifact_name, filename)
+        for language, (artifact_name, filenames) in artifacts.items():
+            data = None
+            for filename in filenames:
+                data = load_results(artifact_name, filename)
+                if data is not None:
+                    break
             if data is None:
                 missing.append(language)
                 results.append((language, False))
@@ -313,6 +352,7 @@ jobs:
         - ✅ Node.js 25
         - ✅ Go 1.21
         - ✅ Rust (stable)
+        - ✅ Elixir/Erlang (OTP 26.2, Elixir 1.15.7)
         
         ## Test Categories
         - ✅ CBOR Encoding/Decoding

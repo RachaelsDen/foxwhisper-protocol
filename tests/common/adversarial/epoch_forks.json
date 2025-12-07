@@ -315,6 +315,221 @@
     }
   },
   {
+    "scenario_id": "fork_replay_drop",
+    "group_context": {
+      "group_id": "g-theta",
+      "epoch_size_limit": 2048,
+      "membership_version": 27,
+      "controller_clock_skew_ms": 120,
+      "max_epoch_skew_ms": 400,
+      "replay_window_ms": 60000,
+      "expected_members": 24,
+      "max_members": 200
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 600,
+          "eare_hash": "0x600",
+          "previous_epoch_hash": null,
+          "membership_digest": "0xaaa",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "n1",
+          "epoch_id": 601,
+          "eare_hash": "0x601",
+          "previous_epoch_hash": "0x600",
+          "membership_digest": "0xaab",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 100
+        },
+        {
+          "node_id": "n2",
+          "epoch_id": 601,
+          "eare_hash": "0x6f1",
+          "previous_epoch_hash": "0x600",
+          "membership_digest": "0xaac",
+          "parent_id": "n0",
+          "issued_by": "controller-b",
+          "timestamp_ms": 110
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "n1",
+          "type": "linear"
+        },
+        {
+          "from": "n0",
+          "to": "n2",
+          "type": "fork"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 90,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 601,
+        "node_id": "n1"
+      },
+      {
+        "t": 100,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 601,
+        "node_id": "n2"
+      },
+      {
+        "t": 160,
+        "event": "merge",
+        "participants": [
+          "controller-b"
+        ],
+        "reconcile_strategy": "prefer_longest"
+      },
+      {
+        "t": 180,
+        "event": "replay_attempt",
+        "count": 8
+      }
+    ],
+    "expectations": {
+      "detected": true,
+      "detection_reference": "fork_created",
+      "max_detection_ms": 200,
+      "max_reconciliation_ms": 500,
+      "reconciled_epoch": {
+        "epoch_id": 601,
+        "node_id": "n1",
+        "eare_hash": "0x601"
+      },
+      "allow_replay_gap": {
+        "max_messages": 5,
+        "max_ms": 3000
+      },
+      "expected_error_categories": [
+        "EPOCH_FORK_DETECTED"
+      ],
+      "healing_required": true
+    }
+  },
+  {
+    "scenario_id": "skew_visibility_fork",
+    "tags": [
+      "skew"
+    ],
+    "group_context": {
+      "group_id": "g-iota",
+      "epoch_size_limit": 2048,
+      "membership_version": 31,
+      "controller_clock_skew_ms": 500,
+      "max_epoch_skew_ms": 700,
+      "replay_window_ms": 120000,
+      "expected_members": 48,
+      "max_members": 200
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 700,
+          "eare_hash": "0x700",
+          "previous_epoch_hash": null,
+          "membership_digest": "0xdef",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "n1",
+          "epoch_id": 701,
+          "eare_hash": "0x701",
+          "previous_epoch_hash": "0x700",
+          "membership_digest": "0xde1",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 200
+        },
+        {
+          "node_id": "n2",
+          "epoch_id": 701,
+          "eare_hash": "0x7f1",
+          "previous_epoch_hash": "0x700",
+          "membership_digest": "0xde2",
+          "parent_id": "n0",
+          "issued_by": "controller-b",
+          "timestamp_ms": 210
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "n1",
+          "type": "linear"
+        },
+        {
+          "from": "n0",
+          "to": "n2",
+          "type": "fork"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 180,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 701,
+        "node_id": "n1",
+        "faults": [
+          "delay_validation:150"
+        ]
+      },
+      {
+        "t": 240,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 701,
+        "node_id": "n2"
+      },
+      {
+        "t": 360,
+        "event": "merge",
+        "participants": [
+          "controller-b"
+        ],
+        "reconcile_strategy": "prefer_longest"
+      }
+    ],
+    "expectations": {
+      "detected": true,
+      "detection_reference": "fork_observable",
+      "max_detection_ms": 250,
+      "max_reconciliation_ms": 600,
+      "reconciled_epoch": {
+        "epoch_id": 701,
+        "node_id": "n1",
+        "eare_hash": "0x701"
+      },
+      "allow_replay_gap": {
+        "max_messages": 2,
+        "max_ms": 2000
+      },
+      "expected_error_categories": [
+        "EPOCH_FORK_DETECTED"
+      ],
+      "healing_required": true
+    }
+  },
+  {
     "scenario_id": "cross_epoch_jump",
     "group_context": {
       "group_id": "g-delta",
@@ -7549,7 +7764,8 @@
       "expected_error_categories": [
         "EPOCH_FORK_DETECTED"
       ],
-      "healing_required": true
+      "healing_required": true,
+      "max_wall_time_ms": 15000
     }
   }
 ]

@@ -51,9 +51,9 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
-    # Schema Validation  
+    # CBOR Schema Validation  
     total_tests=$((total_tests + 1))
-    if run_python_validation "schema_validation" "validate_cbor_schema.py" ""; then
+    if run_python_validation "cbor_schema" "validate_cbor_schema.py" ""; then
         passed_tests=$((passed_tests + 1))
     fi
 
@@ -113,7 +113,7 @@ main() {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "logs": [
     "python_cbor_validation_results.log",
-    "python_schema_validation_results.log", 
+    "python_cbor_schema_results.log", 
     "python_multi_device_sync_results.log",
     "python_replay_poisoning_results.log",
     "python_malformed_fuzz_results.log",

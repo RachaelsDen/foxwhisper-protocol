@@ -79,6 +79,15 @@ results/
 cross_language_validation_results.json
 cbor_validation_report.md
 
+# Elixir build artifacts
+validation/erlang/_build/
+validation/erlang/deps/
+
+# Elixir build artifacts
+_build/
+deps/
+mix.lock
+
 # Python
 .mypy_cache/
 .dmypy.json

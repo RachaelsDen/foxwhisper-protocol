@@ -135,6 +135,12 @@ def run_scenario(scenario, language: str = "python") -> Dict[str, Any]:
         "wall_time_ms": wall_ms,
         "tags": getattr(scenario, "tags", []),
     }
+
+    max_wall = getattr(getattr(scenario, "expectations", None), "max_wall_time_ms", 0)
+    if max_wall and wall_ms > max_wall:
+        envelope["status"] = "fail"
+        envelope.setdefault("failures", []).append("wall_time_sla")
+
     return envelope
 
 

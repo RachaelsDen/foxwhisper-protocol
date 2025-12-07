@@ -50,9 +50,9 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
-    # Schema Validation
+    # CBOR Schema Validation
     total_tests=$((total_tests + 1))
-    if run_rust_validation "schema_validation" "validate_cbor_schema" ""; then
+    if run_rust_validation "cbor_schema" "validate_cbor_schema" ""; then
         passed_tests=$((passed_tests + 1))
     fi
 
@@ -107,7 +107,7 @@ main() {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "logs": [
     "rust_cbor_validation_results.log",
-    "rust_schema_validation_results.log",
+    "rust_cbor_schema_results.log",
     "rust_multi_device_sync_results.log",
     "rust_replay_poisoning_results.log",
     "rust_malformed_fuzz_results.log",
