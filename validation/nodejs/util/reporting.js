@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-
 const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
 const RESULTS_DIR = path.join(ROOT_DIR, 'results');
 
@@ -17,9 +16,21 @@ function writeJson(filename, payload) {
   return outputPath;
 }
 
+function inputPath(relative) {
+  return path.join(ROOT_DIR, relative);
+}
+
+function loadJson(relative) {
+  const p = inputPath(relative);
+  const data = fs.readFileSync(p, 'utf8');
+  return JSON.parse(data);
+}
+
 module.exports = {
   ROOT_DIR,
   RESULTS_DIR,
   ensureResultsDir,
   writeJson,
+  inputPath,
+  loadJson,
 };

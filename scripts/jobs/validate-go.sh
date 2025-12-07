@@ -83,6 +83,12 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
+    # Epoch Fork Simulation
+    total_tests=$((total_tests + 1))
+    if run_go_validation "epoch_fork" "epoch_fork/main.go" "--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
     # Generate job summary
     echo ""
     echo "Go Validation Summary:"
@@ -108,7 +114,8 @@ main() {
     "go_replay_poisoning_results.log",
     "go_cbor_schema_results.log",
     "go_malformed_fuzz_results.log",
-    "go_replay_storm_results.log"
+    "go_replay_storm_results.log",
+    "go_epoch_fork_results.log"
   ]
 }
 EOF

@@ -81,6 +81,17 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
+    # Epoch Fork Simulation (Python coordinator + Go shim)
+    total_tests=$((total_tests + 1))
+    stress_flag=""
+    if [ "${EPOCH_FORK_STRESS:-0}" != "0" ]; then
+        stress_flag="--stress"
+    fi
+    epoch_args="--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json --summary-out $RESULTS_DIR/epoch_fork_summary.json --envelope-out $RESULTS_DIR/epoch_fork_envelopes.jsonl --go-shim go --node-shim node --rust-shim cargo $stress_flag"
+    if run_python_validation "epoch_fork" "epoch_fork_fuzzer.py" "$epoch_args"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
     # Generate job summary
     echo ""
     echo "Python Validation Summary:"
@@ -106,7 +117,8 @@ main() {
     "python_multi_device_sync_results.log",
     "python_replay_poisoning_results.log",
     "python_malformed_fuzz_results.log",
-    "python_replay_storm_results.log"
+    "python_replay_storm_results.log",
+    "python_epoch_fork_results.log"
   ]
 }
 EOF

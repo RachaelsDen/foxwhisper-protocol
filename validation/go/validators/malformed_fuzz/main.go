@@ -25,25 +25,34 @@ type seed struct {
 	Mutations   []mutation `json:"mutations"`
 }
 
+type schemaVector struct {
+	Tag  int                    `json:"tag"`
+	Data map[string]interface{} `json:"data"`
+}
+
 func main() {
-	root, err := filepath.Abs("../../..")
+	corpusPath, err := validatorsutil.InputPath("tests/common/adversarial/malformed_packets.json")
 	if err != nil {
-		fmt.Printf("Failed to resolve repo root: %v\n", err)
+		fmt.Printf("Failed to resolve corpus path: %v\n", err)
 		os.Exit(1)
 	}
-	corpusPath := filepath.Join(root, "tests/common/adversarial/malformed_packets.json")
 	data, err := os.ReadFile(corpusPath)
 	if err != nil {
 		fmt.Printf("Failed to read corpus: %v\n", err)
 		os.Exit(1)
 	}
 
-	type corpus struct {
+	var payload struct {
 		Seeds []seed `json:"seeds"`
 	}
-	var payload corpus
 	if err := json.Unmarshal(data, &payload); err != nil {
 		fmt.Printf("Failed to parse corpus: %v\n", err)
+		os.Exit(1)
+	}
+
+	root, err := validatorsutil.RepoRoot()
+	if err != nil {
+		fmt.Printf("Failed to locate repo root: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -92,11 +101,6 @@ func main() {
 	if passed != len(results) {
 		os.Exit(1)
 	}
-}
-
-type schemaVector struct {
-	Tag  int                    `json:"tag"`
-	Data map[string]interface{} `json:"data"`
 }
 
 func messageVectorFrom(raw interface{}) schemaVector {
@@ -221,8 +225,7 @@ func resolveMap(target interface{}, path []string) (map[string]interface{}, stri
 		}
 		next, ok := m[path[i]]
 		if !ok {
-			next = map[string]interface{}{}
-			m[path[i]] = next
+			return nil, "", fmt.Errorf("path segment %s missing", path[i])
 		}
 		current = next
 	}
@@ -252,6 +255,9 @@ func mutateSet(target interface{}, path []string, value interface{}) error {
 }
 
 func mutateShuffle(target interface{}, path []string) error {
+	if len(path) == 0 {
+		return fmt.Errorf("shuffle path is empty")
+	}
 	resolved, err := traverse(target, strings.Join(path, "."))
 	if err != nil {
 		return err
@@ -264,13 +270,20 @@ func mutateShuffle(target interface{}, path []string) error {
 	for k := range m {
 		keys = append(keys, k)
 	}
-	// Reverse order for deterministic shuffle
 	for i, j := 0, len(keys)-1; i < j; i, j = i+1, j-1 {
 		keys[i], keys[j] = keys[j], keys[i]
 	}
 	reordered := make(map[string]interface{}, len(m))
 	for _, k := range keys {
 		reordered[k] = m[k]
+	}
+	if len(path) == 1 {
+		root, ok := target.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("root is not map")
+		}
+		root[path[0]] = reordered
+		return nil
 	}
 	parent, key, err := resolveMap(target, path[:len(path)-1])
 	if err != nil {

@@ -1,0 +1,9 @@
+{
+  "scenario_id": "simple_fork_merge",
+  "seed_id": "seed-simple",
+  "note": "Baseline fork/merge with two controllers issuing epoch 101 from the same parent.",
+  "event_stream": [
+    {"t": 500, "event": "epoch_issue", "controller": "controller-a", "epoch_id": 101, "node_id": "n1"},
+    {"t": 600, "event": "epoch_issue", "controller": "controller-b", "epoch_id": 101, "node_id": "n2"}
+  ]
+}
