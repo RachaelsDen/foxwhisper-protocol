@@ -49,8 +49,10 @@ run_test "Rust CBOR" "cd validation/rust/validators && cargo run --bin validate_
 run_test "Elixir" "bash scripts/jobs/validate-erlang.sh"
 run_test "Device Desync (Python)" "cd validation/python/validators && python3 device_desync_sim.py"
 run_test "Corrupted EARE (Python)" "cd validation/python/validators && python3 corrupted_eare_sim.py"
-
+run_test "Minimal JS Client" "cd clients/minimal-js && npm test"
+ 
 echo ""
+
 echo "🔗 Cross-Language Compatibility"
 echo "=============================="
 

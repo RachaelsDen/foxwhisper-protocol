@@ -129,8 +129,34 @@ jobs:
         path: results/
         if-no-files-found: warn
 
+  # Minimal JS Client
+  minimal-client:
+    runs-on: ubuntu-latest
+    name: Minimal JS Client
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: |
+        cd clients/minimal-js
+        npm ci
+
+    - name: Run minimal client tests
+      run: |
+        cd clients/minimal-js
+        npm test
+
   # Go Validation
   validate-go:
+
+
     runs-on: ubuntu-latest
     name: Go Validation
     
