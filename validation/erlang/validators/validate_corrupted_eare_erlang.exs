@@ -89,21 +89,22 @@ defmodule Foxwhisper.Validators.CorruptedEARE do
 
         targets = [Map.get(node, "node_id"), "*"]
 
-        errs =
-          Enum.reduce(targets, errs, fn t, acc_errs ->
+        {errs, breaks, rej} =
+          Enum.reduce(targets, {errs, breaks, rej}, fn t, {acc_errs, acc_breaks, acc_rej} ->
             corrs = Map.get(corr_by_target, t, [])
 
-            Enum.reduce(corrs, acc_errs, fn c, e ->
+            Enum.reduce(corrs, {acc_errs, acc_breaks, acc_rej}, fn c,
+                                                              {e, b, r} ->
               case String.upcase(to_string(Map.get(c, "type", ""))) do
-                "INVALID_SIGNATURE" -> add_err(e, "INVALID_SIGNATURE")
-                "INVALID_POP" -> add_err(e, "INVALID_POP")
-                "HASH_CHAIN_BREAK" -> add_err(e, "HASH_CHAIN_BREAK")
-                "TRUNCATED_EARE" -> add_err(e, "TRUNCATED_EARE")
-                "EXTRA_FIELDS" -> add_err(e, "EXTRA_FIELDS")
-                "PAYLOAD_TAMPERED" -> add_err(e, "PAYLOAD_TAMPERED")
-                "TAMPER_PAYLOAD" -> add_err(e, "PAYLOAD_TAMPERED")
-                "STALE_EPOCH_REF" -> add_err(e, "STALE_EPOCH_REF")
-                _ -> e
+                "INVALID_SIGNATURE" -> {add_err(e, "INVALID_SIGNATURE"), b, r}
+                "INVALID_POP" -> {add_err(e, "INVALID_POP"), b, r}
+                "HASH_CHAIN_BREAK" -> {add_err(e, "HASH_CHAIN_BREAK"), b + 1, r + 1}
+                "TRUNCATED_EARE" -> {add_err(e, "TRUNCATED_EARE"), b, r}
+                "EXTRA_FIELDS" -> {add_err(e, "EXTRA_FIELDS"), b, r}
+                "PAYLOAD_TAMPERED" -> {add_err(e, "PAYLOAD_TAMPERED"), b, r}
+                "TAMPER_PAYLOAD" -> {add_err(e, "PAYLOAD_TAMPERED"), b, r}
+                "STALE_EPOCH_REF" -> {add_err(e, "STALE_EPOCH_REF"), b, r}
+                _ -> {e, b, r}
               end
             end)
           end)
