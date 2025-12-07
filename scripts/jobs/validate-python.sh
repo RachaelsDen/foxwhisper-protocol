@@ -87,6 +87,12 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
+    # Corrupted EARE Simulation
+    total_tests=$((total_tests + 1))
+    if run_python_validation "corrupted_eare" "corrupted_eare_sim.py" "--corpus $ROOT_DIR/tests/common/adversarial/corrupted_eare.json --summary-out corrupted_eare_summary.json"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
     # Epoch Fork Simulation (Python coordinator + Go shim)
     total_tests=$((total_tests + 1))
     stress_flag=""
@@ -125,6 +131,7 @@ main() {
     "python_malformed_fuzz_results.log",
     "python_replay_storm_results.log",
     "python_device_desync_results.log",
+    "python_corrupted_eare_results.log",
     "python_epoch_fork_results.log"
   ]
 }

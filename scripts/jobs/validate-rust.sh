@@ -86,6 +86,12 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
+    # Corrupted EARE Simulation
+    total_tests=$((total_tests + 1))
+    if run_rust_validation "corrupted_eare" "validate_corrupted_eare_rust" ""; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
     # Epoch Fork Simulation
     total_tests=$((total_tests + 1))
     if run_rust_validation "epoch_fork" "validate_epoch_fork_rust" "--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json"; then
@@ -119,6 +125,7 @@ main() {
     "rust_malformed_fuzz_results.log",
     "rust_replay_storm_results.log",
     "rust_device_desync_results.log",
+    "rust_corrupted_eare_results.log",
     "rust_epoch_fork_results.log"
   ]
 }

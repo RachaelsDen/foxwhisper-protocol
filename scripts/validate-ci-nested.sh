@@ -207,6 +207,7 @@ TESTS = [
     "cbor_schema",
     "multi_device_sync",
     "device_desync",
+    "corrupted_eare",
     "replay_poisoning",
     "malformed_fuzz",
     "replay_storm",
@@ -222,6 +223,7 @@ LANG_TEST_MATRIX = {
         "cbor_schema",
         "multi_device_sync",
         "device_desync",
+        "corrupted_eare",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -233,6 +235,7 @@ LANG_TEST_MATRIX = {
         "cbor_schema",
         "multi_device_sync",
         "device_desync",
+        "corrupted_eare",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -243,6 +246,7 @@ LANG_TEST_MATRIX = {
         "cbor_schema",
         "multi_device_sync",
         "device_desync",
+        "corrupted_eare",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -253,6 +257,7 @@ LANG_TEST_MATRIX = {
         "cbor_schema",
         "multi_device_sync",
         "device_desync",
+        "corrupted_eare",
         "replay_poisoning",
         "malformed_fuzz",
         "replay_storm",
@@ -281,6 +286,7 @@ RAW_TO_CANONICAL = {
     "epoch_fork": "epoch_fork",
     "cbor_crosslang": "cbor_crosslang",
     "device_desync": "device_desync",
+    "corrupted_eare": "corrupted_eare",
 }
 
 STATUS_SYMBOLS = {"pass": "✅", "fail": "❌", "skip": "⏭️", "unknown": "?"}

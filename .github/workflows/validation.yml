@@ -64,6 +64,11 @@ jobs:
         cd validation/python/validators
         python3 device_desync_sim.py
         
+    - name: Run Corrupted EARE Simulation
+      run: |
+        cd validation/python/validators
+        python3 corrupted_eare_sim.py
+        
     - name: Upload Python Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -111,6 +116,11 @@ jobs:
         cd validation/nodejs/validators
         node device_desync.js
         
+    - name: Run Node.js Corrupted EARE Simulation
+      run: |
+        cd validation/nodejs/validators
+        node corrupted_eare.js
+        
     - name: Upload Node.js Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -151,6 +161,11 @@ jobs:
       run: |
         cd validation/go/validators
         go run device_desync/main.go
+        
+    - name: Run Go Corrupted EARE Simulation
+      run: |
+        cd validation/go/validators
+        go run corrupted_eare/main.go
         
     - name: Upload Go Results
       if: always()
@@ -208,6 +223,10 @@ jobs:
     - name: Run Rust Device Desync Simulation
       run: |
         cargo run --bin validate_device_desync_rust
+        
+    - name: Run Rust Corrupted EARE Simulation
+      run: |
+        cargo run --bin validate_corrupted_eare_rust
         
     - name: Upload Rust Results
       if: always()
