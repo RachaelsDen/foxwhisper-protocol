@@ -1,0 +1,14 @@
+{
+  "seeds": [
+    {
+      "file": "simple_fork_seed.json",
+      "scenario_id": "simple_fork_merge",
+      "description": "Baseline fork/merge with two controllers issuing epoch 101."
+    },
+    {
+      "file": "hash_chain_break_seed.json",
+      "scenario_id": "hash_chain_break",
+      "description": "Fork where one branch breaks the previous_epoch_hash chain."
+    }
+  ]
+}

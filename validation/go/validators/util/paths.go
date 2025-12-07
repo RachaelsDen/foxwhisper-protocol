@@ -44,6 +44,28 @@ func RepoRoot() (string, error) {
 	return repoRootPath, repoRootErr
 }
 
+// InputPath resolves a repo-relative path to an absolute path rooted at the Git repo.
+func InputPath(rel string) (string, error) {
+	root, err := RepoRoot()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(root, rel), nil
+}
+
+// LoadJSON reads a repo-relative JSON file into v.
+func LoadJSON(rel string, v interface{}) error {
+	path, err := InputPath(rel)
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
+}
+
 // SaveJSON writes a JSON payload into the repository-level results directory.
 func SaveJSON(filename string, payload interface{}) error {
 	root, err := RepoRoot()

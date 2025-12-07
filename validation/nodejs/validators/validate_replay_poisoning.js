@@ -4,8 +4,9 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
-const { writeJson } = require('../util/reporting');
+const { writeJson, inputPath } = require('../util/reporting');
 
 class ReplayPoisoningValidator {
   constructor(vectors) {
@@ -242,7 +243,8 @@ function main() {
     process.exit(1);
   }
 
-  const data = fs.readFileSync(vectorsPath, 'utf8');
+  const resolvedPath = path.isAbsolute(vectorsPath) ? vectorsPath : inputPath(vectorsPath);
+  const data = fs.readFileSync(resolvedPath, 'utf8');
   const vectors = JSON.parse(data);
 
   console.log('FoxWhisper Replay & Poisoning Validator (Node.js)');

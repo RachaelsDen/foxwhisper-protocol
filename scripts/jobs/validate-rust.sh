@@ -80,6 +80,12 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
+    # Epoch Fork Simulation
+    total_tests=$((total_tests + 1))
+    if run_rust_validation "epoch_fork" "validate_epoch_fork_rust" "--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
     # Generate job summary
     echo ""
     echo "Rust Validation Summary:"
@@ -105,7 +111,8 @@ main() {
     "rust_multi_device_sync_results.log",
     "rust_replay_poisoning_results.log",
     "rust_malformed_fuzz_results.log",
-    "rust_replay_storm_results.log"
+    "rust_replay_storm_results.log",
+    "rust_epoch_fork_results.log"
   ]
 }
 EOF

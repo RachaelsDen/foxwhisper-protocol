@@ -1,0 +1,9 @@
+{
+  "scenario_id": "hash_chain_break",
+  "seed_id": "seed-hash-break",
+  "note": "Branch n2 uses incorrect previous_epoch_hash to simulate chain break.",
+  "event_stream": [
+    {"t": 50, "event": "epoch_issue", "controller": "controller-a", "epoch_id": 201, "node_id": "n1"},
+    {"t": 120, "event": "epoch_issue", "controller": "controller-b", "epoch_id": 201, "node_id": "n2"}
+  ]
+}

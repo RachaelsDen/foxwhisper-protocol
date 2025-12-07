@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const { ROOT_DIR, writeJson } = require('../util/reporting');
+const { writeJson, inputPath } = require('../util/reporting');
 
 class MultiDeviceSyncValidator {
     constructor() {
@@ -312,7 +312,8 @@ function main() {
     }
 
     const testVectorsFile = args[1];
-    const testVectorsContent = fs.readFileSync(testVectorsFile, 'utf8');
+    const resolvedPath = path.isAbsolute(testVectorsFile) ? testVectorsFile : inputPath(testVectorsFile);
+    const testVectorsContent = fs.readFileSync(resolvedPath, 'utf8');
     const testVectors = JSON.parse(testVectorsContent);
 
     const validator = new MultiDeviceSyncValidator();

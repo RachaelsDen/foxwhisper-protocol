@@ -1,0 +1,7555 @@
+[
+  {
+    "scenario_id": "simple_fork_merge",
+    "group_context": {
+      "group_id": "g-alpha",
+      "epoch_size_limit": 2048,
+      "membership_version": 1,
+      "controller_clock_skew_ms": 150,
+      "max_epoch_skew_ms": 400,
+      "replay_window_ms": 120000,
+      "expected_members": 32,
+      "max_members": 200
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 100,
+          "eare_hash": "0xaaa",
+          "previous_epoch_hash": null,
+          "membership_digest": "0x111",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "n1",
+          "epoch_id": 101,
+          "eare_hash": "0xbbb",
+          "previous_epoch_hash": "0xaaa",
+          "membership_digest": "0x222",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 800
+        },
+        {
+          "node_id": "n2",
+          "epoch_id": 101,
+          "eare_hash": "0xccc",
+          "previous_epoch_hash": "0xaaa",
+          "membership_digest": "0x333",
+          "parent_id": "n0",
+          "issued_by": "controller-b",
+          "timestamp_ms": 850
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "n1",
+          "type": "linear"
+        },
+        {
+          "from": "n0",
+          "to": "n2",
+          "type": "fork"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 0,
+        "event": "partition",
+        "participants": [
+          "controller-b"
+        ]
+      },
+      {
+        "t": 500,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 101,
+        "node_id": "n1"
+      },
+      {
+        "t": 600,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 101,
+        "node_id": "n2"
+      },
+      {
+        "t": 1000,
+        "event": "merge",
+        "participants": [
+          "controller-b"
+        ],
+        "reconcile_strategy": "prefer_longest"
+      }
+    ],
+    "expectations": {
+      "detected": true,
+      "detection_reference": "fork_observable",
+      "max_detection_ms": 400,
+      "max_reconciliation_ms": 800,
+      "reconciled_epoch": {
+        "epoch_id": 101,
+        "node_id": "n1",
+        "eare_hash": "0xbbb"
+      },
+      "allow_replay_gap": {
+        "max_messages": 5,
+        "max_ms": 2000
+      },
+      "expected_error_categories": [
+        "EPOCH_FORK_DETECTED"
+      ],
+      "healing_required": true
+    }
+  },
+  {
+    "scenario_id": "hash_chain_break",
+    "group_context": {
+      "group_id": "g-beta",
+      "epoch_size_limit": 4096,
+      "membership_version": 7,
+      "controller_clock_skew_ms": 200,
+      "max_epoch_skew_ms": 600,
+      "replay_window_ms": 180000,
+      "expected_members": 24,
+      "max_members": 200
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 200,
+          "eare_hash": "0xddd",
+          "previous_epoch_hash": null,
+          "membership_digest": "0x444",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "n1",
+          "epoch_id": 201,
+          "eare_hash": "0xeee",
+          "previous_epoch_hash": "0xddd",
+          "membership_digest": "0x555",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 100
+        },
+        {
+          "node_id": "n2",
+          "epoch_id": 201,
+          "eare_hash": "0xfff",
+          "previous_epoch_hash": "0xdead",
+          "membership_digest": "0x555",
+          "parent_id": "n0",
+          "issued_by": "controller-b",
+          "timestamp_ms": 120
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "n1",
+          "type": "linear"
+        },
+        {
+          "from": "n0",
+          "to": "n2",
+          "type": "fork"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 50,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 201,
+        "node_id": "n1"
+      },
+      {
+        "t": 120,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 201,
+        "node_id": "n2"
+      },
+      {
+        "t": 400,
+        "event": "merge",
+        "participants": [
+          "controller-b"
+        ],
+        "reconcile_strategy": "prefer_longest"
+      }
+    ],
+    "expectations": {
+      "detected": true,
+      "detection_reference": "fork_created",
+      "max_detection_ms": 200,
+      "max_reconciliation_ms": 500,
+      "reconciled_epoch": {
+        "epoch_id": 201,
+        "node_id": "n1",
+        "eare_hash": "0xeee"
+      },
+      "allow_replay_gap": {
+        "max_messages": 3,
+        "max_ms": 1500
+      },
+      "expected_error_categories": [
+        "HASH_CHAIN_BREAK",
+        "EPOCH_FORK_DETECTED"
+      ],
+      "healing_required": true
+    }
+  },
+  {
+    "scenario_id": "latent_unseen_fork",
+    "group_context": {
+      "group_id": "g-gamma",
+      "epoch_size_limit": 1024,
+      "membership_version": 12,
+      "controller_clock_skew_ms": 100,
+      "max_epoch_skew_ms": 300,
+      "replay_window_ms": 90000,
+      "expected_members": 12,
+      "max_members": 200
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 300,
+          "eare_hash": "0xaaa1",
+          "previous_epoch_hash": null,
+          "membership_digest": "0xabc1",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "n1",
+          "epoch_id": 301,
+          "eare_hash": "0xbbbb",
+          "previous_epoch_hash": "0xaaa1",
+          "membership_digest": "0xabc2",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 100
+        },
+        {
+          "node_id": "n2",
+          "epoch_id": 301,
+          "eare_hash": "0xcccc",
+          "previous_epoch_hash": "0xaaa1",
+          "membership_digest": "0xabc3",
+          "parent_id": "n0",
+          "issued_by": "controller-b",
+          "timestamp_ms": 120
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "n1",
+          "type": "linear"
+        },
+        {
+          "from": "n0",
+          "to": "n2",
+          "type": "fork"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 80,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 301,
+        "node_id": "n1"
+      },
+      {
+        "t": 120,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 301,
+        "node_id": "n2",
+        "faults": [
+          "drop_next_eare"
+        ]
+      },
+      {
+        "t": 500,
+        "event": "merge",
+        "participants": [
+          "controller-b"
+        ],
+        "reconcile_strategy": "prefer_longest"
+      }
+    ],
+    "expectations": {
+      "detected": false,
+      "detection_reference": "fork_observable",
+      "max_detection_ms": 0,
+      "max_reconciliation_ms": 0,
+      "reconciled_epoch": {
+        "epoch_id": 301,
+        "node_id": "n1",
+        "eare_hash": "0xbbbb"
+      },
+      "allow_replay_gap": {
+        "max_messages": 1,
+        "max_ms": 500
+      },
+      "expected_error_categories": [],
+      "healing_required": false
+    }
+  },
+  {
+    "scenario_id": "cross_epoch_jump",
+    "group_context": {
+      "group_id": "g-delta",
+      "epoch_size_limit": 2048,
+      "membership_version": 3,
+      "controller_clock_skew_ms": 120,
+      "max_epoch_skew_ms": 500,
+      "replay_window_ms": 120000,
+      "expected_members": 48,
+      "max_members": 200
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 400,
+          "eare_hash": "0xaaaa",
+          "previous_epoch_hash": null,
+          "membership_digest": "0x1111",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "n1",
+          "epoch_id": 401,
+          "eare_hash": "0xbbbb",
+          "previous_epoch_hash": "0xaaaa",
+          "membership_digest": "0x2222",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 100
+        },
+        {
+          "node_id": "n2",
+          "epoch_id": 402,
+          "eare_hash": "0xcccc",
+          "previous_epoch_hash": "0xaaaa",
+          "membership_digest": "0x3333",
+          "parent_id": "n0",
+          "issued_by": "controller-b",
+          "timestamp_ms": 120
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "n1",
+          "type": "linear"
+        },
+        {
+          "from": "n0",
+          "to": "n2",
+          "type": "fork"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 90,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 401,
+        "node_id": "n1"
+      },
+      {
+        "t": 110,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 402,
+        "node_id": "n2"
+      },
+      {
+        "t": 300,
+        "event": "merge",
+        "participants": [
+          "controller-b"
+        ],
+        "reconcile_strategy": "prefer_longest"
+      }
+    ],
+    "expectations": {
+      "detected": true,
+      "detection_reference": "fork_created",
+      "max_detection_ms": 250,
+      "max_reconciliation_ms": 400,
+      "reconciled_epoch": {
+        "epoch_id": 402,
+        "node_id": "n2",
+        "eare_hash": "0xcccc"
+      },
+      "allow_replay_gap": {
+        "max_messages": 4,
+        "max_ms": 2000
+      },
+      "expected_error_categories": [
+        "EPOCH_FORK_DETECTED"
+      ],
+      "healing_required": true
+    }
+  },
+  {
+    "scenario_id": "unresolved_fork_replay",
+    "group_context": {
+      "group_id": "g-epsilon",
+      "epoch_size_limit": 1024,
+      "membership_version": 9,
+      "controller_clock_skew_ms": 180,
+      "max_epoch_skew_ms": 500,
+      "replay_window_ms": 60000,
+      "expected_members": 16,
+      "max_members": 200
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 500,
+          "eare_hash": "0xab00",
+          "previous_epoch_hash": null,
+          "membership_digest": "0xaaaa",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "n1",
+          "epoch_id": 501,
+          "eare_hash": "0xbc00",
+          "previous_epoch_hash": "0xab00",
+          "membership_digest": "0xbbbb",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 200
+        },
+        {
+          "node_id": "n2",
+          "epoch_id": 501,
+          "eare_hash": "0xcd00",
+          "previous_epoch_hash": "0xab00",
+          "membership_digest": "0xbbbb",
+          "parent_id": "n0",
+          "issued_by": "controller-b",
+          "timestamp_ms": 220
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "n1",
+          "type": "linear"
+        },
+        {
+          "from": "n0",
+          "to": "n2",
+          "type": "fork"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 0,
+        "event": "partition",
+        "participants": [
+          "controller-b"
+        ]
+      },
+      {
+        "t": 200,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 501,
+        "node_id": "n1"
+      },
+      {
+        "t": 220,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 501,
+        "node_id": "n2",
+        "faults": [
+          "delay_validation:150"
+        ]
+      },
+      {
+        "t": 260,
+        "event": "replay_attempt",
+        "count": 5
+      }
+    ],
+    "expectations": {
+      "detected": true,
+      "detection_reference": "fork_created",
+      "max_detection_ms": 400,
+      "max_reconciliation_ms": 0,
+      "reconciled_epoch": {
+        "epoch_id": 501,
+        "node_id": "n1",
+        "eare_hash": "0xbc00"
+      },
+      "allow_replay_gap": {
+        "max_messages": 5,
+        "max_ms": 3000
+      },
+      "expected_error_categories": [
+        "EPOCH_FORK_DETECTED"
+      ],
+      "healing_required": false
+    }
+  },
+  {
+    "scenario_id": "stress_long_chain",
+    "tags": [
+      "stress",
+      "load"
+    ],
+    "group_context": {
+      "group_id": "g-zeta",
+      "epoch_size_limit": 8192,
+      "membership_version": 18,
+      "controller_clock_skew_ms": 250,
+      "max_epoch_skew_ms": 800,
+      "replay_window_ms": 180000,
+      "expected_members": 256,
+      "max_members": 512
+    },
+    "graph": {
+      "nodes": [
+        {
+          "node_id": "n0",
+          "epoch_id": 900,
+          "eare_hash": "0xa000",
+          "previous_epoch_hash": null,
+          "membership_digest": "0x1111",
+          "parent_id": null,
+          "issued_by": "controller-a",
+          "timestamp_ms": 0
+        },
+        {
+          "node_id": "nA1",
+          "epoch_id": 901,
+          "eare_hash": "0xa001",
+          "previous_epoch_hash": "0xa000",
+          "membership_digest": "0x2222",
+          "parent_id": "n0",
+          "issued_by": "controller-a",
+          "timestamp_ms": 50
+        },
+        {
+          "node_id": "nA2",
+          "epoch_id": 902,
+          "eare_hash": "0xa002",
+          "previous_epoch_hash": "0xa001",
+          "membership_digest": "0x2222",
+          "parent_id": "nA1",
+          "issued_by": "controller-a",
+          "timestamp_ms": 60
+        },
+        {
+          "node_id": "nA3",
+          "epoch_id": 903,
+          "eare_hash": "0xa003",
+          "previous_epoch_hash": "0xa002",
+          "membership_digest": "0x2222",
+          "parent_id": "nA2",
+          "issued_by": "controller-a",
+          "timestamp_ms": 70
+        },
+        {
+          "node_id": "nA4",
+          "epoch_id": 904,
+          "eare_hash": "0xa004",
+          "previous_epoch_hash": "0xa003",
+          "membership_digest": "0x2222",
+          "parent_id": "nA3",
+          "issued_by": "controller-a",
+          "timestamp_ms": 80
+        },
+        {
+          "node_id": "nA5",
+          "epoch_id": 905,
+          "eare_hash": "0xa005",
+          "previous_epoch_hash": "0xa004",
+          "membership_digest": "0x2222",
+          "parent_id": "nA4",
+          "issued_by": "controller-a",
+          "timestamp_ms": 90
+        },
+        {
+          "node_id": "nA6",
+          "epoch_id": 906,
+          "eare_hash": "0xa006",
+          "previous_epoch_hash": "0xa005",
+          "membership_digest": "0x2222",
+          "parent_id": "nA5",
+          "issued_by": "controller-a",
+          "timestamp_ms": 100
+        },
+        {
+          "node_id": "nA7",
+          "epoch_id": 907,
+          "eare_hash": "0xa007",
+          "previous_epoch_hash": "0xa006",
+          "membership_digest": "0x2222",
+          "parent_id": "nA6",
+          "issued_by": "controller-a",
+          "timestamp_ms": 110
+        },
+        {
+          "node_id": "nA8",
+          "epoch_id": 908,
+          "eare_hash": "0xa008",
+          "previous_epoch_hash": "0xa007",
+          "membership_digest": "0x2222",
+          "parent_id": "nA7",
+          "issued_by": "controller-a",
+          "timestamp_ms": 120
+        },
+        {
+          "node_id": "nA9",
+          "epoch_id": 909,
+          "eare_hash": "0xa009",
+          "previous_epoch_hash": "0xa008",
+          "membership_digest": "0x2222",
+          "parent_id": "nA8",
+          "issued_by": "controller-a",
+          "timestamp_ms": 130
+        },
+        {
+          "node_id": "nA10",
+          "epoch_id": 910,
+          "eare_hash": "0xa010",
+          "previous_epoch_hash": "0xa009",
+          "membership_digest": "0x2222",
+          "parent_id": "nA9",
+          "issued_by": "controller-a",
+          "timestamp_ms": 140
+        },
+        {
+          "node_id": "nB10",
+          "epoch_id": 910,
+          "eare_hash": "0xb010",
+          "previous_epoch_hash": "0xa009",
+          "membership_digest": "0x3333",
+          "parent_id": "nA9",
+          "issued_by": "controller-b",
+          "timestamp_ms": 145
+        },
+        {
+          "node_id": "nA11",
+          "epoch_id": 911,
+          "eare_hash": "0xa011",
+          "previous_epoch_hash": "0xb010",
+          "membership_digest": "0x2222",
+          "parent_id": "nA10",
+          "issued_by": "controller-a",
+          "timestamp_ms": 150
+        },
+        {
+          "node_id": "nA12",
+          "epoch_id": 912,
+          "eare_hash": "0xa012",
+          "previous_epoch_hash": "0xa011",
+          "membership_digest": "0x2222",
+          "parent_id": "nA11",
+          "issued_by": "controller-a",
+          "timestamp_ms": 160
+        },
+        {
+          "node_id": "nA13",
+          "epoch_id": 913,
+          "eare_hash": "0xa013",
+          "previous_epoch_hash": "0xa012",
+          "membership_digest": "0x2222",
+          "parent_id": "nA12",
+          "issued_by": "controller-a",
+          "timestamp_ms": 170
+        },
+        {
+          "node_id": "nA14",
+          "epoch_id": 914,
+          "eare_hash": "0xa014",
+          "previous_epoch_hash": "0xa013",
+          "membership_digest": "0x2222",
+          "parent_id": "nA13",
+          "issued_by": "controller-a",
+          "timestamp_ms": 180
+        },
+        {
+          "node_id": "nA15",
+          "epoch_id": 915,
+          "eare_hash": "0xa015",
+          "previous_epoch_hash": "0xa014",
+          "membership_digest": "0x2222",
+          "parent_id": "nA14",
+          "issued_by": "controller-a",
+          "timestamp_ms": 190
+        },
+        {
+          "node_id": "nA16",
+          "epoch_id": 916,
+          "eare_hash": "0xa016",
+          "previous_epoch_hash": "0xa015",
+          "membership_digest": "0x2222",
+          "parent_id": "nA15",
+          "issued_by": "controller-a",
+          "timestamp_ms": 200
+        },
+        {
+          "node_id": "nA17",
+          "epoch_id": 917,
+          "eare_hash": "0xa017",
+          "previous_epoch_hash": "0xa016",
+          "membership_digest": "0x2222",
+          "parent_id": "nA16",
+          "issued_by": "controller-a",
+          "timestamp_ms": 210
+        },
+        {
+          "node_id": "nA18",
+          "epoch_id": 918,
+          "eare_hash": "0xa018",
+          "previous_epoch_hash": "0xa017",
+          "membership_digest": "0x2222",
+          "parent_id": "nA17",
+          "issued_by": "controller-a",
+          "timestamp_ms": 220
+        },
+        {
+          "node_id": "nA19",
+          "epoch_id": 919,
+          "eare_hash": "0xa019",
+          "previous_epoch_hash": "0xa018",
+          "membership_digest": "0x2222",
+          "parent_id": "nA18",
+          "issued_by": "controller-a",
+          "timestamp_ms": 230
+        },
+        {
+          "node_id": "nA20",
+          "epoch_id": 920,
+          "eare_hash": "0xa020",
+          "previous_epoch_hash": "0xa019",
+          "membership_digest": "0x2222",
+          "parent_id": "nA19",
+          "issued_by": "controller-a",
+          "timestamp_ms": 240
+        },
+        {
+          "node_id": "nB20",
+          "epoch_id": 920,
+          "eare_hash": "0xb020",
+          "previous_epoch_hash": "0xa019",
+          "membership_digest": "0x3333",
+          "parent_id": "nA19",
+          "issued_by": "controller-b",
+          "timestamp_ms": 245
+        },
+        {
+          "node_id": "nA21",
+          "epoch_id": 921,
+          "eare_hash": "0xa021",
+          "previous_epoch_hash": "0xb020",
+          "membership_digest": "0x2222",
+          "parent_id": "nA20",
+          "issued_by": "controller-a",
+          "timestamp_ms": 250
+        },
+        {
+          "node_id": "nA22",
+          "epoch_id": 922,
+          "eare_hash": "0xa022",
+          "previous_epoch_hash": "0xa021",
+          "membership_digest": "0x2222",
+          "parent_id": "nA21",
+          "issued_by": "controller-a",
+          "timestamp_ms": 260
+        },
+        {
+          "node_id": "nA23",
+          "epoch_id": 923,
+          "eare_hash": "0xa023",
+          "previous_epoch_hash": "0xa022",
+          "membership_digest": "0x2222",
+          "parent_id": "nA22",
+          "issued_by": "controller-a",
+          "timestamp_ms": 270
+        },
+        {
+          "node_id": "nA24",
+          "epoch_id": 924,
+          "eare_hash": "0xa024",
+          "previous_epoch_hash": "0xa023",
+          "membership_digest": "0x2222",
+          "parent_id": "nA23",
+          "issued_by": "controller-a",
+          "timestamp_ms": 280
+        },
+        {
+          "node_id": "nA25",
+          "epoch_id": 925,
+          "eare_hash": "0xa025",
+          "previous_epoch_hash": "0xa024",
+          "membership_digest": "0x2222",
+          "parent_id": "nA24",
+          "issued_by": "controller-a",
+          "timestamp_ms": 290
+        },
+        {
+          "node_id": "nA26",
+          "epoch_id": 926,
+          "eare_hash": "0xa026",
+          "previous_epoch_hash": "0xa025",
+          "membership_digest": "0x2222",
+          "parent_id": "nA25",
+          "issued_by": "controller-a",
+          "timestamp_ms": 300
+        },
+        {
+          "node_id": "nA27",
+          "epoch_id": 927,
+          "eare_hash": "0xa027",
+          "previous_epoch_hash": "0xa026",
+          "membership_digest": "0x2222",
+          "parent_id": "nA26",
+          "issued_by": "controller-a",
+          "timestamp_ms": 310
+        },
+        {
+          "node_id": "nA28",
+          "epoch_id": 928,
+          "eare_hash": "0xa028",
+          "previous_epoch_hash": "0xa027",
+          "membership_digest": "0x2222",
+          "parent_id": "nA27",
+          "issued_by": "controller-a",
+          "timestamp_ms": 320
+        },
+        {
+          "node_id": "nA29",
+          "epoch_id": 929,
+          "eare_hash": "0xa029",
+          "previous_epoch_hash": "0xa028",
+          "membership_digest": "0x2222",
+          "parent_id": "nA28",
+          "issued_by": "controller-a",
+          "timestamp_ms": 330
+        },
+        {
+          "node_id": "nA30",
+          "epoch_id": 930,
+          "eare_hash": "0xa030",
+          "previous_epoch_hash": "0xa029",
+          "membership_digest": "0x2222",
+          "parent_id": "nA29",
+          "issued_by": "controller-a",
+          "timestamp_ms": 340
+        },
+        {
+          "node_id": "nB30",
+          "epoch_id": 930,
+          "eare_hash": "0xb030",
+          "previous_epoch_hash": "0xa029",
+          "membership_digest": "0x3333",
+          "parent_id": "nA29",
+          "issued_by": "controller-b",
+          "timestamp_ms": 345
+        },
+        {
+          "node_id": "nA31",
+          "epoch_id": 931,
+          "eare_hash": "0xa031",
+          "previous_epoch_hash": "0xb030",
+          "membership_digest": "0x2222",
+          "parent_id": "nA30",
+          "issued_by": "controller-a",
+          "timestamp_ms": 350
+        },
+        {
+          "node_id": "nA32",
+          "epoch_id": 932,
+          "eare_hash": "0xa032",
+          "previous_epoch_hash": "0xa031",
+          "membership_digest": "0x2222",
+          "parent_id": "nA31",
+          "issued_by": "controller-a",
+          "timestamp_ms": 360
+        },
+        {
+          "node_id": "nA33",
+          "epoch_id": 933,
+          "eare_hash": "0xa033",
+          "previous_epoch_hash": "0xa032",
+          "membership_digest": "0x2222",
+          "parent_id": "nA32",
+          "issued_by": "controller-a",
+          "timestamp_ms": 370
+        },
+        {
+          "node_id": "nA34",
+          "epoch_id": 934,
+          "eare_hash": "0xa034",
+          "previous_epoch_hash": "0xa033",
+          "membership_digest": "0x2222",
+          "parent_id": "nA33",
+          "issued_by": "controller-a",
+          "timestamp_ms": 380
+        },
+        {
+          "node_id": "nA35",
+          "epoch_id": 935,
+          "eare_hash": "0xa035",
+          "previous_epoch_hash": "0xa034",
+          "membership_digest": "0x2222",
+          "parent_id": "nA34",
+          "issued_by": "controller-a",
+          "timestamp_ms": 390
+        },
+        {
+          "node_id": "nA36",
+          "epoch_id": 936,
+          "eare_hash": "0xa036",
+          "previous_epoch_hash": "0xa035",
+          "membership_digest": "0x2222",
+          "parent_id": "nA35",
+          "issued_by": "controller-a",
+          "timestamp_ms": 400
+        },
+        {
+          "node_id": "nA37",
+          "epoch_id": 937,
+          "eare_hash": "0xa037",
+          "previous_epoch_hash": "0xa036",
+          "membership_digest": "0x2222",
+          "parent_id": "nA36",
+          "issued_by": "controller-a",
+          "timestamp_ms": 410
+        },
+        {
+          "node_id": "nA38",
+          "epoch_id": 938,
+          "eare_hash": "0xa038",
+          "previous_epoch_hash": "0xa037",
+          "membership_digest": "0x2222",
+          "parent_id": "nA37",
+          "issued_by": "controller-a",
+          "timestamp_ms": 420
+        },
+        {
+          "node_id": "nA39",
+          "epoch_id": 939,
+          "eare_hash": "0xa039",
+          "previous_epoch_hash": "0xa038",
+          "membership_digest": "0x2222",
+          "parent_id": "nA38",
+          "issued_by": "controller-a",
+          "timestamp_ms": 430
+        },
+        {
+          "node_id": "nA40",
+          "epoch_id": 940,
+          "eare_hash": "0xa040",
+          "previous_epoch_hash": "0xa039",
+          "membership_digest": "0x2222",
+          "parent_id": "nA39",
+          "issued_by": "controller-a",
+          "timestamp_ms": 440
+        },
+        {
+          "node_id": "nB40",
+          "epoch_id": 940,
+          "eare_hash": "0xb040",
+          "previous_epoch_hash": "0xa039",
+          "membership_digest": "0x3333",
+          "parent_id": "nA39",
+          "issued_by": "controller-b",
+          "timestamp_ms": 445
+        },
+        {
+          "node_id": "nA41",
+          "epoch_id": 941,
+          "eare_hash": "0xa041",
+          "previous_epoch_hash": "0xb040",
+          "membership_digest": "0x2222",
+          "parent_id": "nA40",
+          "issued_by": "controller-a",
+          "timestamp_ms": 450
+        },
+        {
+          "node_id": "nA42",
+          "epoch_id": 942,
+          "eare_hash": "0xa042",
+          "previous_epoch_hash": "0xa041",
+          "membership_digest": "0x2222",
+          "parent_id": "nA41",
+          "issued_by": "controller-a",
+          "timestamp_ms": 460
+        },
+        {
+          "node_id": "nA43",
+          "epoch_id": 943,
+          "eare_hash": "0xa043",
+          "previous_epoch_hash": "0xa042",
+          "membership_digest": "0x2222",
+          "parent_id": "nA42",
+          "issued_by": "controller-a",
+          "timestamp_ms": 470
+        },
+        {
+          "node_id": "nA44",
+          "epoch_id": 944,
+          "eare_hash": "0xa044",
+          "previous_epoch_hash": "0xa043",
+          "membership_digest": "0x2222",
+          "parent_id": "nA43",
+          "issued_by": "controller-a",
+          "timestamp_ms": 480
+        },
+        {
+          "node_id": "nA45",
+          "epoch_id": 945,
+          "eare_hash": "0xa045",
+          "previous_epoch_hash": "0xa044",
+          "membership_digest": "0x2222",
+          "parent_id": "nA44",
+          "issued_by": "controller-a",
+          "timestamp_ms": 490
+        },
+        {
+          "node_id": "nA46",
+          "epoch_id": 946,
+          "eare_hash": "0xa046",
+          "previous_epoch_hash": "0xa045",
+          "membership_digest": "0x2222",
+          "parent_id": "nA45",
+          "issued_by": "controller-a",
+          "timestamp_ms": 500
+        },
+        {
+          "node_id": "nA47",
+          "epoch_id": 947,
+          "eare_hash": "0xa047",
+          "previous_epoch_hash": "0xa046",
+          "membership_digest": "0x2222",
+          "parent_id": "nA46",
+          "issued_by": "controller-a",
+          "timestamp_ms": 510
+        },
+        {
+          "node_id": "nA48",
+          "epoch_id": 948,
+          "eare_hash": "0xa048",
+          "previous_epoch_hash": "0xa047",
+          "membership_digest": "0x2222",
+          "parent_id": "nA47",
+          "issued_by": "controller-a",
+          "timestamp_ms": 520
+        },
+        {
+          "node_id": "nA49",
+          "epoch_id": 949,
+          "eare_hash": "0xa049",
+          "previous_epoch_hash": "0xa048",
+          "membership_digest": "0x2222",
+          "parent_id": "nA48",
+          "issued_by": "controller-a",
+          "timestamp_ms": 530
+        },
+        {
+          "node_id": "nA50",
+          "epoch_id": 950,
+          "eare_hash": "0xa050",
+          "previous_epoch_hash": "0xa049",
+          "membership_digest": "0x2222",
+          "parent_id": "nA49",
+          "issued_by": "controller-a",
+          "timestamp_ms": 540
+        },
+        {
+          "node_id": "nB50",
+          "epoch_id": 950,
+          "eare_hash": "0xb050",
+          "previous_epoch_hash": "0xa049",
+          "membership_digest": "0x3333",
+          "parent_id": "nA49",
+          "issued_by": "controller-b",
+          "timestamp_ms": 545
+        },
+        {
+          "node_id": "nA51",
+          "epoch_id": 951,
+          "eare_hash": "0xa051",
+          "previous_epoch_hash": "0xb050",
+          "membership_digest": "0x2222",
+          "parent_id": "nA50",
+          "issued_by": "controller-a",
+          "timestamp_ms": 550
+        },
+        {
+          "node_id": "nA52",
+          "epoch_id": 952,
+          "eare_hash": "0xa052",
+          "previous_epoch_hash": "0xa051",
+          "membership_digest": "0x2222",
+          "parent_id": "nA51",
+          "issued_by": "controller-a",
+          "timestamp_ms": 560
+        },
+        {
+          "node_id": "nA53",
+          "epoch_id": 953,
+          "eare_hash": "0xa053",
+          "previous_epoch_hash": "0xa052",
+          "membership_digest": "0x2222",
+          "parent_id": "nA52",
+          "issued_by": "controller-a",
+          "timestamp_ms": 570
+        },
+        {
+          "node_id": "nA54",
+          "epoch_id": 954,
+          "eare_hash": "0xa054",
+          "previous_epoch_hash": "0xa053",
+          "membership_digest": "0x2222",
+          "parent_id": "nA53",
+          "issued_by": "controller-a",
+          "timestamp_ms": 580
+        },
+        {
+          "node_id": "nA55",
+          "epoch_id": 955,
+          "eare_hash": "0xa055",
+          "previous_epoch_hash": "0xa054",
+          "membership_digest": "0x2222",
+          "parent_id": "nA54",
+          "issued_by": "controller-a",
+          "timestamp_ms": 590
+        },
+        {
+          "node_id": "nA56",
+          "epoch_id": 956,
+          "eare_hash": "0xa056",
+          "previous_epoch_hash": "0xa055",
+          "membership_digest": "0x2222",
+          "parent_id": "nA55",
+          "issued_by": "controller-a",
+          "timestamp_ms": 600
+        },
+        {
+          "node_id": "nA57",
+          "epoch_id": 957,
+          "eare_hash": "0xa057",
+          "previous_epoch_hash": "0xa056",
+          "membership_digest": "0x2222",
+          "parent_id": "nA56",
+          "issued_by": "controller-a",
+          "timestamp_ms": 610
+        },
+        {
+          "node_id": "nA58",
+          "epoch_id": 958,
+          "eare_hash": "0xa058",
+          "previous_epoch_hash": "0xa057",
+          "membership_digest": "0x2222",
+          "parent_id": "nA57",
+          "issued_by": "controller-a",
+          "timestamp_ms": 620
+        },
+        {
+          "node_id": "nA59",
+          "epoch_id": 959,
+          "eare_hash": "0xa059",
+          "previous_epoch_hash": "0xa058",
+          "membership_digest": "0x2222",
+          "parent_id": "nA58",
+          "issued_by": "controller-a",
+          "timestamp_ms": 630
+        },
+        {
+          "node_id": "nA60",
+          "epoch_id": 960,
+          "eare_hash": "0xa060",
+          "previous_epoch_hash": "0xa059",
+          "membership_digest": "0x2222",
+          "parent_id": "nA59",
+          "issued_by": "controller-a",
+          "timestamp_ms": 640
+        },
+        {
+          "node_id": "nB60",
+          "epoch_id": 960,
+          "eare_hash": "0xb060",
+          "previous_epoch_hash": "0xa059",
+          "membership_digest": "0x3333",
+          "parent_id": "nA59",
+          "issued_by": "controller-b",
+          "timestamp_ms": 645
+        },
+        {
+          "node_id": "nA61",
+          "epoch_id": 961,
+          "eare_hash": "0xa061",
+          "previous_epoch_hash": "0xb060",
+          "membership_digest": "0x2222",
+          "parent_id": "nA60",
+          "issued_by": "controller-a",
+          "timestamp_ms": 650
+        },
+        {
+          "node_id": "nA62",
+          "epoch_id": 962,
+          "eare_hash": "0xa062",
+          "previous_epoch_hash": "0xa061",
+          "membership_digest": "0x2222",
+          "parent_id": "nA61",
+          "issued_by": "controller-a",
+          "timestamp_ms": 660
+        },
+        {
+          "node_id": "nA63",
+          "epoch_id": 963,
+          "eare_hash": "0xa063",
+          "previous_epoch_hash": "0xa062",
+          "membership_digest": "0x2222",
+          "parent_id": "nA62",
+          "issued_by": "controller-a",
+          "timestamp_ms": 670
+        },
+        {
+          "node_id": "nA64",
+          "epoch_id": 964,
+          "eare_hash": "0xa064",
+          "previous_epoch_hash": "0xa063",
+          "membership_digest": "0x2222",
+          "parent_id": "nA63",
+          "issued_by": "controller-a",
+          "timestamp_ms": 680
+        },
+        {
+          "node_id": "nA65",
+          "epoch_id": 965,
+          "eare_hash": "0xa065",
+          "previous_epoch_hash": "0xa064",
+          "membership_digest": "0x2222",
+          "parent_id": "nA64",
+          "issued_by": "controller-a",
+          "timestamp_ms": 690
+        },
+        {
+          "node_id": "nA66",
+          "epoch_id": 966,
+          "eare_hash": "0xa066",
+          "previous_epoch_hash": "0xa065",
+          "membership_digest": "0x2222",
+          "parent_id": "nA65",
+          "issued_by": "controller-a",
+          "timestamp_ms": 700
+        },
+        {
+          "node_id": "nA67",
+          "epoch_id": 967,
+          "eare_hash": "0xa067",
+          "previous_epoch_hash": "0xa066",
+          "membership_digest": "0x2222",
+          "parent_id": "nA66",
+          "issued_by": "controller-a",
+          "timestamp_ms": 710
+        },
+        {
+          "node_id": "nA68",
+          "epoch_id": 968,
+          "eare_hash": "0xa068",
+          "previous_epoch_hash": "0xa067",
+          "membership_digest": "0x2222",
+          "parent_id": "nA67",
+          "issued_by": "controller-a",
+          "timestamp_ms": 720
+        },
+        {
+          "node_id": "nA69",
+          "epoch_id": 969,
+          "eare_hash": "0xa069",
+          "previous_epoch_hash": "0xa068",
+          "membership_digest": "0x2222",
+          "parent_id": "nA68",
+          "issued_by": "controller-a",
+          "timestamp_ms": 730
+        },
+        {
+          "node_id": "nA70",
+          "epoch_id": 970,
+          "eare_hash": "0xa070",
+          "previous_epoch_hash": "0xa069",
+          "membership_digest": "0x2222",
+          "parent_id": "nA69",
+          "issued_by": "controller-a",
+          "timestamp_ms": 740
+        },
+        {
+          "node_id": "nB70",
+          "epoch_id": 970,
+          "eare_hash": "0xb070",
+          "previous_epoch_hash": "0xa069",
+          "membership_digest": "0x3333",
+          "parent_id": "nA69",
+          "issued_by": "controller-b",
+          "timestamp_ms": 745
+        },
+        {
+          "node_id": "nA71",
+          "epoch_id": 971,
+          "eare_hash": "0xa071",
+          "previous_epoch_hash": "0xb070",
+          "membership_digest": "0x2222",
+          "parent_id": "nA70",
+          "issued_by": "controller-a",
+          "timestamp_ms": 750
+        },
+        {
+          "node_id": "nA72",
+          "epoch_id": 972,
+          "eare_hash": "0xa072",
+          "previous_epoch_hash": "0xa071",
+          "membership_digest": "0x2222",
+          "parent_id": "nA71",
+          "issued_by": "controller-a",
+          "timestamp_ms": 760
+        },
+        {
+          "node_id": "nA73",
+          "epoch_id": 973,
+          "eare_hash": "0xa073",
+          "previous_epoch_hash": "0xa072",
+          "membership_digest": "0x2222",
+          "parent_id": "nA72",
+          "issued_by": "controller-a",
+          "timestamp_ms": 770
+        },
+        {
+          "node_id": "nA74",
+          "epoch_id": 974,
+          "eare_hash": "0xa074",
+          "previous_epoch_hash": "0xa073",
+          "membership_digest": "0x2222",
+          "parent_id": "nA73",
+          "issued_by": "controller-a",
+          "timestamp_ms": 780
+        },
+        {
+          "node_id": "nA75",
+          "epoch_id": 975,
+          "eare_hash": "0xa075",
+          "previous_epoch_hash": "0xa074",
+          "membership_digest": "0x2222",
+          "parent_id": "nA74",
+          "issued_by": "controller-a",
+          "timestamp_ms": 790
+        },
+        {
+          "node_id": "nA76",
+          "epoch_id": 976,
+          "eare_hash": "0xa076",
+          "previous_epoch_hash": "0xa075",
+          "membership_digest": "0x2222",
+          "parent_id": "nA75",
+          "issued_by": "controller-a",
+          "timestamp_ms": 800
+        },
+        {
+          "node_id": "nA77",
+          "epoch_id": 977,
+          "eare_hash": "0xa077",
+          "previous_epoch_hash": "0xa076",
+          "membership_digest": "0x2222",
+          "parent_id": "nA76",
+          "issued_by": "controller-a",
+          "timestamp_ms": 810
+        },
+        {
+          "node_id": "nA78",
+          "epoch_id": 978,
+          "eare_hash": "0xa078",
+          "previous_epoch_hash": "0xa077",
+          "membership_digest": "0x2222",
+          "parent_id": "nA77",
+          "issued_by": "controller-a",
+          "timestamp_ms": 820
+        },
+        {
+          "node_id": "nA79",
+          "epoch_id": 979,
+          "eare_hash": "0xa079",
+          "previous_epoch_hash": "0xa078",
+          "membership_digest": "0x2222",
+          "parent_id": "nA78",
+          "issued_by": "controller-a",
+          "timestamp_ms": 830
+        },
+        {
+          "node_id": "nA80",
+          "epoch_id": 980,
+          "eare_hash": "0xa080",
+          "previous_epoch_hash": "0xa079",
+          "membership_digest": "0x2222",
+          "parent_id": "nA79",
+          "issued_by": "controller-a",
+          "timestamp_ms": 840
+        },
+        {
+          "node_id": "nB80",
+          "epoch_id": 980,
+          "eare_hash": "0xb080",
+          "previous_epoch_hash": "0xa079",
+          "membership_digest": "0x3333",
+          "parent_id": "nA79",
+          "issued_by": "controller-b",
+          "timestamp_ms": 845
+        },
+        {
+          "node_id": "nA81",
+          "epoch_id": 981,
+          "eare_hash": "0xa081",
+          "previous_epoch_hash": "0xb080",
+          "membership_digest": "0x2222",
+          "parent_id": "nA80",
+          "issued_by": "controller-a",
+          "timestamp_ms": 850
+        },
+        {
+          "node_id": "nA82",
+          "epoch_id": 982,
+          "eare_hash": "0xa082",
+          "previous_epoch_hash": "0xa081",
+          "membership_digest": "0x2222",
+          "parent_id": "nA81",
+          "issued_by": "controller-a",
+          "timestamp_ms": 860
+        },
+        {
+          "node_id": "nA83",
+          "epoch_id": 983,
+          "eare_hash": "0xa083",
+          "previous_epoch_hash": "0xa082",
+          "membership_digest": "0x2222",
+          "parent_id": "nA82",
+          "issued_by": "controller-a",
+          "timestamp_ms": 870
+        },
+        {
+          "node_id": "nA84",
+          "epoch_id": 984,
+          "eare_hash": "0xa084",
+          "previous_epoch_hash": "0xa083",
+          "membership_digest": "0x2222",
+          "parent_id": "nA83",
+          "issued_by": "controller-a",
+          "timestamp_ms": 880
+        },
+        {
+          "node_id": "nA85",
+          "epoch_id": 985,
+          "eare_hash": "0xa085",
+          "previous_epoch_hash": "0xa084",
+          "membership_digest": "0x2222",
+          "parent_id": "nA84",
+          "issued_by": "controller-a",
+          "timestamp_ms": 890
+        },
+        {
+          "node_id": "nA86",
+          "epoch_id": 986,
+          "eare_hash": "0xa086",
+          "previous_epoch_hash": "0xa085",
+          "membership_digest": "0x2222",
+          "parent_id": "nA85",
+          "issued_by": "controller-a",
+          "timestamp_ms": 900
+        },
+        {
+          "node_id": "nA87",
+          "epoch_id": 987,
+          "eare_hash": "0xa087",
+          "previous_epoch_hash": "0xa086",
+          "membership_digest": "0x2222",
+          "parent_id": "nA86",
+          "issued_by": "controller-a",
+          "timestamp_ms": 910
+        },
+        {
+          "node_id": "nA88",
+          "epoch_id": 988,
+          "eare_hash": "0xa088",
+          "previous_epoch_hash": "0xa087",
+          "membership_digest": "0x2222",
+          "parent_id": "nA87",
+          "issued_by": "controller-a",
+          "timestamp_ms": 920
+        },
+        {
+          "node_id": "nA89",
+          "epoch_id": 989,
+          "eare_hash": "0xa089",
+          "previous_epoch_hash": "0xa088",
+          "membership_digest": "0x2222",
+          "parent_id": "nA88",
+          "issued_by": "controller-a",
+          "timestamp_ms": 930
+        },
+        {
+          "node_id": "nA90",
+          "epoch_id": 990,
+          "eare_hash": "0xa090",
+          "previous_epoch_hash": "0xa089",
+          "membership_digest": "0x2222",
+          "parent_id": "nA89",
+          "issued_by": "controller-a",
+          "timestamp_ms": 940
+        },
+        {
+          "node_id": "nB90",
+          "epoch_id": 990,
+          "eare_hash": "0xb090",
+          "previous_epoch_hash": "0xa089",
+          "membership_digest": "0x3333",
+          "parent_id": "nA89",
+          "issued_by": "controller-b",
+          "timestamp_ms": 945
+        },
+        {
+          "node_id": "nA91",
+          "epoch_id": 991,
+          "eare_hash": "0xa091",
+          "previous_epoch_hash": "0xb090",
+          "membership_digest": "0x2222",
+          "parent_id": "nA90",
+          "issued_by": "controller-a",
+          "timestamp_ms": 950
+        },
+        {
+          "node_id": "nA92",
+          "epoch_id": 992,
+          "eare_hash": "0xa092",
+          "previous_epoch_hash": "0xa091",
+          "membership_digest": "0x2222",
+          "parent_id": "nA91",
+          "issued_by": "controller-a",
+          "timestamp_ms": 960
+        },
+        {
+          "node_id": "nA93",
+          "epoch_id": 993,
+          "eare_hash": "0xa093",
+          "previous_epoch_hash": "0xa092",
+          "membership_digest": "0x2222",
+          "parent_id": "nA92",
+          "issued_by": "controller-a",
+          "timestamp_ms": 970
+        },
+        {
+          "node_id": "nA94",
+          "epoch_id": 994,
+          "eare_hash": "0xa094",
+          "previous_epoch_hash": "0xa093",
+          "membership_digest": "0x2222",
+          "parent_id": "nA93",
+          "issued_by": "controller-a",
+          "timestamp_ms": 980
+        },
+        {
+          "node_id": "nA95",
+          "epoch_id": 995,
+          "eare_hash": "0xa095",
+          "previous_epoch_hash": "0xa094",
+          "membership_digest": "0x2222",
+          "parent_id": "nA94",
+          "issued_by": "controller-a",
+          "timestamp_ms": 990
+        },
+        {
+          "node_id": "nA96",
+          "epoch_id": 996,
+          "eare_hash": "0xa096",
+          "previous_epoch_hash": "0xa095",
+          "membership_digest": "0x2222",
+          "parent_id": "nA95",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1000
+        },
+        {
+          "node_id": "nA97",
+          "epoch_id": 997,
+          "eare_hash": "0xa097",
+          "previous_epoch_hash": "0xa096",
+          "membership_digest": "0x2222",
+          "parent_id": "nA96",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1010
+        },
+        {
+          "node_id": "nA98",
+          "epoch_id": 998,
+          "eare_hash": "0xa098",
+          "previous_epoch_hash": "0xa097",
+          "membership_digest": "0x2222",
+          "parent_id": "nA97",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1020
+        },
+        {
+          "node_id": "nA99",
+          "epoch_id": 999,
+          "eare_hash": "0xa099",
+          "previous_epoch_hash": "0xa098",
+          "membership_digest": "0x2222",
+          "parent_id": "nA98",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1030
+        },
+        {
+          "node_id": "nA100",
+          "epoch_id": 1000,
+          "eare_hash": "0xa100",
+          "previous_epoch_hash": "0xa099",
+          "membership_digest": "0x2222",
+          "parent_id": "nA99",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1040
+        },
+        {
+          "node_id": "nB100",
+          "epoch_id": 1000,
+          "eare_hash": "0xb100",
+          "previous_epoch_hash": "0xa099",
+          "membership_digest": "0x3333",
+          "parent_id": "nA99",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1045
+        },
+        {
+          "node_id": "nA101",
+          "epoch_id": 1001,
+          "eare_hash": "0xa101",
+          "previous_epoch_hash": "0xb100",
+          "membership_digest": "0x2222",
+          "parent_id": "nA100",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1050
+        },
+        {
+          "node_id": "nA102",
+          "epoch_id": 1002,
+          "eare_hash": "0xa102",
+          "previous_epoch_hash": "0xa101",
+          "membership_digest": "0x2222",
+          "parent_id": "nA101",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1060
+        },
+        {
+          "node_id": "nA103",
+          "epoch_id": 1003,
+          "eare_hash": "0xa103",
+          "previous_epoch_hash": "0xa102",
+          "membership_digest": "0x2222",
+          "parent_id": "nA102",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1070
+        },
+        {
+          "node_id": "nA104",
+          "epoch_id": 1004,
+          "eare_hash": "0xa104",
+          "previous_epoch_hash": "0xa103",
+          "membership_digest": "0x2222",
+          "parent_id": "nA103",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1080
+        },
+        {
+          "node_id": "nA105",
+          "epoch_id": 1005,
+          "eare_hash": "0xa105",
+          "previous_epoch_hash": "0xa104",
+          "membership_digest": "0x2222",
+          "parent_id": "nA104",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1090
+        },
+        {
+          "node_id": "nA106",
+          "epoch_id": 1006,
+          "eare_hash": "0xa106",
+          "previous_epoch_hash": "0xa105",
+          "membership_digest": "0x2222",
+          "parent_id": "nA105",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1100
+        },
+        {
+          "node_id": "nA107",
+          "epoch_id": 1007,
+          "eare_hash": "0xa107",
+          "previous_epoch_hash": "0xa106",
+          "membership_digest": "0x2222",
+          "parent_id": "nA106",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1110
+        },
+        {
+          "node_id": "nA108",
+          "epoch_id": 1008,
+          "eare_hash": "0xa108",
+          "previous_epoch_hash": "0xa107",
+          "membership_digest": "0x2222",
+          "parent_id": "nA107",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1120
+        },
+        {
+          "node_id": "nA109",
+          "epoch_id": 1009,
+          "eare_hash": "0xa109",
+          "previous_epoch_hash": "0xa108",
+          "membership_digest": "0x2222",
+          "parent_id": "nA108",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1130
+        },
+        {
+          "node_id": "nA110",
+          "epoch_id": 1010,
+          "eare_hash": "0xa110",
+          "previous_epoch_hash": "0xa109",
+          "membership_digest": "0x2222",
+          "parent_id": "nA109",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1140
+        },
+        {
+          "node_id": "nB110",
+          "epoch_id": 1010,
+          "eare_hash": "0xb110",
+          "previous_epoch_hash": "0xa109",
+          "membership_digest": "0x3333",
+          "parent_id": "nA109",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1145
+        },
+        {
+          "node_id": "nA111",
+          "epoch_id": 1011,
+          "eare_hash": "0xa111",
+          "previous_epoch_hash": "0xb110",
+          "membership_digest": "0x2222",
+          "parent_id": "nA110",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1150
+        },
+        {
+          "node_id": "nA112",
+          "epoch_id": 1012,
+          "eare_hash": "0xa112",
+          "previous_epoch_hash": "0xa111",
+          "membership_digest": "0x2222",
+          "parent_id": "nA111",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1160
+        },
+        {
+          "node_id": "nA113",
+          "epoch_id": 1013,
+          "eare_hash": "0xa113",
+          "previous_epoch_hash": "0xa112",
+          "membership_digest": "0x2222",
+          "parent_id": "nA112",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1170
+        },
+        {
+          "node_id": "nA114",
+          "epoch_id": 1014,
+          "eare_hash": "0xa114",
+          "previous_epoch_hash": "0xa113",
+          "membership_digest": "0x2222",
+          "parent_id": "nA113",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1180
+        },
+        {
+          "node_id": "nA115",
+          "epoch_id": 1015,
+          "eare_hash": "0xa115",
+          "previous_epoch_hash": "0xa114",
+          "membership_digest": "0x2222",
+          "parent_id": "nA114",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1190
+        },
+        {
+          "node_id": "nA116",
+          "epoch_id": 1016,
+          "eare_hash": "0xa116",
+          "previous_epoch_hash": "0xa115",
+          "membership_digest": "0x2222",
+          "parent_id": "nA115",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1200
+        },
+        {
+          "node_id": "nA117",
+          "epoch_id": 1017,
+          "eare_hash": "0xa117",
+          "previous_epoch_hash": "0xa116",
+          "membership_digest": "0x2222",
+          "parent_id": "nA116",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1210
+        },
+        {
+          "node_id": "nA118",
+          "epoch_id": 1018,
+          "eare_hash": "0xa118",
+          "previous_epoch_hash": "0xa117",
+          "membership_digest": "0x2222",
+          "parent_id": "nA117",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1220
+        },
+        {
+          "node_id": "nA119",
+          "epoch_id": 1019,
+          "eare_hash": "0xa119",
+          "previous_epoch_hash": "0xa118",
+          "membership_digest": "0x2222",
+          "parent_id": "nA118",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1230
+        },
+        {
+          "node_id": "nA120",
+          "epoch_id": 1020,
+          "eare_hash": "0xa120",
+          "previous_epoch_hash": "0xa119",
+          "membership_digest": "0x2222",
+          "parent_id": "nA119",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1240
+        },
+        {
+          "node_id": "nB120",
+          "epoch_id": 1020,
+          "eare_hash": "0xb120",
+          "previous_epoch_hash": "0xa119",
+          "membership_digest": "0x3333",
+          "parent_id": "nA119",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1245
+        },
+        {
+          "node_id": "nA121",
+          "epoch_id": 1021,
+          "eare_hash": "0xa121",
+          "previous_epoch_hash": "0xb120",
+          "membership_digest": "0x2222",
+          "parent_id": "nA120",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1250
+        },
+        {
+          "node_id": "nA122",
+          "epoch_id": 1022,
+          "eare_hash": "0xa122",
+          "previous_epoch_hash": "0xa121",
+          "membership_digest": "0x2222",
+          "parent_id": "nA121",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1260
+        },
+        {
+          "node_id": "nA123",
+          "epoch_id": 1023,
+          "eare_hash": "0xa123",
+          "previous_epoch_hash": "0xa122",
+          "membership_digest": "0x2222",
+          "parent_id": "nA122",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1270
+        },
+        {
+          "node_id": "nA124",
+          "epoch_id": 1024,
+          "eare_hash": "0xa124",
+          "previous_epoch_hash": "0xa123",
+          "membership_digest": "0x2222",
+          "parent_id": "nA123",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1280
+        },
+        {
+          "node_id": "nA125",
+          "epoch_id": 1025,
+          "eare_hash": "0xa125",
+          "previous_epoch_hash": "0xa124",
+          "membership_digest": "0x2222",
+          "parent_id": "nA124",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1290
+        },
+        {
+          "node_id": "nA126",
+          "epoch_id": 1026,
+          "eare_hash": "0xa126",
+          "previous_epoch_hash": "0xa125",
+          "membership_digest": "0x2222",
+          "parent_id": "nA125",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1300
+        },
+        {
+          "node_id": "nA127",
+          "epoch_id": 1027,
+          "eare_hash": "0xa127",
+          "previous_epoch_hash": "0xa126",
+          "membership_digest": "0x2222",
+          "parent_id": "nA126",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1310
+        },
+        {
+          "node_id": "nA128",
+          "epoch_id": 1028,
+          "eare_hash": "0xa128",
+          "previous_epoch_hash": "0xa127",
+          "membership_digest": "0x2222",
+          "parent_id": "nA127",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1320
+        },
+        {
+          "node_id": "nA129",
+          "epoch_id": 1029,
+          "eare_hash": "0xa129",
+          "previous_epoch_hash": "0xa128",
+          "membership_digest": "0x2222",
+          "parent_id": "nA128",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1330
+        },
+        {
+          "node_id": "nA130",
+          "epoch_id": 1030,
+          "eare_hash": "0xa130",
+          "previous_epoch_hash": "0xa129",
+          "membership_digest": "0x2222",
+          "parent_id": "nA129",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1340
+        },
+        {
+          "node_id": "nB130",
+          "epoch_id": 1030,
+          "eare_hash": "0xb130",
+          "previous_epoch_hash": "0xa129",
+          "membership_digest": "0x3333",
+          "parent_id": "nA129",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1345
+        },
+        {
+          "node_id": "nA131",
+          "epoch_id": 1031,
+          "eare_hash": "0xa131",
+          "previous_epoch_hash": "0xb130",
+          "membership_digest": "0x2222",
+          "parent_id": "nA130",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1350
+        },
+        {
+          "node_id": "nA132",
+          "epoch_id": 1032,
+          "eare_hash": "0xa132",
+          "previous_epoch_hash": "0xa131",
+          "membership_digest": "0x2222",
+          "parent_id": "nA131",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1360
+        },
+        {
+          "node_id": "nA133",
+          "epoch_id": 1033,
+          "eare_hash": "0xa133",
+          "previous_epoch_hash": "0xa132",
+          "membership_digest": "0x2222",
+          "parent_id": "nA132",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1370
+        },
+        {
+          "node_id": "nA134",
+          "epoch_id": 1034,
+          "eare_hash": "0xa134",
+          "previous_epoch_hash": "0xa133",
+          "membership_digest": "0x2222",
+          "parent_id": "nA133",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1380
+        },
+        {
+          "node_id": "nA135",
+          "epoch_id": 1035,
+          "eare_hash": "0xa135",
+          "previous_epoch_hash": "0xa134",
+          "membership_digest": "0x2222",
+          "parent_id": "nA134",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1390
+        },
+        {
+          "node_id": "nA136",
+          "epoch_id": 1036,
+          "eare_hash": "0xa136",
+          "previous_epoch_hash": "0xa135",
+          "membership_digest": "0x2222",
+          "parent_id": "nA135",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1400
+        },
+        {
+          "node_id": "nA137",
+          "epoch_id": 1037,
+          "eare_hash": "0xa137",
+          "previous_epoch_hash": "0xa136",
+          "membership_digest": "0x2222",
+          "parent_id": "nA136",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1410
+        },
+        {
+          "node_id": "nA138",
+          "epoch_id": 1038,
+          "eare_hash": "0xa138",
+          "previous_epoch_hash": "0xa137",
+          "membership_digest": "0x2222",
+          "parent_id": "nA137",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1420
+        },
+        {
+          "node_id": "nA139",
+          "epoch_id": 1039,
+          "eare_hash": "0xa139",
+          "previous_epoch_hash": "0xa138",
+          "membership_digest": "0x2222",
+          "parent_id": "nA138",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1430
+        },
+        {
+          "node_id": "nA140",
+          "epoch_id": 1040,
+          "eare_hash": "0xa140",
+          "previous_epoch_hash": "0xa139",
+          "membership_digest": "0x2222",
+          "parent_id": "nA139",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1440
+        },
+        {
+          "node_id": "nB140",
+          "epoch_id": 1040,
+          "eare_hash": "0xb140",
+          "previous_epoch_hash": "0xa139",
+          "membership_digest": "0x3333",
+          "parent_id": "nA139",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1445
+        },
+        {
+          "node_id": "nA141",
+          "epoch_id": 1041,
+          "eare_hash": "0xa141",
+          "previous_epoch_hash": "0xb140",
+          "membership_digest": "0x2222",
+          "parent_id": "nA140",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1450
+        },
+        {
+          "node_id": "nA142",
+          "epoch_id": 1042,
+          "eare_hash": "0xa142",
+          "previous_epoch_hash": "0xa141",
+          "membership_digest": "0x2222",
+          "parent_id": "nA141",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1460
+        },
+        {
+          "node_id": "nA143",
+          "epoch_id": 1043,
+          "eare_hash": "0xa143",
+          "previous_epoch_hash": "0xa142",
+          "membership_digest": "0x2222",
+          "parent_id": "nA142",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1470
+        },
+        {
+          "node_id": "nA144",
+          "epoch_id": 1044,
+          "eare_hash": "0xa144",
+          "previous_epoch_hash": "0xa143",
+          "membership_digest": "0x2222",
+          "parent_id": "nA143",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1480
+        },
+        {
+          "node_id": "nA145",
+          "epoch_id": 1045,
+          "eare_hash": "0xa145",
+          "previous_epoch_hash": "0xa144",
+          "membership_digest": "0x2222",
+          "parent_id": "nA144",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1490
+        },
+        {
+          "node_id": "nA146",
+          "epoch_id": 1046,
+          "eare_hash": "0xa146",
+          "previous_epoch_hash": "0xa145",
+          "membership_digest": "0x2222",
+          "parent_id": "nA145",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1500
+        },
+        {
+          "node_id": "nA147",
+          "epoch_id": 1047,
+          "eare_hash": "0xa147",
+          "previous_epoch_hash": "0xa146",
+          "membership_digest": "0x2222",
+          "parent_id": "nA146",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1510
+        },
+        {
+          "node_id": "nA148",
+          "epoch_id": 1048,
+          "eare_hash": "0xa148",
+          "previous_epoch_hash": "0xa147",
+          "membership_digest": "0x2222",
+          "parent_id": "nA147",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1520
+        },
+        {
+          "node_id": "nA149",
+          "epoch_id": 1049,
+          "eare_hash": "0xa149",
+          "previous_epoch_hash": "0xa148",
+          "membership_digest": "0x2222",
+          "parent_id": "nA148",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1530
+        },
+        {
+          "node_id": "nA150",
+          "epoch_id": 1050,
+          "eare_hash": "0xa150",
+          "previous_epoch_hash": "0xa149",
+          "membership_digest": "0x2222",
+          "parent_id": "nA149",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1540
+        },
+        {
+          "node_id": "nB150",
+          "epoch_id": 1050,
+          "eare_hash": "0xb150",
+          "previous_epoch_hash": "0xa149",
+          "membership_digest": "0x3333",
+          "parent_id": "nA149",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1545
+        },
+        {
+          "node_id": "nA151",
+          "epoch_id": 1051,
+          "eare_hash": "0xa151",
+          "previous_epoch_hash": "0xb150",
+          "membership_digest": "0x2222",
+          "parent_id": "nA150",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1550
+        },
+        {
+          "node_id": "nA152",
+          "epoch_id": 1052,
+          "eare_hash": "0xa152",
+          "previous_epoch_hash": "0xa151",
+          "membership_digest": "0x2222",
+          "parent_id": "nA151",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1560
+        },
+        {
+          "node_id": "nA153",
+          "epoch_id": 1053,
+          "eare_hash": "0xa153",
+          "previous_epoch_hash": "0xa152",
+          "membership_digest": "0x2222",
+          "parent_id": "nA152",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1570
+        },
+        {
+          "node_id": "nA154",
+          "epoch_id": 1054,
+          "eare_hash": "0xa154",
+          "previous_epoch_hash": "0xa153",
+          "membership_digest": "0x2222",
+          "parent_id": "nA153",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1580
+        },
+        {
+          "node_id": "nA155",
+          "epoch_id": 1055,
+          "eare_hash": "0xa155",
+          "previous_epoch_hash": "0xa154",
+          "membership_digest": "0x2222",
+          "parent_id": "nA154",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1590
+        },
+        {
+          "node_id": "nA156",
+          "epoch_id": 1056,
+          "eare_hash": "0xa156",
+          "previous_epoch_hash": "0xa155",
+          "membership_digest": "0x2222",
+          "parent_id": "nA155",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1600
+        },
+        {
+          "node_id": "nA157",
+          "epoch_id": 1057,
+          "eare_hash": "0xa157",
+          "previous_epoch_hash": "0xa156",
+          "membership_digest": "0x2222",
+          "parent_id": "nA156",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1610
+        },
+        {
+          "node_id": "nA158",
+          "epoch_id": 1058,
+          "eare_hash": "0xa158",
+          "previous_epoch_hash": "0xa157",
+          "membership_digest": "0x2222",
+          "parent_id": "nA157",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1620
+        },
+        {
+          "node_id": "nA159",
+          "epoch_id": 1059,
+          "eare_hash": "0xa159",
+          "previous_epoch_hash": "0xa158",
+          "membership_digest": "0x2222",
+          "parent_id": "nA158",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1630
+        },
+        {
+          "node_id": "nA160",
+          "epoch_id": 1060,
+          "eare_hash": "0xa160",
+          "previous_epoch_hash": "0xa159",
+          "membership_digest": "0x2222",
+          "parent_id": "nA159",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1640
+        },
+        {
+          "node_id": "nB160",
+          "epoch_id": 1060,
+          "eare_hash": "0xb160",
+          "previous_epoch_hash": "0xa159",
+          "membership_digest": "0x3333",
+          "parent_id": "nA159",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1645
+        },
+        {
+          "node_id": "nA161",
+          "epoch_id": 1061,
+          "eare_hash": "0xa161",
+          "previous_epoch_hash": "0xb160",
+          "membership_digest": "0x2222",
+          "parent_id": "nA160",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1650
+        },
+        {
+          "node_id": "nA162",
+          "epoch_id": 1062,
+          "eare_hash": "0xa162",
+          "previous_epoch_hash": "0xa161",
+          "membership_digest": "0x2222",
+          "parent_id": "nA161",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1660
+        },
+        {
+          "node_id": "nA163",
+          "epoch_id": 1063,
+          "eare_hash": "0xa163",
+          "previous_epoch_hash": "0xa162",
+          "membership_digest": "0x2222",
+          "parent_id": "nA162",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1670
+        },
+        {
+          "node_id": "nA164",
+          "epoch_id": 1064,
+          "eare_hash": "0xa164",
+          "previous_epoch_hash": "0xa163",
+          "membership_digest": "0x2222",
+          "parent_id": "nA163",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1680
+        },
+        {
+          "node_id": "nA165",
+          "epoch_id": 1065,
+          "eare_hash": "0xa165",
+          "previous_epoch_hash": "0xa164",
+          "membership_digest": "0x2222",
+          "parent_id": "nA164",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1690
+        },
+        {
+          "node_id": "nA166",
+          "epoch_id": 1066,
+          "eare_hash": "0xa166",
+          "previous_epoch_hash": "0xa165",
+          "membership_digest": "0x2222",
+          "parent_id": "nA165",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1700
+        },
+        {
+          "node_id": "nA167",
+          "epoch_id": 1067,
+          "eare_hash": "0xa167",
+          "previous_epoch_hash": "0xa166",
+          "membership_digest": "0x2222",
+          "parent_id": "nA166",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1710
+        },
+        {
+          "node_id": "nA168",
+          "epoch_id": 1068,
+          "eare_hash": "0xa168",
+          "previous_epoch_hash": "0xa167",
+          "membership_digest": "0x2222",
+          "parent_id": "nA167",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1720
+        },
+        {
+          "node_id": "nA169",
+          "epoch_id": 1069,
+          "eare_hash": "0xa169",
+          "previous_epoch_hash": "0xa168",
+          "membership_digest": "0x2222",
+          "parent_id": "nA168",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1730
+        },
+        {
+          "node_id": "nA170",
+          "epoch_id": 1070,
+          "eare_hash": "0xa170",
+          "previous_epoch_hash": "0xa169",
+          "membership_digest": "0x2222",
+          "parent_id": "nA169",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1740
+        },
+        {
+          "node_id": "nB170",
+          "epoch_id": 1070,
+          "eare_hash": "0xb170",
+          "previous_epoch_hash": "0xa169",
+          "membership_digest": "0x3333",
+          "parent_id": "nA169",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1745
+        },
+        {
+          "node_id": "nA171",
+          "epoch_id": 1071,
+          "eare_hash": "0xa171",
+          "previous_epoch_hash": "0xb170",
+          "membership_digest": "0x2222",
+          "parent_id": "nA170",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1750
+        },
+        {
+          "node_id": "nA172",
+          "epoch_id": 1072,
+          "eare_hash": "0xa172",
+          "previous_epoch_hash": "0xa171",
+          "membership_digest": "0x2222",
+          "parent_id": "nA171",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1760
+        },
+        {
+          "node_id": "nA173",
+          "epoch_id": 1073,
+          "eare_hash": "0xa173",
+          "previous_epoch_hash": "0xa172",
+          "membership_digest": "0x2222",
+          "parent_id": "nA172",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1770
+        },
+        {
+          "node_id": "nA174",
+          "epoch_id": 1074,
+          "eare_hash": "0xa174",
+          "previous_epoch_hash": "0xa173",
+          "membership_digest": "0x2222",
+          "parent_id": "nA173",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1780
+        },
+        {
+          "node_id": "nA175",
+          "epoch_id": 1075,
+          "eare_hash": "0xa175",
+          "previous_epoch_hash": "0xa174",
+          "membership_digest": "0x2222",
+          "parent_id": "nA174",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1790
+        },
+        {
+          "node_id": "nA176",
+          "epoch_id": 1076,
+          "eare_hash": "0xa176",
+          "previous_epoch_hash": "0xa175",
+          "membership_digest": "0x2222",
+          "parent_id": "nA175",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1800
+        },
+        {
+          "node_id": "nA177",
+          "epoch_id": 1077,
+          "eare_hash": "0xa177",
+          "previous_epoch_hash": "0xa176",
+          "membership_digest": "0x2222",
+          "parent_id": "nA176",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1810
+        },
+        {
+          "node_id": "nA178",
+          "epoch_id": 1078,
+          "eare_hash": "0xa178",
+          "previous_epoch_hash": "0xa177",
+          "membership_digest": "0x2222",
+          "parent_id": "nA177",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1820
+        },
+        {
+          "node_id": "nA179",
+          "epoch_id": 1079,
+          "eare_hash": "0xa179",
+          "previous_epoch_hash": "0xa178",
+          "membership_digest": "0x2222",
+          "parent_id": "nA178",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1830
+        },
+        {
+          "node_id": "nA180",
+          "epoch_id": 1080,
+          "eare_hash": "0xa180",
+          "previous_epoch_hash": "0xa179",
+          "membership_digest": "0x2222",
+          "parent_id": "nA179",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1840
+        },
+        {
+          "node_id": "nB180",
+          "epoch_id": 1080,
+          "eare_hash": "0xb180",
+          "previous_epoch_hash": "0xa179",
+          "membership_digest": "0x3333",
+          "parent_id": "nA179",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1845
+        },
+        {
+          "node_id": "nA181",
+          "epoch_id": 1081,
+          "eare_hash": "0xa181",
+          "previous_epoch_hash": "0xb180",
+          "membership_digest": "0x2222",
+          "parent_id": "nA180",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1850
+        },
+        {
+          "node_id": "nA182",
+          "epoch_id": 1082,
+          "eare_hash": "0xa182",
+          "previous_epoch_hash": "0xa181",
+          "membership_digest": "0x2222",
+          "parent_id": "nA181",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1860
+        },
+        {
+          "node_id": "nA183",
+          "epoch_id": 1083,
+          "eare_hash": "0xa183",
+          "previous_epoch_hash": "0xa182",
+          "membership_digest": "0x2222",
+          "parent_id": "nA182",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1870
+        },
+        {
+          "node_id": "nA184",
+          "epoch_id": 1084,
+          "eare_hash": "0xa184",
+          "previous_epoch_hash": "0xa183",
+          "membership_digest": "0x2222",
+          "parent_id": "nA183",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1880
+        },
+        {
+          "node_id": "nA185",
+          "epoch_id": 1085,
+          "eare_hash": "0xa185",
+          "previous_epoch_hash": "0xa184",
+          "membership_digest": "0x2222",
+          "parent_id": "nA184",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1890
+        },
+        {
+          "node_id": "nA186",
+          "epoch_id": 1086,
+          "eare_hash": "0xa186",
+          "previous_epoch_hash": "0xa185",
+          "membership_digest": "0x2222",
+          "parent_id": "nA185",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1900
+        },
+        {
+          "node_id": "nA187",
+          "epoch_id": 1087,
+          "eare_hash": "0xa187",
+          "previous_epoch_hash": "0xa186",
+          "membership_digest": "0x2222",
+          "parent_id": "nA186",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1910
+        },
+        {
+          "node_id": "nA188",
+          "epoch_id": 1088,
+          "eare_hash": "0xa188",
+          "previous_epoch_hash": "0xa187",
+          "membership_digest": "0x2222",
+          "parent_id": "nA187",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1920
+        },
+        {
+          "node_id": "nA189",
+          "epoch_id": 1089,
+          "eare_hash": "0xa189",
+          "previous_epoch_hash": "0xa188",
+          "membership_digest": "0x2222",
+          "parent_id": "nA188",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1930
+        },
+        {
+          "node_id": "nA190",
+          "epoch_id": 1090,
+          "eare_hash": "0xa190",
+          "previous_epoch_hash": "0xa189",
+          "membership_digest": "0x2222",
+          "parent_id": "nA189",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1940
+        },
+        {
+          "node_id": "nB190",
+          "epoch_id": 1090,
+          "eare_hash": "0xb190",
+          "previous_epoch_hash": "0xa189",
+          "membership_digest": "0x3333",
+          "parent_id": "nA189",
+          "issued_by": "controller-b",
+          "timestamp_ms": 1945
+        },
+        {
+          "node_id": "nA191",
+          "epoch_id": 1091,
+          "eare_hash": "0xa191",
+          "previous_epoch_hash": "0xb190",
+          "membership_digest": "0x2222",
+          "parent_id": "nA190",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1950
+        },
+        {
+          "node_id": "nA192",
+          "epoch_id": 1092,
+          "eare_hash": "0xa192",
+          "previous_epoch_hash": "0xa191",
+          "membership_digest": "0x2222",
+          "parent_id": "nA191",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1960
+        },
+        {
+          "node_id": "nA193",
+          "epoch_id": 1093,
+          "eare_hash": "0xa193",
+          "previous_epoch_hash": "0xa192",
+          "membership_digest": "0x2222",
+          "parent_id": "nA192",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1970
+        },
+        {
+          "node_id": "nA194",
+          "epoch_id": 1094,
+          "eare_hash": "0xa194",
+          "previous_epoch_hash": "0xa193",
+          "membership_digest": "0x2222",
+          "parent_id": "nA193",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1980
+        },
+        {
+          "node_id": "nA195",
+          "epoch_id": 1095,
+          "eare_hash": "0xa195",
+          "previous_epoch_hash": "0xa194",
+          "membership_digest": "0x2222",
+          "parent_id": "nA194",
+          "issued_by": "controller-a",
+          "timestamp_ms": 1990
+        },
+        {
+          "node_id": "nA196",
+          "epoch_id": 1096,
+          "eare_hash": "0xa196",
+          "previous_epoch_hash": "0xa195",
+          "membership_digest": "0x2222",
+          "parent_id": "nA195",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2000
+        },
+        {
+          "node_id": "nA197",
+          "epoch_id": 1097,
+          "eare_hash": "0xa197",
+          "previous_epoch_hash": "0xa196",
+          "membership_digest": "0x2222",
+          "parent_id": "nA196",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2010
+        },
+        {
+          "node_id": "nA198",
+          "epoch_id": 1098,
+          "eare_hash": "0xa198",
+          "previous_epoch_hash": "0xa197",
+          "membership_digest": "0x2222",
+          "parent_id": "nA197",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2020
+        },
+        {
+          "node_id": "nA199",
+          "epoch_id": 1099,
+          "eare_hash": "0xa199",
+          "previous_epoch_hash": "0xa198",
+          "membership_digest": "0x2222",
+          "parent_id": "nA198",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2030
+        },
+        {
+          "node_id": "nA200",
+          "epoch_id": 1100,
+          "eare_hash": "0xa200",
+          "previous_epoch_hash": "0xa199",
+          "membership_digest": "0x2222",
+          "parent_id": "nA199",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2040
+        },
+        {
+          "node_id": "nB200",
+          "epoch_id": 1100,
+          "eare_hash": "0xb200",
+          "previous_epoch_hash": "0xa199",
+          "membership_digest": "0x3333",
+          "parent_id": "nA199",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2045
+        },
+        {
+          "node_id": "nA201",
+          "epoch_id": 1101,
+          "eare_hash": "0xa201",
+          "previous_epoch_hash": "0xb200",
+          "membership_digest": "0x2222",
+          "parent_id": "nA200",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2050
+        },
+        {
+          "node_id": "nA202",
+          "epoch_id": 1102,
+          "eare_hash": "0xa202",
+          "previous_epoch_hash": "0xa201",
+          "membership_digest": "0x2222",
+          "parent_id": "nA201",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2060
+        },
+        {
+          "node_id": "nA203",
+          "epoch_id": 1103,
+          "eare_hash": "0xa203",
+          "previous_epoch_hash": "0xa202",
+          "membership_digest": "0x2222",
+          "parent_id": "nA202",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2070
+        },
+        {
+          "node_id": "nA204",
+          "epoch_id": 1104,
+          "eare_hash": "0xa204",
+          "previous_epoch_hash": "0xa203",
+          "membership_digest": "0x2222",
+          "parent_id": "nA203",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2080
+        },
+        {
+          "node_id": "nA205",
+          "epoch_id": 1105,
+          "eare_hash": "0xa205",
+          "previous_epoch_hash": "0xa204",
+          "membership_digest": "0x2222",
+          "parent_id": "nA204",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2090
+        },
+        {
+          "node_id": "nA206",
+          "epoch_id": 1106,
+          "eare_hash": "0xa206",
+          "previous_epoch_hash": "0xa205",
+          "membership_digest": "0x2222",
+          "parent_id": "nA205",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2100
+        },
+        {
+          "node_id": "nA207",
+          "epoch_id": 1107,
+          "eare_hash": "0xa207",
+          "previous_epoch_hash": "0xa206",
+          "membership_digest": "0x2222",
+          "parent_id": "nA206",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2110
+        },
+        {
+          "node_id": "nA208",
+          "epoch_id": 1108,
+          "eare_hash": "0xa208",
+          "previous_epoch_hash": "0xa207",
+          "membership_digest": "0x2222",
+          "parent_id": "nA207",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2120
+        },
+        {
+          "node_id": "nA209",
+          "epoch_id": 1109,
+          "eare_hash": "0xa209",
+          "previous_epoch_hash": "0xa208",
+          "membership_digest": "0x2222",
+          "parent_id": "nA208",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2130
+        },
+        {
+          "node_id": "nA210",
+          "epoch_id": 1110,
+          "eare_hash": "0xa210",
+          "previous_epoch_hash": "0xa209",
+          "membership_digest": "0x2222",
+          "parent_id": "nA209",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2140
+        },
+        {
+          "node_id": "nB210",
+          "epoch_id": 1110,
+          "eare_hash": "0xb210",
+          "previous_epoch_hash": "0xa209",
+          "membership_digest": "0x3333",
+          "parent_id": "nA209",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2145
+        },
+        {
+          "node_id": "nA211",
+          "epoch_id": 1111,
+          "eare_hash": "0xa211",
+          "previous_epoch_hash": "0xb210",
+          "membership_digest": "0x2222",
+          "parent_id": "nA210",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2150
+        },
+        {
+          "node_id": "nA212",
+          "epoch_id": 1112,
+          "eare_hash": "0xa212",
+          "previous_epoch_hash": "0xa211",
+          "membership_digest": "0x2222",
+          "parent_id": "nA211",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2160
+        },
+        {
+          "node_id": "nA213",
+          "epoch_id": 1113,
+          "eare_hash": "0xa213",
+          "previous_epoch_hash": "0xa212",
+          "membership_digest": "0x2222",
+          "parent_id": "nA212",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2170
+        },
+        {
+          "node_id": "nA214",
+          "epoch_id": 1114,
+          "eare_hash": "0xa214",
+          "previous_epoch_hash": "0xa213",
+          "membership_digest": "0x2222",
+          "parent_id": "nA213",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2180
+        },
+        {
+          "node_id": "nA215",
+          "epoch_id": 1115,
+          "eare_hash": "0xa215",
+          "previous_epoch_hash": "0xa214",
+          "membership_digest": "0x2222",
+          "parent_id": "nA214",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2190
+        },
+        {
+          "node_id": "nA216",
+          "epoch_id": 1116,
+          "eare_hash": "0xa216",
+          "previous_epoch_hash": "0xa215",
+          "membership_digest": "0x2222",
+          "parent_id": "nA215",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2200
+        },
+        {
+          "node_id": "nA217",
+          "epoch_id": 1117,
+          "eare_hash": "0xa217",
+          "previous_epoch_hash": "0xa216",
+          "membership_digest": "0x2222",
+          "parent_id": "nA216",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2210
+        },
+        {
+          "node_id": "nA218",
+          "epoch_id": 1118,
+          "eare_hash": "0xa218",
+          "previous_epoch_hash": "0xa217",
+          "membership_digest": "0x2222",
+          "parent_id": "nA217",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2220
+        },
+        {
+          "node_id": "nA219",
+          "epoch_id": 1119,
+          "eare_hash": "0xa219",
+          "previous_epoch_hash": "0xa218",
+          "membership_digest": "0x2222",
+          "parent_id": "nA218",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2230
+        },
+        {
+          "node_id": "nA220",
+          "epoch_id": 1120,
+          "eare_hash": "0xa220",
+          "previous_epoch_hash": "0xa219",
+          "membership_digest": "0x2222",
+          "parent_id": "nA219",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2240
+        },
+        {
+          "node_id": "nB220",
+          "epoch_id": 1120,
+          "eare_hash": "0xb220",
+          "previous_epoch_hash": "0xa219",
+          "membership_digest": "0x3333",
+          "parent_id": "nA219",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2245
+        },
+        {
+          "node_id": "nA221",
+          "epoch_id": 1121,
+          "eare_hash": "0xa221",
+          "previous_epoch_hash": "0xb220",
+          "membership_digest": "0x2222",
+          "parent_id": "nA220",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2250
+        },
+        {
+          "node_id": "nA222",
+          "epoch_id": 1122,
+          "eare_hash": "0xa222",
+          "previous_epoch_hash": "0xa221",
+          "membership_digest": "0x2222",
+          "parent_id": "nA221",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2260
+        },
+        {
+          "node_id": "nA223",
+          "epoch_id": 1123,
+          "eare_hash": "0xa223",
+          "previous_epoch_hash": "0xa222",
+          "membership_digest": "0x2222",
+          "parent_id": "nA222",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2270
+        },
+        {
+          "node_id": "nA224",
+          "epoch_id": 1124,
+          "eare_hash": "0xa224",
+          "previous_epoch_hash": "0xa223",
+          "membership_digest": "0x2222",
+          "parent_id": "nA223",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2280
+        },
+        {
+          "node_id": "nA225",
+          "epoch_id": 1125,
+          "eare_hash": "0xa225",
+          "previous_epoch_hash": "0xa224",
+          "membership_digest": "0x2222",
+          "parent_id": "nA224",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2290
+        },
+        {
+          "node_id": "nA226",
+          "epoch_id": 1126,
+          "eare_hash": "0xa226",
+          "previous_epoch_hash": "0xa225",
+          "membership_digest": "0x2222",
+          "parent_id": "nA225",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2300
+        },
+        {
+          "node_id": "nA227",
+          "epoch_id": 1127,
+          "eare_hash": "0xa227",
+          "previous_epoch_hash": "0xa226",
+          "membership_digest": "0x2222",
+          "parent_id": "nA226",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2310
+        },
+        {
+          "node_id": "nA228",
+          "epoch_id": 1128,
+          "eare_hash": "0xa228",
+          "previous_epoch_hash": "0xa227",
+          "membership_digest": "0x2222",
+          "parent_id": "nA227",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2320
+        },
+        {
+          "node_id": "nA229",
+          "epoch_id": 1129,
+          "eare_hash": "0xa229",
+          "previous_epoch_hash": "0xa228",
+          "membership_digest": "0x2222",
+          "parent_id": "nA228",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2330
+        },
+        {
+          "node_id": "nA230",
+          "epoch_id": 1130,
+          "eare_hash": "0xa230",
+          "previous_epoch_hash": "0xa229",
+          "membership_digest": "0x2222",
+          "parent_id": "nA229",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2340
+        },
+        {
+          "node_id": "nB230",
+          "epoch_id": 1130,
+          "eare_hash": "0xb230",
+          "previous_epoch_hash": "0xa229",
+          "membership_digest": "0x3333",
+          "parent_id": "nA229",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2345
+        },
+        {
+          "node_id": "nA231",
+          "epoch_id": 1131,
+          "eare_hash": "0xa231",
+          "previous_epoch_hash": "0xb230",
+          "membership_digest": "0x2222",
+          "parent_id": "nA230",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2350
+        },
+        {
+          "node_id": "nA232",
+          "epoch_id": 1132,
+          "eare_hash": "0xa232",
+          "previous_epoch_hash": "0xa231",
+          "membership_digest": "0x2222",
+          "parent_id": "nA231",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2360
+        },
+        {
+          "node_id": "nA233",
+          "epoch_id": 1133,
+          "eare_hash": "0xa233",
+          "previous_epoch_hash": "0xa232",
+          "membership_digest": "0x2222",
+          "parent_id": "nA232",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2370
+        },
+        {
+          "node_id": "nA234",
+          "epoch_id": 1134,
+          "eare_hash": "0xa234",
+          "previous_epoch_hash": "0xa233",
+          "membership_digest": "0x2222",
+          "parent_id": "nA233",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2380
+        },
+        {
+          "node_id": "nA235",
+          "epoch_id": 1135,
+          "eare_hash": "0xa235",
+          "previous_epoch_hash": "0xa234",
+          "membership_digest": "0x2222",
+          "parent_id": "nA234",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2390
+        },
+        {
+          "node_id": "nA236",
+          "epoch_id": 1136,
+          "eare_hash": "0xa236",
+          "previous_epoch_hash": "0xa235",
+          "membership_digest": "0x2222",
+          "parent_id": "nA235",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2400
+        },
+        {
+          "node_id": "nA237",
+          "epoch_id": 1137,
+          "eare_hash": "0xa237",
+          "previous_epoch_hash": "0xa236",
+          "membership_digest": "0x2222",
+          "parent_id": "nA236",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2410
+        },
+        {
+          "node_id": "nA238",
+          "epoch_id": 1138,
+          "eare_hash": "0xa238",
+          "previous_epoch_hash": "0xa237",
+          "membership_digest": "0x2222",
+          "parent_id": "nA237",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2420
+        },
+        {
+          "node_id": "nA239",
+          "epoch_id": 1139,
+          "eare_hash": "0xa239",
+          "previous_epoch_hash": "0xa238",
+          "membership_digest": "0x2222",
+          "parent_id": "nA238",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2430
+        },
+        {
+          "node_id": "nA240",
+          "epoch_id": 1140,
+          "eare_hash": "0xa240",
+          "previous_epoch_hash": "0xa239",
+          "membership_digest": "0x2222",
+          "parent_id": "nA239",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2440
+        },
+        {
+          "node_id": "nB240",
+          "epoch_id": 1140,
+          "eare_hash": "0xb240",
+          "previous_epoch_hash": "0xa239",
+          "membership_digest": "0x3333",
+          "parent_id": "nA239",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2445
+        },
+        {
+          "node_id": "nA241",
+          "epoch_id": 1141,
+          "eare_hash": "0xa241",
+          "previous_epoch_hash": "0xb240",
+          "membership_digest": "0x2222",
+          "parent_id": "nA240",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2450
+        },
+        {
+          "node_id": "nA242",
+          "epoch_id": 1142,
+          "eare_hash": "0xa242",
+          "previous_epoch_hash": "0xa241",
+          "membership_digest": "0x2222",
+          "parent_id": "nA241",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2460
+        },
+        {
+          "node_id": "nA243",
+          "epoch_id": 1143,
+          "eare_hash": "0xa243",
+          "previous_epoch_hash": "0xa242",
+          "membership_digest": "0x2222",
+          "parent_id": "nA242",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2470
+        },
+        {
+          "node_id": "nA244",
+          "epoch_id": 1144,
+          "eare_hash": "0xa244",
+          "previous_epoch_hash": "0xa243",
+          "membership_digest": "0x2222",
+          "parent_id": "nA243",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2480
+        },
+        {
+          "node_id": "nA245",
+          "epoch_id": 1145,
+          "eare_hash": "0xa245",
+          "previous_epoch_hash": "0xa244",
+          "membership_digest": "0x2222",
+          "parent_id": "nA244",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2490
+        },
+        {
+          "node_id": "nA246",
+          "epoch_id": 1146,
+          "eare_hash": "0xa246",
+          "previous_epoch_hash": "0xa245",
+          "membership_digest": "0x2222",
+          "parent_id": "nA245",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2500
+        },
+        {
+          "node_id": "nA247",
+          "epoch_id": 1147,
+          "eare_hash": "0xa247",
+          "previous_epoch_hash": "0xa246",
+          "membership_digest": "0x2222",
+          "parent_id": "nA246",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2510
+        },
+        {
+          "node_id": "nA248",
+          "epoch_id": 1148,
+          "eare_hash": "0xa248",
+          "previous_epoch_hash": "0xa247",
+          "membership_digest": "0x2222",
+          "parent_id": "nA247",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2520
+        },
+        {
+          "node_id": "nA249",
+          "epoch_id": 1149,
+          "eare_hash": "0xa249",
+          "previous_epoch_hash": "0xa248",
+          "membership_digest": "0x2222",
+          "parent_id": "nA248",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2530
+        },
+        {
+          "node_id": "nA250",
+          "epoch_id": 1150,
+          "eare_hash": "0xa250",
+          "previous_epoch_hash": "0xa249",
+          "membership_digest": "0x2222",
+          "parent_id": "nA249",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2540
+        },
+        {
+          "node_id": "nB250",
+          "epoch_id": 1150,
+          "eare_hash": "0xb250",
+          "previous_epoch_hash": "0xa249",
+          "membership_digest": "0x3333",
+          "parent_id": "nA249",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2545
+        },
+        {
+          "node_id": "nA251",
+          "epoch_id": 1151,
+          "eare_hash": "0xa251",
+          "previous_epoch_hash": "0xb250",
+          "membership_digest": "0x2222",
+          "parent_id": "nA250",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2550
+        },
+        {
+          "node_id": "nA252",
+          "epoch_id": 1152,
+          "eare_hash": "0xa252",
+          "previous_epoch_hash": "0xa251",
+          "membership_digest": "0x2222",
+          "parent_id": "nA251",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2560
+        },
+        {
+          "node_id": "nA253",
+          "epoch_id": 1153,
+          "eare_hash": "0xa253",
+          "previous_epoch_hash": "0xa252",
+          "membership_digest": "0x2222",
+          "parent_id": "nA252",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2570
+        },
+        {
+          "node_id": "nA254",
+          "epoch_id": 1154,
+          "eare_hash": "0xa254",
+          "previous_epoch_hash": "0xa253",
+          "membership_digest": "0x2222",
+          "parent_id": "nA253",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2580
+        },
+        {
+          "node_id": "nA255",
+          "epoch_id": 1155,
+          "eare_hash": "0xa255",
+          "previous_epoch_hash": "0xa254",
+          "membership_digest": "0x2222",
+          "parent_id": "nA254",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2590
+        },
+        {
+          "node_id": "nA256",
+          "epoch_id": 1156,
+          "eare_hash": "0xa256",
+          "previous_epoch_hash": "0xa255",
+          "membership_digest": "0x2222",
+          "parent_id": "nA255",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2600
+        },
+        {
+          "node_id": "nA257",
+          "epoch_id": 1157,
+          "eare_hash": "0xa257",
+          "previous_epoch_hash": "0xa256",
+          "membership_digest": "0x2222",
+          "parent_id": "nA256",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2610
+        },
+        {
+          "node_id": "nA258",
+          "epoch_id": 1158,
+          "eare_hash": "0xa258",
+          "previous_epoch_hash": "0xa257",
+          "membership_digest": "0x2222",
+          "parent_id": "nA257",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2620
+        },
+        {
+          "node_id": "nA259",
+          "epoch_id": 1159,
+          "eare_hash": "0xa259",
+          "previous_epoch_hash": "0xa258",
+          "membership_digest": "0x2222",
+          "parent_id": "nA258",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2630
+        },
+        {
+          "node_id": "nA260",
+          "epoch_id": 1160,
+          "eare_hash": "0xa260",
+          "previous_epoch_hash": "0xa259",
+          "membership_digest": "0x2222",
+          "parent_id": "nA259",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2640
+        },
+        {
+          "node_id": "nB260",
+          "epoch_id": 1160,
+          "eare_hash": "0xb260",
+          "previous_epoch_hash": "0xa259",
+          "membership_digest": "0x3333",
+          "parent_id": "nA259",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2645
+        },
+        {
+          "node_id": "nA261",
+          "epoch_id": 1161,
+          "eare_hash": "0xa261",
+          "previous_epoch_hash": "0xb260",
+          "membership_digest": "0x2222",
+          "parent_id": "nA260",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2650
+        },
+        {
+          "node_id": "nA262",
+          "epoch_id": 1162,
+          "eare_hash": "0xa262",
+          "previous_epoch_hash": "0xa261",
+          "membership_digest": "0x2222",
+          "parent_id": "nA261",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2660
+        },
+        {
+          "node_id": "nA263",
+          "epoch_id": 1163,
+          "eare_hash": "0xa263",
+          "previous_epoch_hash": "0xa262",
+          "membership_digest": "0x2222",
+          "parent_id": "nA262",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2670
+        },
+        {
+          "node_id": "nA264",
+          "epoch_id": 1164,
+          "eare_hash": "0xa264",
+          "previous_epoch_hash": "0xa263",
+          "membership_digest": "0x2222",
+          "parent_id": "nA263",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2680
+        },
+        {
+          "node_id": "nA265",
+          "epoch_id": 1165,
+          "eare_hash": "0xa265",
+          "previous_epoch_hash": "0xa264",
+          "membership_digest": "0x2222",
+          "parent_id": "nA264",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2690
+        },
+        {
+          "node_id": "nA266",
+          "epoch_id": 1166,
+          "eare_hash": "0xa266",
+          "previous_epoch_hash": "0xa265",
+          "membership_digest": "0x2222",
+          "parent_id": "nA265",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2700
+        },
+        {
+          "node_id": "nA267",
+          "epoch_id": 1167,
+          "eare_hash": "0xa267",
+          "previous_epoch_hash": "0xa266",
+          "membership_digest": "0x2222",
+          "parent_id": "nA266",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2710
+        },
+        {
+          "node_id": "nA268",
+          "epoch_id": 1168,
+          "eare_hash": "0xa268",
+          "previous_epoch_hash": "0xa267",
+          "membership_digest": "0x2222",
+          "parent_id": "nA267",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2720
+        },
+        {
+          "node_id": "nA269",
+          "epoch_id": 1169,
+          "eare_hash": "0xa269",
+          "previous_epoch_hash": "0xa268",
+          "membership_digest": "0x2222",
+          "parent_id": "nA268",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2730
+        },
+        {
+          "node_id": "nA270",
+          "epoch_id": 1170,
+          "eare_hash": "0xa270",
+          "previous_epoch_hash": "0xa269",
+          "membership_digest": "0x2222",
+          "parent_id": "nA269",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2740
+        },
+        {
+          "node_id": "nB270",
+          "epoch_id": 1170,
+          "eare_hash": "0xb270",
+          "previous_epoch_hash": "0xa269",
+          "membership_digest": "0x3333",
+          "parent_id": "nA269",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2745
+        },
+        {
+          "node_id": "nA271",
+          "epoch_id": 1171,
+          "eare_hash": "0xa271",
+          "previous_epoch_hash": "0xb270",
+          "membership_digest": "0x2222",
+          "parent_id": "nA270",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2750
+        },
+        {
+          "node_id": "nA272",
+          "epoch_id": 1172,
+          "eare_hash": "0xa272",
+          "previous_epoch_hash": "0xa271",
+          "membership_digest": "0x2222",
+          "parent_id": "nA271",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2760
+        },
+        {
+          "node_id": "nA273",
+          "epoch_id": 1173,
+          "eare_hash": "0xa273",
+          "previous_epoch_hash": "0xa272",
+          "membership_digest": "0x2222",
+          "parent_id": "nA272",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2770
+        },
+        {
+          "node_id": "nA274",
+          "epoch_id": 1174,
+          "eare_hash": "0xa274",
+          "previous_epoch_hash": "0xa273",
+          "membership_digest": "0x2222",
+          "parent_id": "nA273",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2780
+        },
+        {
+          "node_id": "nA275",
+          "epoch_id": 1175,
+          "eare_hash": "0xa275",
+          "previous_epoch_hash": "0xa274",
+          "membership_digest": "0x2222",
+          "parent_id": "nA274",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2790
+        },
+        {
+          "node_id": "nA276",
+          "epoch_id": 1176,
+          "eare_hash": "0xa276",
+          "previous_epoch_hash": "0xa275",
+          "membership_digest": "0x2222",
+          "parent_id": "nA275",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2800
+        },
+        {
+          "node_id": "nA277",
+          "epoch_id": 1177,
+          "eare_hash": "0xa277",
+          "previous_epoch_hash": "0xa276",
+          "membership_digest": "0x2222",
+          "parent_id": "nA276",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2810
+        },
+        {
+          "node_id": "nA278",
+          "epoch_id": 1178,
+          "eare_hash": "0xa278",
+          "previous_epoch_hash": "0xa277",
+          "membership_digest": "0x2222",
+          "parent_id": "nA277",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2820
+        },
+        {
+          "node_id": "nA279",
+          "epoch_id": 1179,
+          "eare_hash": "0xa279",
+          "previous_epoch_hash": "0xa278",
+          "membership_digest": "0x2222",
+          "parent_id": "nA278",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2830
+        },
+        {
+          "node_id": "nA280",
+          "epoch_id": 1180,
+          "eare_hash": "0xa280",
+          "previous_epoch_hash": "0xa279",
+          "membership_digest": "0x2222",
+          "parent_id": "nA279",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2840
+        },
+        {
+          "node_id": "nB280",
+          "epoch_id": 1180,
+          "eare_hash": "0xb280",
+          "previous_epoch_hash": "0xa279",
+          "membership_digest": "0x3333",
+          "parent_id": "nA279",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2845
+        },
+        {
+          "node_id": "nA281",
+          "epoch_id": 1181,
+          "eare_hash": "0xa281",
+          "previous_epoch_hash": "0xb280",
+          "membership_digest": "0x2222",
+          "parent_id": "nA280",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2850
+        },
+        {
+          "node_id": "nA282",
+          "epoch_id": 1182,
+          "eare_hash": "0xa282",
+          "previous_epoch_hash": "0xa281",
+          "membership_digest": "0x2222",
+          "parent_id": "nA281",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2860
+        },
+        {
+          "node_id": "nA283",
+          "epoch_id": 1183,
+          "eare_hash": "0xa283",
+          "previous_epoch_hash": "0xa282",
+          "membership_digest": "0x2222",
+          "parent_id": "nA282",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2870
+        },
+        {
+          "node_id": "nA284",
+          "epoch_id": 1184,
+          "eare_hash": "0xa284",
+          "previous_epoch_hash": "0xa283",
+          "membership_digest": "0x2222",
+          "parent_id": "nA283",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2880
+        },
+        {
+          "node_id": "nA285",
+          "epoch_id": 1185,
+          "eare_hash": "0xa285",
+          "previous_epoch_hash": "0xa284",
+          "membership_digest": "0x2222",
+          "parent_id": "nA284",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2890
+        },
+        {
+          "node_id": "nA286",
+          "epoch_id": 1186,
+          "eare_hash": "0xa286",
+          "previous_epoch_hash": "0xa285",
+          "membership_digest": "0x2222",
+          "parent_id": "nA285",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2900
+        },
+        {
+          "node_id": "nA287",
+          "epoch_id": 1187,
+          "eare_hash": "0xa287",
+          "previous_epoch_hash": "0xa286",
+          "membership_digest": "0x2222",
+          "parent_id": "nA286",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2910
+        },
+        {
+          "node_id": "nA288",
+          "epoch_id": 1188,
+          "eare_hash": "0xa288",
+          "previous_epoch_hash": "0xa287",
+          "membership_digest": "0x2222",
+          "parent_id": "nA287",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2920
+        },
+        {
+          "node_id": "nA289",
+          "epoch_id": 1189,
+          "eare_hash": "0xa289",
+          "previous_epoch_hash": "0xa288",
+          "membership_digest": "0x2222",
+          "parent_id": "nA288",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2930
+        },
+        {
+          "node_id": "nA290",
+          "epoch_id": 1190,
+          "eare_hash": "0xa290",
+          "previous_epoch_hash": "0xa289",
+          "membership_digest": "0x2222",
+          "parent_id": "nA289",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2940
+        },
+        {
+          "node_id": "nB290",
+          "epoch_id": 1190,
+          "eare_hash": "0xb290",
+          "previous_epoch_hash": "0xa289",
+          "membership_digest": "0x3333",
+          "parent_id": "nA289",
+          "issued_by": "controller-b",
+          "timestamp_ms": 2945
+        },
+        {
+          "node_id": "nA291",
+          "epoch_id": 1191,
+          "eare_hash": "0xa291",
+          "previous_epoch_hash": "0xb290",
+          "membership_digest": "0x2222",
+          "parent_id": "nA290",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2950
+        },
+        {
+          "node_id": "nA292",
+          "epoch_id": 1192,
+          "eare_hash": "0xa292",
+          "previous_epoch_hash": "0xa291",
+          "membership_digest": "0x2222",
+          "parent_id": "nA291",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2960
+        },
+        {
+          "node_id": "nA293",
+          "epoch_id": 1193,
+          "eare_hash": "0xa293",
+          "previous_epoch_hash": "0xa292",
+          "membership_digest": "0x2222",
+          "parent_id": "nA292",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2970
+        },
+        {
+          "node_id": "nA294",
+          "epoch_id": 1194,
+          "eare_hash": "0xa294",
+          "previous_epoch_hash": "0xa293",
+          "membership_digest": "0x2222",
+          "parent_id": "nA293",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2980
+        },
+        {
+          "node_id": "nA295",
+          "epoch_id": 1195,
+          "eare_hash": "0xa295",
+          "previous_epoch_hash": "0xa294",
+          "membership_digest": "0x2222",
+          "parent_id": "nA294",
+          "issued_by": "controller-a",
+          "timestamp_ms": 2990
+        },
+        {
+          "node_id": "nA296",
+          "epoch_id": 1196,
+          "eare_hash": "0xa296",
+          "previous_epoch_hash": "0xa295",
+          "membership_digest": "0x2222",
+          "parent_id": "nA295",
+          "issued_by": "controller-a",
+          "timestamp_ms": 3000
+        },
+        {
+          "node_id": "nA297",
+          "epoch_id": 1197,
+          "eare_hash": "0xa297",
+          "previous_epoch_hash": "0xa296",
+          "membership_digest": "0x2222",
+          "parent_id": "nA296",
+          "issued_by": "controller-a",
+          "timestamp_ms": 3010
+        },
+        {
+          "node_id": "nA298",
+          "epoch_id": 1198,
+          "eare_hash": "0xa298",
+          "previous_epoch_hash": "0xa297",
+          "membership_digest": "0x2222",
+          "parent_id": "nA297",
+          "issued_by": "controller-a",
+          "timestamp_ms": 3020
+        },
+        {
+          "node_id": "nA299",
+          "epoch_id": 1199,
+          "eare_hash": "0xa299",
+          "previous_epoch_hash": "0xa298",
+          "membership_digest": "0x2222",
+          "parent_id": "nA298",
+          "issued_by": "controller-a",
+          "timestamp_ms": 3030
+        },
+        {
+          "node_id": "nA300",
+          "epoch_id": 1200,
+          "eare_hash": "0xa300",
+          "previous_epoch_hash": "0xa299",
+          "membership_digest": "0x2222",
+          "parent_id": "nA299",
+          "issued_by": "controller-a",
+          "timestamp_ms": 3040
+        },
+        {
+          "node_id": "nB300",
+          "epoch_id": 1200,
+          "eare_hash": "0xb300",
+          "previous_epoch_hash": "0xa299",
+          "membership_digest": "0x3333",
+          "parent_id": "nA299",
+          "issued_by": "controller-b",
+          "timestamp_ms": 3045
+        }
+      ],
+      "edges": [
+        {
+          "from": "n0",
+          "to": "nA1",
+          "type": "linear"
+        },
+        {
+          "from": "nA1",
+          "to": "nA2",
+          "type": "linear"
+        },
+        {
+          "from": "nA2",
+          "to": "nA3",
+          "type": "linear"
+        },
+        {
+          "from": "nA3",
+          "to": "nA4",
+          "type": "linear"
+        },
+        {
+          "from": "nA4",
+          "to": "nA5",
+          "type": "linear"
+        },
+        {
+          "from": "nA5",
+          "to": "nA6",
+          "type": "linear"
+        },
+        {
+          "from": "nA6",
+          "to": "nA7",
+          "type": "linear"
+        },
+        {
+          "from": "nA7",
+          "to": "nA8",
+          "type": "linear"
+        },
+        {
+          "from": "nA8",
+          "to": "nA9",
+          "type": "linear"
+        },
+        {
+          "from": "nA9",
+          "to": "nA10",
+          "type": "linear"
+        },
+        {
+          "from": "nA11",
+          "to": "nA12",
+          "type": "linear"
+        },
+        {
+          "from": "nA12",
+          "to": "nA13",
+          "type": "linear"
+        },
+        {
+          "from": "nA13",
+          "to": "nA14",
+          "type": "linear"
+        },
+        {
+          "from": "nA14",
+          "to": "nA15",
+          "type": "linear"
+        },
+        {
+          "from": "nA15",
+          "to": "nA16",
+          "type": "linear"
+        },
+        {
+          "from": "nA16",
+          "to": "nA17",
+          "type": "linear"
+        },
+        {
+          "from": "nA17",
+          "to": "nA18",
+          "type": "linear"
+        },
+        {
+          "from": "nA18",
+          "to": "nA19",
+          "type": "linear"
+        },
+        {
+          "from": "nA19",
+          "to": "nA20",
+          "type": "linear"
+        },
+        {
+          "from": "nA21",
+          "to": "nA22",
+          "type": "linear"
+        },
+        {
+          "from": "nA22",
+          "to": "nA23",
+          "type": "linear"
+        },
+        {
+          "from": "nA23",
+          "to": "nA24",
+          "type": "linear"
+        },
+        {
+          "from": "nA24",
+          "to": "nA25",
+          "type": "linear"
+        },
+        {
+          "from": "nA25",
+          "to": "nA26",
+          "type": "linear"
+        },
+        {
+          "from": "nA26",
+          "to": "nA27",
+          "type": "linear"
+        },
+        {
+          "from": "nA27",
+          "to": "nA28",
+          "type": "linear"
+        },
+        {
+          "from": "nA28",
+          "to": "nA29",
+          "type": "linear"
+        },
+        {
+          "from": "nA29",
+          "to": "nA30",
+          "type": "linear"
+        },
+        {
+          "from": "nA31",
+          "to": "nA32",
+          "type": "linear"
+        },
+        {
+          "from": "nA32",
+          "to": "nA33",
+          "type": "linear"
+        },
+        {
+          "from": "nA33",
+          "to": "nA34",
+          "type": "linear"
+        },
+        {
+          "from": "nA34",
+          "to": "nA35",
+          "type": "linear"
+        },
+        {
+          "from": "nA35",
+          "to": "nA36",
+          "type": "linear"
+        },
+        {
+          "from": "nA36",
+          "to": "nA37",
+          "type": "linear"
+        },
+        {
+          "from": "nA37",
+          "to": "nA38",
+          "type": "linear"
+        },
+        {
+          "from": "nA38",
+          "to": "nA39",
+          "type": "linear"
+        },
+        {
+          "from": "nA39",
+          "to": "nA40",
+          "type": "linear"
+        },
+        {
+          "from": "nA41",
+          "to": "nA42",
+          "type": "linear"
+        },
+        {
+          "from": "nA42",
+          "to": "nA43",
+          "type": "linear"
+        },
+        {
+          "from": "nA43",
+          "to": "nA44",
+          "type": "linear"
+        },
+        {
+          "from": "nA44",
+          "to": "nA45",
+          "type": "linear"
+        },
+        {
+          "from": "nA45",
+          "to": "nA46",
+          "type": "linear"
+        },
+        {
+          "from": "nA46",
+          "to": "nA47",
+          "type": "linear"
+        },
+        {
+          "from": "nA47",
+          "to": "nA48",
+          "type": "linear"
+        },
+        {
+          "from": "nA48",
+          "to": "nA49",
+          "type": "linear"
+        },
+        {
+          "from": "nA49",
+          "to": "nA50",
+          "type": "linear"
+        },
+        {
+          "from": "nA51",
+          "to": "nA52",
+          "type": "linear"
+        },
+        {
+          "from": "nA52",
+          "to": "nA53",
+          "type": "linear"
+        },
+        {
+          "from": "nA53",
+          "to": "nA54",
+          "type": "linear"
+        },
+        {
+          "from": "nA54",
+          "to": "nA55",
+          "type": "linear"
+        },
+        {
+          "from": "nA55",
+          "to": "nA56",
+          "type": "linear"
+        },
+        {
+          "from": "nA56",
+          "to": "nA57",
+          "type": "linear"
+        },
+        {
+          "from": "nA57",
+          "to": "nA58",
+          "type": "linear"
+        },
+        {
+          "from": "nA58",
+          "to": "nA59",
+          "type": "linear"
+        },
+        {
+          "from": "nA59",
+          "to": "nA60",
+          "type": "linear"
+        },
+        {
+          "from": "nA61",
+          "to": "nA62",
+          "type": "linear"
+        },
+        {
+          "from": "nA62",
+          "to": "nA63",
+          "type": "linear"
+        },
+        {
+          "from": "nA63",
+          "to": "nA64",
+          "type": "linear"
+        },
+        {
+          "from": "nA64",
+          "to": "nA65",
+          "type": "linear"
+        },
+        {
+          "from": "nA65",
+          "to": "nA66",
+          "type": "linear"
+        },
+        {
+          "from": "nA66",
+          "to": "nA67",
+          "type": "linear"
+        },
+        {
+          "from": "nA67",
+          "to": "nA68",
+          "type": "linear"
+        },
+        {
+          "from": "nA68",
+          "to": "nA69",
+          "type": "linear"
+        },
+        {
+          "from": "nA69",
+          "to": "nA70",
+          "type": "linear"
+        },
+        {
+          "from": "nA71",
+          "to": "nA72",
+          "type": "linear"
+        },
+        {
+          "from": "nA72",
+          "to": "nA73",
+          "type": "linear"
+        },
+        {
+          "from": "nA73",
+          "to": "nA74",
+          "type": "linear"
+        },
+        {
+          "from": "nA74",
+          "to": "nA75",
+          "type": "linear"
+        },
+        {
+          "from": "nA75",
+          "to": "nA76",
+          "type": "linear"
+        },
+        {
+          "from": "nA76",
+          "to": "nA77",
+          "type": "linear"
+        },
+        {
+          "from": "nA77",
+          "to": "nA78",
+          "type": "linear"
+        },
+        {
+          "from": "nA78",
+          "to": "nA79",
+          "type": "linear"
+        },
+        {
+          "from": "nA79",
+          "to": "nA80",
+          "type": "linear"
+        },
+        {
+          "from": "nA81",
+          "to": "nA82",
+          "type": "linear"
+        },
+        {
+          "from": "nA82",
+          "to": "nA83",
+          "type": "linear"
+        },
+        {
+          "from": "nA83",
+          "to": "nA84",
+          "type": "linear"
+        },
+        {
+          "from": "nA84",
+          "to": "nA85",
+          "type": "linear"
+        },
+        {
+          "from": "nA85",
+          "to": "nA86",
+          "type": "linear"
+        },
+        {
+          "from": "nA86",
+          "to": "nA87",
+          "type": "linear"
+        },
+        {
+          "from": "nA87",
+          "to": "nA88",
+          "type": "linear"
+        },
+        {
+          "from": "nA88",
+          "to": "nA89",
+          "type": "linear"
+        },
+        {
+          "from": "nA89",
+          "to": "nA90",
+          "type": "linear"
+        },
+        {
+          "from": "nA91",
+          "to": "nA92",
+          "type": "linear"
+        },
+        {
+          "from": "nA92",
+          "to": "nA93",
+          "type": "linear"
+        },
+        {
+          "from": "nA93",
+          "to": "nA94",
+          "type": "linear"
+        },
+        {
+          "from": "nA94",
+          "to": "nA95",
+          "type": "linear"
+        },
+        {
+          "from": "nA95",
+          "to": "nA96",
+          "type": "linear"
+        },
+        {
+          "from": "nA96",
+          "to": "nA97",
+          "type": "linear"
+        },
+        {
+          "from": "nA97",
+          "to": "nA98",
+          "type": "linear"
+        },
+        {
+          "from": "nA98",
+          "to": "nA99",
+          "type": "linear"
+        },
+        {
+          "from": "nA99",
+          "to": "nA100",
+          "type": "linear"
+        },
+        {
+          "from": "nA101",
+          "to": "nA102",
+          "type": "linear"
+        },
+        {
+          "from": "nA102",
+          "to": "nA103",
+          "type": "linear"
+        },
+        {
+          "from": "nA103",
+          "to": "nA104",
+          "type": "linear"
+        },
+        {
+          "from": "nA104",
+          "to": "nA105",
+          "type": "linear"
+        },
+        {
+          "from": "nA105",
+          "to": "nA106",
+          "type": "linear"
+        },
+        {
+          "from": "nA106",
+          "to": "nA107",
+          "type": "linear"
+        },
+        {
+          "from": "nA107",
+          "to": "nA108",
+          "type": "linear"
+        },
+        {
+          "from": "nA108",
+          "to": "nA109",
+          "type": "linear"
+        },
+        {
+          "from": "nA109",
+          "to": "nA110",
+          "type": "linear"
+        },
+        {
+          "from": "nA111",
+          "to": "nA112",
+          "type": "linear"
+        },
+        {
+          "from": "nA112",
+          "to": "nA113",
+          "type": "linear"
+        },
+        {
+          "from": "nA113",
+          "to": "nA114",
+          "type": "linear"
+        },
+        {
+          "from": "nA114",
+          "to": "nA115",
+          "type": "linear"
+        },
+        {
+          "from": "nA115",
+          "to": "nA116",
+          "type": "linear"
+        },
+        {
+          "from": "nA116",
+          "to": "nA117",
+          "type": "linear"
+        },
+        {
+          "from": "nA117",
+          "to": "nA118",
+          "type": "linear"
+        },
+        {
+          "from": "nA118",
+          "to": "nA119",
+          "type": "linear"
+        },
+        {
+          "from": "nA119",
+          "to": "nA120",
+          "type": "linear"
+        },
+        {
+          "from": "nA121",
+          "to": "nA122",
+          "type": "linear"
+        },
+        {
+          "from": "nA122",
+          "to": "nA123",
+          "type": "linear"
+        },
+        {
+          "from": "nA123",
+          "to": "nA124",
+          "type": "linear"
+        },
+        {
+          "from": "nA124",
+          "to": "nA125",
+          "type": "linear"
+        },
+        {
+          "from": "nA125",
+          "to": "nA126",
+          "type": "linear"
+        },
+        {
+          "from": "nA126",
+          "to": "nA127",
+          "type": "linear"
+        },
+        {
+          "from": "nA127",
+          "to": "nA128",
+          "type": "linear"
+        },
+        {
+          "from": "nA128",
+          "to": "nA129",
+          "type": "linear"
+        },
+        {
+          "from": "nA129",
+          "to": "nA130",
+          "type": "linear"
+        },
+        {
+          "from": "nA131",
+          "to": "nA132",
+          "type": "linear"
+        },
+        {
+          "from": "nA132",
+          "to": "nA133",
+          "type": "linear"
+        },
+        {
+          "from": "nA133",
+          "to": "nA134",
+          "type": "linear"
+        },
+        {
+          "from": "nA134",
+          "to": "nA135",
+          "type": "linear"
+        },
+        {
+          "from": "nA135",
+          "to": "nA136",
+          "type": "linear"
+        },
+        {
+          "from": "nA136",
+          "to": "nA137",
+          "type": "linear"
+        },
+        {
+          "from": "nA137",
+          "to": "nA138",
+          "type": "linear"
+        },
+        {
+          "from": "nA138",
+          "to": "nA139",
+          "type": "linear"
+        },
+        {
+          "from": "nA139",
+          "to": "nA140",
+          "type": "linear"
+        },
+        {
+          "from": "nA141",
+          "to": "nA142",
+          "type": "linear"
+        },
+        {
+          "from": "nA142",
+          "to": "nA143",
+          "type": "linear"
+        },
+        {
+          "from": "nA143",
+          "to": "nA144",
+          "type": "linear"
+        },
+        {
+          "from": "nA144",
+          "to": "nA145",
+          "type": "linear"
+        },
+        {
+          "from": "nA145",
+          "to": "nA146",
+          "type": "linear"
+        },
+        {
+          "from": "nA146",
+          "to": "nA147",
+          "type": "linear"
+        },
+        {
+          "from": "nA147",
+          "to": "nA148",
+          "type": "linear"
+        },
+        {
+          "from": "nA148",
+          "to": "nA149",
+          "type": "linear"
+        },
+        {
+          "from": "nA149",
+          "to": "nA150",
+          "type": "linear"
+        },
+        {
+          "from": "nA151",
+          "to": "nA152",
+          "type": "linear"
+        },
+        {
+          "from": "nA152",
+          "to": "nA153",
+          "type": "linear"
+        },
+        {
+          "from": "nA153",
+          "to": "nA154",
+          "type": "linear"
+        },
+        {
+          "from": "nA154",
+          "to": "nA155",
+          "type": "linear"
+        },
+        {
+          "from": "nA155",
+          "to": "nA156",
+          "type": "linear"
+        },
+        {
+          "from": "nA156",
+          "to": "nA157",
+          "type": "linear"
+        },
+        {
+          "from": "nA157",
+          "to": "nA158",
+          "type": "linear"
+        },
+        {
+          "from": "nA158",
+          "to": "nA159",
+          "type": "linear"
+        },
+        {
+          "from": "nA159",
+          "to": "nA160",
+          "type": "linear"
+        },
+        {
+          "from": "nA161",
+          "to": "nA162",
+          "type": "linear"
+        },
+        {
+          "from": "nA162",
+          "to": "nA163",
+          "type": "linear"
+        },
+        {
+          "from": "nA163",
+          "to": "nA164",
+          "type": "linear"
+        },
+        {
+          "from": "nA164",
+          "to": "nA165",
+          "type": "linear"
+        },
+        {
+          "from": "nA165",
+          "to": "nA166",
+          "type": "linear"
+        },
+        {
+          "from": "nA166",
+          "to": "nA167",
+          "type": "linear"
+        },
+        {
+          "from": "nA167",
+          "to": "nA168",
+          "type": "linear"
+        },
+        {
+          "from": "nA168",
+          "to": "nA169",
+          "type": "linear"
+        },
+        {
+          "from": "nA169",
+          "to": "nA170",
+          "type": "linear"
+        },
+        {
+          "from": "nA171",
+          "to": "nA172",
+          "type": "linear"
+        },
+        {
+          "from": "nA172",
+          "to": "nA173",
+          "type": "linear"
+        },
+        {
+          "from": "nA173",
+          "to": "nA174",
+          "type": "linear"
+        },
+        {
+          "from": "nA174",
+          "to": "nA175",
+          "type": "linear"
+        },
+        {
+          "from": "nA175",
+          "to": "nA176",
+          "type": "linear"
+        },
+        {
+          "from": "nA176",
+          "to": "nA177",
+          "type": "linear"
+        },
+        {
+          "from": "nA177",
+          "to": "nA178",
+          "type": "linear"
+        },
+        {
+          "from": "nA178",
+          "to": "nA179",
+          "type": "linear"
+        },
+        {
+          "from": "nA179",
+          "to": "nA180",
+          "type": "linear"
+        },
+        {
+          "from": "nA181",
+          "to": "nA182",
+          "type": "linear"
+        },
+        {
+          "from": "nA182",
+          "to": "nA183",
+          "type": "linear"
+        },
+        {
+          "from": "nA183",
+          "to": "nA184",
+          "type": "linear"
+        },
+        {
+          "from": "nA184",
+          "to": "nA185",
+          "type": "linear"
+        },
+        {
+          "from": "nA185",
+          "to": "nA186",
+          "type": "linear"
+        },
+        {
+          "from": "nA186",
+          "to": "nA187",
+          "type": "linear"
+        },
+        {
+          "from": "nA187",
+          "to": "nA188",
+          "type": "linear"
+        },
+        {
+          "from": "nA188",
+          "to": "nA189",
+          "type": "linear"
+        },
+        {
+          "from": "nA189",
+          "to": "nA190",
+          "type": "linear"
+        },
+        {
+          "from": "nA191",
+          "to": "nA192",
+          "type": "linear"
+        },
+        {
+          "from": "nA192",
+          "to": "nA193",
+          "type": "linear"
+        },
+        {
+          "from": "nA193",
+          "to": "nA194",
+          "type": "linear"
+        },
+        {
+          "from": "nA194",
+          "to": "nA195",
+          "type": "linear"
+        },
+        {
+          "from": "nA195",
+          "to": "nA196",
+          "type": "linear"
+        },
+        {
+          "from": "nA196",
+          "to": "nA197",
+          "type": "linear"
+        },
+        {
+          "from": "nA197",
+          "to": "nA198",
+          "type": "linear"
+        },
+        {
+          "from": "nA198",
+          "to": "nA199",
+          "type": "linear"
+        },
+        {
+          "from": "nA199",
+          "to": "nA200",
+          "type": "linear"
+        },
+        {
+          "from": "nA201",
+          "to": "nA202",
+          "type": "linear"
+        },
+        {
+          "from": "nA202",
+          "to": "nA203",
+          "type": "linear"
+        },
+        {
+          "from": "nA203",
+          "to": "nA204",
+          "type": "linear"
+        },
+        {
+          "from": "nA204",
+          "to": "nA205",
+          "type": "linear"
+        },
+        {
+          "from": "nA205",
+          "to": "nA206",
+          "type": "linear"
+        },
+        {
+          "from": "nA206",
+          "to": "nA207",
+          "type": "linear"
+        },
+        {
+          "from": "nA207",
+          "to": "nA208",
+          "type": "linear"
+        },
+        {
+          "from": "nA208",
+          "to": "nA209",
+          "type": "linear"
+        },
+        {
+          "from": "nA209",
+          "to": "nA210",
+          "type": "linear"
+        },
+        {
+          "from": "nA211",
+          "to": "nA212",
+          "type": "linear"
+        },
+        {
+          "from": "nA212",
+          "to": "nA213",
+          "type": "linear"
+        },
+        {
+          "from": "nA213",
+          "to": "nA214",
+          "type": "linear"
+        },
+        {
+          "from": "nA214",
+          "to": "nA215",
+          "type": "linear"
+        },
+        {
+          "from": "nA215",
+          "to": "nA216",
+          "type": "linear"
+        },
+        {
+          "from": "nA216",
+          "to": "nA217",
+          "type": "linear"
+        },
+        {
+          "from": "nA217",
+          "to": "nA218",
+          "type": "linear"
+        },
+        {
+          "from": "nA218",
+          "to": "nA219",
+          "type": "linear"
+        },
+        {
+          "from": "nA219",
+          "to": "nA220",
+          "type": "linear"
+        },
+        {
+          "from": "nA221",
+          "to": "nA222",
+          "type": "linear"
+        },
+        {
+          "from": "nA222",
+          "to": "nA223",
+          "type": "linear"
+        },
+        {
+          "from": "nA223",
+          "to": "nA224",
+          "type": "linear"
+        },
+        {
+          "from": "nA224",
+          "to": "nA225",
+          "type": "linear"
+        },
+        {
+          "from": "nA225",
+          "to": "nA226",
+          "type": "linear"
+        },
+        {
+          "from": "nA226",
+          "to": "nA227",
+          "type": "linear"
+        },
+        {
+          "from": "nA227",
+          "to": "nA228",
+          "type": "linear"
+        },
+        {
+          "from": "nA228",
+          "to": "nA229",
+          "type": "linear"
+        },
+        {
+          "from": "nA229",
+          "to": "nA230",
+          "type": "linear"
+        },
+        {
+          "from": "nA231",
+          "to": "nA232",
+          "type": "linear"
+        },
+        {
+          "from": "nA232",
+          "to": "nA233",
+          "type": "linear"
+        },
+        {
+          "from": "nA233",
+          "to": "nA234",
+          "type": "linear"
+        },
+        {
+          "from": "nA234",
+          "to": "nA235",
+          "type": "linear"
+        },
+        {
+          "from": "nA235",
+          "to": "nA236",
+          "type": "linear"
+        },
+        {
+          "from": "nA236",
+          "to": "nA237",
+          "type": "linear"
+        },
+        {
+          "from": "nA237",
+          "to": "nA238",
+          "type": "linear"
+        },
+        {
+          "from": "nA238",
+          "to": "nA239",
+          "type": "linear"
+        },
+        {
+          "from": "nA239",
+          "to": "nA240",
+          "type": "linear"
+        },
+        {
+          "from": "nA241",
+          "to": "nA242",
+          "type": "linear"
+        },
+        {
+          "from": "nA242",
+          "to": "nA243",
+          "type": "linear"
+        },
+        {
+          "from": "nA243",
+          "to": "nA244",
+          "type": "linear"
+        },
+        {
+          "from": "nA244",
+          "to": "nA245",
+          "type": "linear"
+        },
+        {
+          "from": "nA245",
+          "to": "nA246",
+          "type": "linear"
+        },
+        {
+          "from": "nA246",
+          "to": "nA247",
+          "type": "linear"
+        },
+        {
+          "from": "nA247",
+          "to": "nA248",
+          "type": "linear"
+        },
+        {
+          "from": "nA248",
+          "to": "nA249",
+          "type": "linear"
+        },
+        {
+          "from": "nA249",
+          "to": "nA250",
+          "type": "linear"
+        },
+        {
+          "from": "nA251",
+          "to": "nA252",
+          "type": "linear"
+        },
+        {
+          "from": "nA252",
+          "to": "nA253",
+          "type": "linear"
+        },
+        {
+          "from": "nA253",
+          "to": "nA254",
+          "type": "linear"
+        },
+        {
+          "from": "nA254",
+          "to": "nA255",
+          "type": "linear"
+        },
+        {
+          "from": "nA255",
+          "to": "nA256",
+          "type": "linear"
+        },
+        {
+          "from": "nA256",
+          "to": "nA257",
+          "type": "linear"
+        },
+        {
+          "from": "nA257",
+          "to": "nA258",
+          "type": "linear"
+        },
+        {
+          "from": "nA258",
+          "to": "nA259",
+          "type": "linear"
+        },
+        {
+          "from": "nA259",
+          "to": "nA260",
+          "type": "linear"
+        },
+        {
+          "from": "nA261",
+          "to": "nA262",
+          "type": "linear"
+        },
+        {
+          "from": "nA262",
+          "to": "nA263",
+          "type": "linear"
+        },
+        {
+          "from": "nA263",
+          "to": "nA264",
+          "type": "linear"
+        },
+        {
+          "from": "nA264",
+          "to": "nA265",
+          "type": "linear"
+        },
+        {
+          "from": "nA265",
+          "to": "nA266",
+          "type": "linear"
+        },
+        {
+          "from": "nA266",
+          "to": "nA267",
+          "type": "linear"
+        },
+        {
+          "from": "nA267",
+          "to": "nA268",
+          "type": "linear"
+        },
+        {
+          "from": "nA268",
+          "to": "nA269",
+          "type": "linear"
+        },
+        {
+          "from": "nA269",
+          "to": "nA270",
+          "type": "linear"
+        },
+        {
+          "from": "nA271",
+          "to": "nA272",
+          "type": "linear"
+        },
+        {
+          "from": "nA272",
+          "to": "nA273",
+          "type": "linear"
+        },
+        {
+          "from": "nA273",
+          "to": "nA274",
+          "type": "linear"
+        },
+        {
+          "from": "nA274",
+          "to": "nA275",
+          "type": "linear"
+        },
+        {
+          "from": "nA275",
+          "to": "nA276",
+          "type": "linear"
+        },
+        {
+          "from": "nA276",
+          "to": "nA277",
+          "type": "linear"
+        },
+        {
+          "from": "nA277",
+          "to": "nA278",
+          "type": "linear"
+        },
+        {
+          "from": "nA278",
+          "to": "nA279",
+          "type": "linear"
+        },
+        {
+          "from": "nA279",
+          "to": "nA280",
+          "type": "linear"
+        },
+        {
+          "from": "nA281",
+          "to": "nA282",
+          "type": "linear"
+        },
+        {
+          "from": "nA282",
+          "to": "nA283",
+          "type": "linear"
+        },
+        {
+          "from": "nA283",
+          "to": "nA284",
+          "type": "linear"
+        },
+        {
+          "from": "nA284",
+          "to": "nA285",
+          "type": "linear"
+        },
+        {
+          "from": "nA285",
+          "to": "nA286",
+          "type": "linear"
+        },
+        {
+          "from": "nA286",
+          "to": "nA287",
+          "type": "linear"
+        },
+        {
+          "from": "nA287",
+          "to": "nA288",
+          "type": "linear"
+        },
+        {
+          "from": "nA288",
+          "to": "nA289",
+          "type": "linear"
+        },
+        {
+          "from": "nA289",
+          "to": "nA290",
+          "type": "linear"
+        },
+        {
+          "from": "nA291",
+          "to": "nA292",
+          "type": "linear"
+        },
+        {
+          "from": "nA292",
+          "to": "nA293",
+          "type": "linear"
+        },
+        {
+          "from": "nA293",
+          "to": "nA294",
+          "type": "linear"
+        },
+        {
+          "from": "nA294",
+          "to": "nA295",
+          "type": "linear"
+        },
+        {
+          "from": "nA295",
+          "to": "nA296",
+          "type": "linear"
+        },
+        {
+          "from": "nA296",
+          "to": "nA297",
+          "type": "linear"
+        },
+        {
+          "from": "nA297",
+          "to": "nA298",
+          "type": "linear"
+        },
+        {
+          "from": "nA298",
+          "to": "nA299",
+          "type": "linear"
+        },
+        {
+          "from": "nA299",
+          "to": "nA300",
+          "type": "linear"
+        }
+      ]
+    },
+    "event_stream": [
+      {
+        "t": 50,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 901,
+        "node_id": "nA1"
+      },
+      {
+        "t": 60,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 902,
+        "node_id": "nA2"
+      },
+      {
+        "t": 70,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 903,
+        "node_id": "nA3"
+      },
+      {
+        "t": 80,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 904,
+        "node_id": "nA4"
+      },
+      {
+        "t": 90,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 905,
+        "node_id": "nA5"
+      },
+      {
+        "t": 100,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 906,
+        "node_id": "nA6"
+      },
+      {
+        "t": 110,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 907,
+        "node_id": "nA7"
+      },
+      {
+        "t": 120,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 908,
+        "node_id": "nA8"
+      },
+      {
+        "t": 130,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 909,
+        "node_id": "nA9"
+      },
+      {
+        "t": 140,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 910,
+        "node_id": "nA10"
+      },
+      {
+        "t": 145,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 910,
+        "node_id": "nB10"
+      },
+      {
+        "t": 150,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 911,
+        "node_id": "nA11"
+      },
+      {
+        "t": 160,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 912,
+        "node_id": "nA12"
+      },
+      {
+        "t": 170,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 913,
+        "node_id": "nA13"
+      },
+      {
+        "t": 180,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 914,
+        "node_id": "nA14"
+      },
+      {
+        "t": 190,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 915,
+        "node_id": "nA15"
+      },
+      {
+        "t": 200,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 916,
+        "node_id": "nA16"
+      },
+      {
+        "t": 210,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 917,
+        "node_id": "nA17"
+      },
+      {
+        "t": 220,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 918,
+        "node_id": "nA18"
+      },
+      {
+        "t": 230,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 919,
+        "node_id": "nA19"
+      },
+      {
+        "t": 240,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 920,
+        "node_id": "nA20"
+      },
+      {
+        "t": 245,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 920,
+        "node_id": "nB20"
+      },
+      {
+        "t": 250,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 921,
+        "node_id": "nA21"
+      },
+      {
+        "t": 260,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 922,
+        "node_id": "nA22"
+      },
+      {
+        "t": 270,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 923,
+        "node_id": "nA23"
+      },
+      {
+        "t": 280,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 924,
+        "node_id": "nA24"
+      },
+      {
+        "t": 290,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 925,
+        "node_id": "nA25"
+      },
+      {
+        "t": 300,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 926,
+        "node_id": "nA26"
+      },
+      {
+        "t": 310,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 927,
+        "node_id": "nA27"
+      },
+      {
+        "t": 320,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 928,
+        "node_id": "nA28"
+      },
+      {
+        "t": 330,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 929,
+        "node_id": "nA29"
+      },
+      {
+        "t": 340,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 930,
+        "node_id": "nA30"
+      },
+      {
+        "t": 345,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 930,
+        "node_id": "nB30"
+      },
+      {
+        "t": 350,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 931,
+        "node_id": "nA31"
+      },
+      {
+        "t": 360,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 932,
+        "node_id": "nA32"
+      },
+      {
+        "t": 370,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 933,
+        "node_id": "nA33"
+      },
+      {
+        "t": 380,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 934,
+        "node_id": "nA34"
+      },
+      {
+        "t": 390,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 935,
+        "node_id": "nA35"
+      },
+      {
+        "t": 400,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 936,
+        "node_id": "nA36"
+      },
+      {
+        "t": 410,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 937,
+        "node_id": "nA37"
+      },
+      {
+        "t": 420,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 938,
+        "node_id": "nA38"
+      },
+      {
+        "t": 430,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 939,
+        "node_id": "nA39"
+      },
+      {
+        "t": 440,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 940,
+        "node_id": "nA40"
+      },
+      {
+        "t": 445,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 940,
+        "node_id": "nB40"
+      },
+      {
+        "t": 450,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 941,
+        "node_id": "nA41"
+      },
+      {
+        "t": 460,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 942,
+        "node_id": "nA42"
+      },
+      {
+        "t": 470,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 943,
+        "node_id": "nA43"
+      },
+      {
+        "t": 480,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 944,
+        "node_id": "nA44"
+      },
+      {
+        "t": 490,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 945,
+        "node_id": "nA45"
+      },
+      {
+        "t": 500,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 946,
+        "node_id": "nA46"
+      },
+      {
+        "t": 510,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 947,
+        "node_id": "nA47"
+      },
+      {
+        "t": 520,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 948,
+        "node_id": "nA48"
+      },
+      {
+        "t": 530,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 949,
+        "node_id": "nA49"
+      },
+      {
+        "t": 540,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 950,
+        "node_id": "nA50"
+      },
+      {
+        "t": 545,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 950,
+        "node_id": "nB50"
+      },
+      {
+        "t": 550,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 951,
+        "node_id": "nA51"
+      },
+      {
+        "t": 560,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 952,
+        "node_id": "nA52"
+      },
+      {
+        "t": 570,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 953,
+        "node_id": "nA53"
+      },
+      {
+        "t": 580,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 954,
+        "node_id": "nA54"
+      },
+      {
+        "t": 590,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 955,
+        "node_id": "nA55"
+      },
+      {
+        "t": 600,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 956,
+        "node_id": "nA56"
+      },
+      {
+        "t": 610,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 957,
+        "node_id": "nA57"
+      },
+      {
+        "t": 620,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 958,
+        "node_id": "nA58"
+      },
+      {
+        "t": 630,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 959,
+        "node_id": "nA59"
+      },
+      {
+        "t": 640,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 960,
+        "node_id": "nA60"
+      },
+      {
+        "t": 645,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 960,
+        "node_id": "nB60"
+      },
+      {
+        "t": 650,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 961,
+        "node_id": "nA61"
+      },
+      {
+        "t": 660,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 962,
+        "node_id": "nA62"
+      },
+      {
+        "t": 670,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 963,
+        "node_id": "nA63"
+      },
+      {
+        "t": 680,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 964,
+        "node_id": "nA64"
+      },
+      {
+        "t": 690,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 965,
+        "node_id": "nA65"
+      },
+      {
+        "t": 700,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 966,
+        "node_id": "nA66"
+      },
+      {
+        "t": 710,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 967,
+        "node_id": "nA67"
+      },
+      {
+        "t": 720,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 968,
+        "node_id": "nA68"
+      },
+      {
+        "t": 730,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 969,
+        "node_id": "nA69"
+      },
+      {
+        "t": 740,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 970,
+        "node_id": "nA70"
+      },
+      {
+        "t": 745,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 970,
+        "node_id": "nB70"
+      },
+      {
+        "t": 750,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 971,
+        "node_id": "nA71"
+      },
+      {
+        "t": 760,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 972,
+        "node_id": "nA72"
+      },
+      {
+        "t": 770,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 973,
+        "node_id": "nA73"
+      },
+      {
+        "t": 780,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 974,
+        "node_id": "nA74"
+      },
+      {
+        "t": 790,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 975,
+        "node_id": "nA75"
+      },
+      {
+        "t": 800,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 976,
+        "node_id": "nA76"
+      },
+      {
+        "t": 810,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 977,
+        "node_id": "nA77"
+      },
+      {
+        "t": 820,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 978,
+        "node_id": "nA78"
+      },
+      {
+        "t": 830,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 979,
+        "node_id": "nA79"
+      },
+      {
+        "t": 840,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 980,
+        "node_id": "nA80"
+      },
+      {
+        "t": 845,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 980,
+        "node_id": "nB80"
+      },
+      {
+        "t": 850,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 981,
+        "node_id": "nA81"
+      },
+      {
+        "t": 860,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 982,
+        "node_id": "nA82"
+      },
+      {
+        "t": 870,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 983,
+        "node_id": "nA83"
+      },
+      {
+        "t": 880,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 984,
+        "node_id": "nA84"
+      },
+      {
+        "t": 890,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 985,
+        "node_id": "nA85"
+      },
+      {
+        "t": 900,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 986,
+        "node_id": "nA86"
+      },
+      {
+        "t": 910,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 987,
+        "node_id": "nA87"
+      },
+      {
+        "t": 920,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 988,
+        "node_id": "nA88"
+      },
+      {
+        "t": 930,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 989,
+        "node_id": "nA89"
+      },
+      {
+        "t": 940,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 990,
+        "node_id": "nA90"
+      },
+      {
+        "t": 945,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 990,
+        "node_id": "nB90"
+      },
+      {
+        "t": 950,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 991,
+        "node_id": "nA91"
+      },
+      {
+        "t": 960,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 992,
+        "node_id": "nA92"
+      },
+      {
+        "t": 970,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 993,
+        "node_id": "nA93"
+      },
+      {
+        "t": 980,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 994,
+        "node_id": "nA94"
+      },
+      {
+        "t": 990,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 995,
+        "node_id": "nA95"
+      },
+      {
+        "t": 1000,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 996,
+        "node_id": "nA96"
+      },
+      {
+        "t": 1010,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 997,
+        "node_id": "nA97"
+      },
+      {
+        "t": 1020,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 998,
+        "node_id": "nA98"
+      },
+      {
+        "t": 1030,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 999,
+        "node_id": "nA99"
+      },
+      {
+        "t": 1040,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1000,
+        "node_id": "nA100"
+      },
+      {
+        "t": 1045,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1000,
+        "node_id": "nB100"
+      },
+      {
+        "t": 1050,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1001,
+        "node_id": "nA101"
+      },
+      {
+        "t": 1060,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1002,
+        "node_id": "nA102"
+      },
+      {
+        "t": 1070,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1003,
+        "node_id": "nA103"
+      },
+      {
+        "t": 1080,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1004,
+        "node_id": "nA104"
+      },
+      {
+        "t": 1090,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1005,
+        "node_id": "nA105"
+      },
+      {
+        "t": 1100,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1006,
+        "node_id": "nA106"
+      },
+      {
+        "t": 1110,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1007,
+        "node_id": "nA107"
+      },
+      {
+        "t": 1120,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1008,
+        "node_id": "nA108"
+      },
+      {
+        "t": 1130,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1009,
+        "node_id": "nA109"
+      },
+      {
+        "t": 1140,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1010,
+        "node_id": "nA110"
+      },
+      {
+        "t": 1145,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1010,
+        "node_id": "nB110"
+      },
+      {
+        "t": 1150,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1011,
+        "node_id": "nA111"
+      },
+      {
+        "t": 1160,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1012,
+        "node_id": "nA112"
+      },
+      {
+        "t": 1170,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1013,
+        "node_id": "nA113"
+      },
+      {
+        "t": 1180,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1014,
+        "node_id": "nA114"
+      },
+      {
+        "t": 1190,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1015,
+        "node_id": "nA115"
+      },
+      {
+        "t": 1200,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1016,
+        "node_id": "nA116"
+      },
+      {
+        "t": 1210,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1017,
+        "node_id": "nA117"
+      },
+      {
+        "t": 1220,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1018,
+        "node_id": "nA118"
+      },
+      {
+        "t": 1230,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1019,
+        "node_id": "nA119"
+      },
+      {
+        "t": 1240,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1020,
+        "node_id": "nA120"
+      },
+      {
+        "t": 1245,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1020,
+        "node_id": "nB120"
+      },
+      {
+        "t": 1250,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1021,
+        "node_id": "nA121"
+      },
+      {
+        "t": 1260,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1022,
+        "node_id": "nA122"
+      },
+      {
+        "t": 1270,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1023,
+        "node_id": "nA123"
+      },
+      {
+        "t": 1280,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1024,
+        "node_id": "nA124"
+      },
+      {
+        "t": 1290,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1025,
+        "node_id": "nA125"
+      },
+      {
+        "t": 1300,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1026,
+        "node_id": "nA126"
+      },
+      {
+        "t": 1310,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1027,
+        "node_id": "nA127"
+      },
+      {
+        "t": 1320,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1028,
+        "node_id": "nA128"
+      },
+      {
+        "t": 1330,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1029,
+        "node_id": "nA129"
+      },
+      {
+        "t": 1340,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1030,
+        "node_id": "nA130"
+      },
+      {
+        "t": 1345,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1030,
+        "node_id": "nB130"
+      },
+      {
+        "t": 1350,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1031,
+        "node_id": "nA131"
+      },
+      {
+        "t": 1360,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1032,
+        "node_id": "nA132"
+      },
+      {
+        "t": 1370,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1033,
+        "node_id": "nA133"
+      },
+      {
+        "t": 1380,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1034,
+        "node_id": "nA134"
+      },
+      {
+        "t": 1390,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1035,
+        "node_id": "nA135"
+      },
+      {
+        "t": 1400,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1036,
+        "node_id": "nA136"
+      },
+      {
+        "t": 1410,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1037,
+        "node_id": "nA137"
+      },
+      {
+        "t": 1420,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1038,
+        "node_id": "nA138"
+      },
+      {
+        "t": 1430,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1039,
+        "node_id": "nA139"
+      },
+      {
+        "t": 1440,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1040,
+        "node_id": "nA140"
+      },
+      {
+        "t": 1445,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1040,
+        "node_id": "nB140"
+      },
+      {
+        "t": 1450,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1041,
+        "node_id": "nA141"
+      },
+      {
+        "t": 1460,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1042,
+        "node_id": "nA142"
+      },
+      {
+        "t": 1470,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1043,
+        "node_id": "nA143"
+      },
+      {
+        "t": 1480,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1044,
+        "node_id": "nA144"
+      },
+      {
+        "t": 1490,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1045,
+        "node_id": "nA145"
+      },
+      {
+        "t": 1500,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1046,
+        "node_id": "nA146"
+      },
+      {
+        "t": 1510,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1047,
+        "node_id": "nA147"
+      },
+      {
+        "t": 1520,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1048,
+        "node_id": "nA148"
+      },
+      {
+        "t": 1530,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1049,
+        "node_id": "nA149"
+      },
+      {
+        "t": 1540,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1050,
+        "node_id": "nA150"
+      },
+      {
+        "t": 1545,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1050,
+        "node_id": "nB150"
+      },
+      {
+        "t": 1550,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1051,
+        "node_id": "nA151"
+      },
+      {
+        "t": 1560,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1052,
+        "node_id": "nA152"
+      },
+      {
+        "t": 1570,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1053,
+        "node_id": "nA153"
+      },
+      {
+        "t": 1580,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1054,
+        "node_id": "nA154"
+      },
+      {
+        "t": 1590,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1055,
+        "node_id": "nA155"
+      },
+      {
+        "t": 1600,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1056,
+        "node_id": "nA156"
+      },
+      {
+        "t": 1610,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1057,
+        "node_id": "nA157"
+      },
+      {
+        "t": 1620,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1058,
+        "node_id": "nA158"
+      },
+      {
+        "t": 1630,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1059,
+        "node_id": "nA159"
+      },
+      {
+        "t": 1640,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1060,
+        "node_id": "nA160"
+      },
+      {
+        "t": 1645,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1060,
+        "node_id": "nB160"
+      },
+      {
+        "t": 1650,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1061,
+        "node_id": "nA161"
+      },
+      {
+        "t": 1660,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1062,
+        "node_id": "nA162"
+      },
+      {
+        "t": 1670,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1063,
+        "node_id": "nA163"
+      },
+      {
+        "t": 1680,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1064,
+        "node_id": "nA164"
+      },
+      {
+        "t": 1690,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1065,
+        "node_id": "nA165"
+      },
+      {
+        "t": 1700,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1066,
+        "node_id": "nA166"
+      },
+      {
+        "t": 1710,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1067,
+        "node_id": "nA167"
+      },
+      {
+        "t": 1720,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1068,
+        "node_id": "nA168"
+      },
+      {
+        "t": 1730,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1069,
+        "node_id": "nA169"
+      },
+      {
+        "t": 1740,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1070,
+        "node_id": "nA170"
+      },
+      {
+        "t": 1745,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1070,
+        "node_id": "nB170"
+      },
+      {
+        "t": 1750,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1071,
+        "node_id": "nA171"
+      },
+      {
+        "t": 1760,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1072,
+        "node_id": "nA172"
+      },
+      {
+        "t": 1770,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1073,
+        "node_id": "nA173"
+      },
+      {
+        "t": 1780,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1074,
+        "node_id": "nA174"
+      },
+      {
+        "t": 1790,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1075,
+        "node_id": "nA175"
+      },
+      {
+        "t": 1800,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1076,
+        "node_id": "nA176"
+      },
+      {
+        "t": 1810,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1077,
+        "node_id": "nA177"
+      },
+      {
+        "t": 1820,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1078,
+        "node_id": "nA178"
+      },
+      {
+        "t": 1830,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1079,
+        "node_id": "nA179"
+      },
+      {
+        "t": 1840,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1080,
+        "node_id": "nA180"
+      },
+      {
+        "t": 1845,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1080,
+        "node_id": "nB180"
+      },
+      {
+        "t": 1850,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1081,
+        "node_id": "nA181"
+      },
+      {
+        "t": 1860,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1082,
+        "node_id": "nA182"
+      },
+      {
+        "t": 1870,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1083,
+        "node_id": "nA183"
+      },
+      {
+        "t": 1880,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1084,
+        "node_id": "nA184"
+      },
+      {
+        "t": 1890,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1085,
+        "node_id": "nA185"
+      },
+      {
+        "t": 1900,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1086,
+        "node_id": "nA186"
+      },
+      {
+        "t": 1910,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1087,
+        "node_id": "nA187"
+      },
+      {
+        "t": 1920,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1088,
+        "node_id": "nA188"
+      },
+      {
+        "t": 1930,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1089,
+        "node_id": "nA189"
+      },
+      {
+        "t": 1940,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1090,
+        "node_id": "nA190"
+      },
+      {
+        "t": 1945,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1090,
+        "node_id": "nB190"
+      },
+      {
+        "t": 1950,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1091,
+        "node_id": "nA191"
+      },
+      {
+        "t": 1960,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1092,
+        "node_id": "nA192"
+      },
+      {
+        "t": 1970,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1093,
+        "node_id": "nA193"
+      },
+      {
+        "t": 1980,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1094,
+        "node_id": "nA194"
+      },
+      {
+        "t": 1990,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1095,
+        "node_id": "nA195"
+      },
+      {
+        "t": 2000,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1096,
+        "node_id": "nA196"
+      },
+      {
+        "t": 2010,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1097,
+        "node_id": "nA197"
+      },
+      {
+        "t": 2020,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1098,
+        "node_id": "nA198"
+      },
+      {
+        "t": 2030,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1099,
+        "node_id": "nA199"
+      },
+      {
+        "t": 2040,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1100,
+        "node_id": "nA200"
+      },
+      {
+        "t": 2045,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1100,
+        "node_id": "nB200"
+      },
+      {
+        "t": 2050,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1101,
+        "node_id": "nA201"
+      },
+      {
+        "t": 2060,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1102,
+        "node_id": "nA202"
+      },
+      {
+        "t": 2070,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1103,
+        "node_id": "nA203"
+      },
+      {
+        "t": 2080,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1104,
+        "node_id": "nA204"
+      },
+      {
+        "t": 2090,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1105,
+        "node_id": "nA205"
+      },
+      {
+        "t": 2100,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1106,
+        "node_id": "nA206"
+      },
+      {
+        "t": 2110,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1107,
+        "node_id": "nA207"
+      },
+      {
+        "t": 2120,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1108,
+        "node_id": "nA208"
+      },
+      {
+        "t": 2130,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1109,
+        "node_id": "nA209"
+      },
+      {
+        "t": 2140,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1110,
+        "node_id": "nA210"
+      },
+      {
+        "t": 2145,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1110,
+        "node_id": "nB210"
+      },
+      {
+        "t": 2150,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1111,
+        "node_id": "nA211"
+      },
+      {
+        "t": 2160,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1112,
+        "node_id": "nA212"
+      },
+      {
+        "t": 2170,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1113,
+        "node_id": "nA213"
+      },
+      {
+        "t": 2180,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1114,
+        "node_id": "nA214"
+      },
+      {
+        "t": 2190,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1115,
+        "node_id": "nA215"
+      },
+      {
+        "t": 2200,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1116,
+        "node_id": "nA216"
+      },
+      {
+        "t": 2210,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1117,
+        "node_id": "nA217"
+      },
+      {
+        "t": 2220,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1118,
+        "node_id": "nA218"
+      },
+      {
+        "t": 2230,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1119,
+        "node_id": "nA219"
+      },
+      {
+        "t": 2240,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1120,
+        "node_id": "nA220"
+      },
+      {
+        "t": 2245,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1120,
+        "node_id": "nB220"
+      },
+      {
+        "t": 2250,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1121,
+        "node_id": "nA221"
+      },
+      {
+        "t": 2260,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1122,
+        "node_id": "nA222"
+      },
+      {
+        "t": 2270,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1123,
+        "node_id": "nA223"
+      },
+      {
+        "t": 2280,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1124,
+        "node_id": "nA224"
+      },
+      {
+        "t": 2290,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1125,
+        "node_id": "nA225"
+      },
+      {
+        "t": 2300,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1126,
+        "node_id": "nA226"
+      },
+      {
+        "t": 2310,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1127,
+        "node_id": "nA227"
+      },
+      {
+        "t": 2320,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1128,
+        "node_id": "nA228"
+      },
+      {
+        "t": 2330,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1129,
+        "node_id": "nA229"
+      },
+      {
+        "t": 2340,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1130,
+        "node_id": "nA230"
+      },
+      {
+        "t": 2345,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1130,
+        "node_id": "nB230"
+      },
+      {
+        "t": 2350,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1131,
+        "node_id": "nA231"
+      },
+      {
+        "t": 2360,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1132,
+        "node_id": "nA232"
+      },
+      {
+        "t": 2370,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1133,
+        "node_id": "nA233"
+      },
+      {
+        "t": 2380,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1134,
+        "node_id": "nA234"
+      },
+      {
+        "t": 2390,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1135,
+        "node_id": "nA235"
+      },
+      {
+        "t": 2400,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1136,
+        "node_id": "nA236"
+      },
+      {
+        "t": 2410,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1137,
+        "node_id": "nA237"
+      },
+      {
+        "t": 2420,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1138,
+        "node_id": "nA238"
+      },
+      {
+        "t": 2430,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1139,
+        "node_id": "nA239"
+      },
+      {
+        "t": 2440,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1140,
+        "node_id": "nA240"
+      },
+      {
+        "t": 2445,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1140,
+        "node_id": "nB240"
+      },
+      {
+        "t": 2450,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1141,
+        "node_id": "nA241"
+      },
+      {
+        "t": 2460,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1142,
+        "node_id": "nA242"
+      },
+      {
+        "t": 2470,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1143,
+        "node_id": "nA243"
+      },
+      {
+        "t": 2480,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1144,
+        "node_id": "nA244"
+      },
+      {
+        "t": 2490,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1145,
+        "node_id": "nA245"
+      },
+      {
+        "t": 2500,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1146,
+        "node_id": "nA246"
+      },
+      {
+        "t": 2510,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1147,
+        "node_id": "nA247"
+      },
+      {
+        "t": 2520,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1148,
+        "node_id": "nA248"
+      },
+      {
+        "t": 2530,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1149,
+        "node_id": "nA249"
+      },
+      {
+        "t": 2540,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1150,
+        "node_id": "nA250"
+      },
+      {
+        "t": 2545,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1150,
+        "node_id": "nB250"
+      },
+      {
+        "t": 2550,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1151,
+        "node_id": "nA251"
+      },
+      {
+        "t": 2560,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1152,
+        "node_id": "nA252"
+      },
+      {
+        "t": 2570,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1153,
+        "node_id": "nA253"
+      },
+      {
+        "t": 2580,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1154,
+        "node_id": "nA254"
+      },
+      {
+        "t": 2590,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1155,
+        "node_id": "nA255"
+      },
+      {
+        "t": 2600,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1156,
+        "node_id": "nA256"
+      },
+      {
+        "t": 2610,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1157,
+        "node_id": "nA257"
+      },
+      {
+        "t": 2620,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1158,
+        "node_id": "nA258"
+      },
+      {
+        "t": 2630,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1159,
+        "node_id": "nA259"
+      },
+      {
+        "t": 2640,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1160,
+        "node_id": "nA260"
+      },
+      {
+        "t": 2645,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1160,
+        "node_id": "nB260"
+      },
+      {
+        "t": 2650,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1161,
+        "node_id": "nA261"
+      },
+      {
+        "t": 2660,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1162,
+        "node_id": "nA262"
+      },
+      {
+        "t": 2670,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1163,
+        "node_id": "nA263"
+      },
+      {
+        "t": 2680,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1164,
+        "node_id": "nA264"
+      },
+      {
+        "t": 2690,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1165,
+        "node_id": "nA265"
+      },
+      {
+        "t": 2700,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1166,
+        "node_id": "nA266"
+      },
+      {
+        "t": 2710,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1167,
+        "node_id": "nA267"
+      },
+      {
+        "t": 2720,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1168,
+        "node_id": "nA268"
+      },
+      {
+        "t": 2730,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1169,
+        "node_id": "nA269"
+      },
+      {
+        "t": 2740,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1170,
+        "node_id": "nA270"
+      },
+      {
+        "t": 2745,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1170,
+        "node_id": "nB270"
+      },
+      {
+        "t": 2750,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1171,
+        "node_id": "nA271"
+      },
+      {
+        "t": 2760,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1172,
+        "node_id": "nA272"
+      },
+      {
+        "t": 2770,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1173,
+        "node_id": "nA273"
+      },
+      {
+        "t": 2780,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1174,
+        "node_id": "nA274"
+      },
+      {
+        "t": 2790,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1175,
+        "node_id": "nA275"
+      },
+      {
+        "t": 2800,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1176,
+        "node_id": "nA276"
+      },
+      {
+        "t": 2810,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1177,
+        "node_id": "nA277"
+      },
+      {
+        "t": 2820,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1178,
+        "node_id": "nA278"
+      },
+      {
+        "t": 2830,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1179,
+        "node_id": "nA279"
+      },
+      {
+        "t": 2840,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1180,
+        "node_id": "nA280"
+      },
+      {
+        "t": 2845,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1180,
+        "node_id": "nB280"
+      },
+      {
+        "t": 2850,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1181,
+        "node_id": "nA281"
+      },
+      {
+        "t": 2860,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1182,
+        "node_id": "nA282"
+      },
+      {
+        "t": 2870,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1183,
+        "node_id": "nA283"
+      },
+      {
+        "t": 2880,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1184,
+        "node_id": "nA284"
+      },
+      {
+        "t": 2890,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1185,
+        "node_id": "nA285"
+      },
+      {
+        "t": 2900,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1186,
+        "node_id": "nA286"
+      },
+      {
+        "t": 2910,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1187,
+        "node_id": "nA287"
+      },
+      {
+        "t": 2920,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1188,
+        "node_id": "nA288"
+      },
+      {
+        "t": 2930,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1189,
+        "node_id": "nA289"
+      },
+      {
+        "t": 2940,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1190,
+        "node_id": "nA290"
+      },
+      {
+        "t": 2945,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1190,
+        "node_id": "nB290"
+      },
+      {
+        "t": 2950,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1191,
+        "node_id": "nA291"
+      },
+      {
+        "t": 2960,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1192,
+        "node_id": "nA292"
+      },
+      {
+        "t": 2970,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1193,
+        "node_id": "nA293"
+      },
+      {
+        "t": 2980,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1194,
+        "node_id": "nA294"
+      },
+      {
+        "t": 2990,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1195,
+        "node_id": "nA295"
+      },
+      {
+        "t": 3000,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1196,
+        "node_id": "nA296"
+      },
+      {
+        "t": 3010,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1197,
+        "node_id": "nA297"
+      },
+      {
+        "t": 3020,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1198,
+        "node_id": "nA298"
+      },
+      {
+        "t": 3030,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1199,
+        "node_id": "nA299"
+      },
+      {
+        "t": 3040,
+        "event": "epoch_issue",
+        "controller": "controller-a",
+        "epoch_id": 1200,
+        "node_id": "nA300"
+      },
+      {
+        "t": 3045,
+        "event": "epoch_issue",
+        "controller": "controller-b",
+        "epoch_id": 1200,
+        "node_id": "nB300"
+      },
+      {
+        "t": 3250,
+        "event": "merge",
+        "participants": [
+          "controller-b"
+        ],
+        "reconcile_strategy": "prefer_longest"
+      }
+    ],
+    "expectations": {
+      "detected": true,
+      "detection_reference": "fork_created",
+      "max_detection_ms": 500,
+      "max_reconciliation_ms": 15000,
+      "reconciled_epoch": {
+        "epoch_id": 1200,
+        "node_id": "nA300",
+        "eare_hash": "0xa300"
+      },
+      "allow_replay_gap": {
+        "max_messages": 20,
+        "max_ms": 15000
+      },
+      "expected_error_categories": [
+        "EPOCH_FORK_DETECTED"
+      ],
+      "healing_required": true
+    }
+  }
+]

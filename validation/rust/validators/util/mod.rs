@@ -1,3 +1,4 @@
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json;
 use std::error::Error;
@@ -12,6 +13,13 @@ pub fn root_path(relative: &str) -> PathBuf {
     let mut path = repo_root();
     path.push(relative);
     path
+}
+
+pub fn load_json<T: DeserializeOwned>(relative: &str) -> Result<T, Box<dyn Error>> {
+    let path = root_path(relative);
+    let data = fs::read_to_string(path)?;
+    let parsed = serde_json::from_str::<T>(&data)?;
+    Ok(parsed)
 }
 
 pub fn write_json<T: Serialize>(filename: &str, payload: &T) -> Result<(), Box<dyn Error>> {
