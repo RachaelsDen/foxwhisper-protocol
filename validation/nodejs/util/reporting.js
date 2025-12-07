@@ -1,6 +1,6 @@
-const fs = require('fs');const fs = require('fs');
 const fs = require('fs');
 const path = require('path');
+
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
 const RESULTS_DIR = path.join(ROOT_DIR, 'results');
