@@ -52,10 +52,13 @@ main() {
     # Run CBOR validation tests
     run_and_track "cbor_validation" "validate_cbor_node.js" ""
     run_and_track "cbor_crosslang" "validate_cbor_crosslang.js" ""
+    run_and_track "cbor_schema" "validate_schema_node.js" ""
     
     # Run multi-device sync validation
     run_and_track "multi_device_sync" "validate_multi_device_sync.js" "$ROOT_DIR/tests/common/handshake/multi_device_sync_test_vectors.json"
     run_and_track "replay_poisoning" "validate_replay_poisoning.js" "$ROOT_DIR/tests/common/handshake/replay_poisoning_test_vectors.json"
+    run_and_track "malformed_fuzz" "validate_malformed_fuzz.js" ""
+    run_and_track "replay_storm" "validate_replay_storm.js" ""
     run_and_track "epoch_fork" "epoch_fork.js" "--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json"
     
     echo ""
@@ -78,8 +81,11 @@ main() {
   "logs": [
     "nodejs_cbor_validation_results.log",
     "nodejs_cbor_crosslang_results.log",
+    "nodejs_cbor_schema_results.log",
     "nodejs_multi_device_sync_results.log",
     "nodejs_replay_poisoning_results.log",
+    "nodejs_malformed_fuzz_results.log",
+    "nodejs_replay_storm_results.log",
     "nodejs_epoch_fork_results.log"
   ]
 }
