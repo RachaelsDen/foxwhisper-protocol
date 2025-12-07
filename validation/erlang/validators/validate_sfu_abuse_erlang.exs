@@ -87,9 +87,9 @@ defmodule Foxwhisper.Validators.SFUAbuse do
     errors = []
     detection_time = nil
 
-    {errors, unauthorized_tracks, hijacked_tracks, key_leak_attempts, replayed_tracks, duplicate_routes, simulcast_spoofs, bitrate_abuse_events, false_positive_blocks, false_negative_leaks, affected, detection_time} =
-      Enum.reduce(events, {errors, unauthorized_tracks, hijacked_tracks, key_leak_attempts, replayed_tracks, duplicate_routes, simulcast_spoofs, bitrate_abuse_events, false_positive_blocks, false_negative_leaks, affected, detection_time}, fn ev, acc ->
-        {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time} = acc
+    {errors, unauthorized_tracks, hijacked_tracks, key_leak_attempts, replayed_tracks, duplicate_routes, simulcast_spoofs, bitrate_abuse_events, false_positive_blocks, false_negative_leaks, affected, detection_time, authed, routes, track_layers} =
+      Enum.reduce(events, {errors, unauthorized_tracks, hijacked_tracks, key_leak_attempts, replayed_tracks, duplicate_routes, simulcast_spoofs, bitrate_abuse_events, false_positive_blocks, false_negative_leaks, affected, detection_time, authed, routes, track_layers}, fn ev, acc ->
+        {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time, authed_acc, routes_acc, layers_acc} = acc
         t = ev["t"] || 0
         case ev["event"] do
           "join" ->
@@ -97,60 +97,60 @@ defmodule Foxwhisper.Validators.SFUAbuse do
             token = ev["token"]
             part = Map.get(participants, pid)
             cond do
-              part == nil -> {add_err(errs, "IMPERSONATION"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
-              token not in (part["authz_tokens"] || []) -> {add_err(errs, "IMPERSONATION"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
-              true -> {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, MapSet.put(authed, pid), det_time}
+              part == nil -> {add_err(errs, "IMPERSONATION"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
+              token not in (part["authz_tokens"] || []) -> {add_err(errs, "IMPERSONATION"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
+              true -> {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, MapSet.put(authed_acc, pid), det_time, routes_acc, layers_acc}
             end
           "publish" ->
             pid = ev["participant"]
             track_id = ev["track_id"]
             layers = ev["layers"] || []
-            if not MapSet.member?(authed, pid) do
-              {add_err(errs, "UNAUTHORIZED_SUBSCRIBE"), unauth + 1, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
+            if not MapSet.member?(authed_acc, pid) do
+              {add_err(errs, "UNAUTHORIZED_SUBSCRIBE"), unauth + 1, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
             else
-              routes2 = Map.put(routes, track_id, pid)
-              layers2 = Map.put(track_layers, track_id, layers)
-              {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time, routes2, layers2}
+              routes2 = Map.put(routes_acc, track_id, pid)
+              layers2 = Map.put(layers_acc, track_id, layers)
+              {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time, MapSet.put(authed_acc, pid), routes2, layers2}
             end
           "subscribe" ->
             pid = ev["participant"]
             track_id = ev["track_id"]
-            if not MapSet.member?(authed, pid) or not Map.has_key?(routes, track_id) do
-              {add_err(errs, "UNAUTHORIZED_SUBSCRIBE"), unauth + 1, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
+            if not MapSet.member?(authed_acc, pid) or not Map.has_key?(routes_acc, track_id) do
+              {add_err(errs, "UNAUTHORIZED_SUBSCRIBE"), unauth + 1, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
             else
-              {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time}
+              {errs, unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time, authed_acc, routes_acc, layers_acc}
             end
           "ghost_subscribe" ->
-            {add_err(errs, "UNAUTHORIZED_SUBSCRIBE"), unauth + 1, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, MapSet.put(affected_acc, ev["participant"] || "ghost"), det_time || t}
+            {add_err(errs, "UNAUTHORIZED_SUBSCRIBE"), unauth + 1, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, MapSet.put(affected_acc, ev["participant"] || "ghost"), det_time || t, authed_acc, routes_acc, layers_acc}
           "impersonate" ->
-            {add_err(errs, "IMPERSONATION"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, MapSet.put(affected_acc, ev["participant"] || "unknown"), det_time || t}
+            {add_err(errs, "IMPERSONATION"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate, fpb, fnl, MapSet.put(affected_acc, ev["participant"] || "unknown"), det_time || t, authed_acc, routes_acc, layers_acc}
           "replay_track" ->
             track_id = ev["track_id"]
-            if Map.has_key?(routes, track_id) do
-              {add_err(errs, "REPLAY_TRACK"), unauth, hijacked, keyleak, replayed + 1, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
+            if Map.has_key?(routes_acc, track_id) do
+              {add_err(errs, "REPLAY_TRACK"), unauth, hijacked, keyleak, replayed + 1, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
             else
               acc
             end
           "dup_track" ->
             track_id = ev["track_id"]
-            if Map.has_key?(routes, track_id) do
-              {add_err(errs, "DUPLICATE_ROUTE"), unauth, hijacked, keyleak, replayed, dup + 1, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
+            if Map.has_key?(routes_acc, track_id) do
+              {add_err(errs, "DUPLICATE_ROUTE"), unauth, hijacked, keyleak, replayed, dup + 1, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
             else
               acc
             end
           "simulcast_spoof" ->
             track_id = ev["track_id"]
             requested = ev["requested_layers"] || []
-            allowed = Map.get(track_layers, track_id, [])
+            allowed = Map.get(layers_acc, track_id, [])
             if Enum.any?(requested, fn r -> not Enum.member?(allowed, r) end) do
-              {add_err(errs, "SIMULCAST_SPOOF"), unauth, hijacked, keyleak, replayed, dup, spoof + 1, bitrate, fpb, fnl, affected_acc, det_time || t}
+              {add_err(errs, "SIMULCAST_SPOOF"), unauth, hijacked, keyleak, replayed, dup, spoof + 1, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
             else
               acc
             end
-          "bitrate_abuse" -> {add_err(errs, "BITRATE_ABUSE"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate + 1, fpb, fnl, affected_acc, det_time || t}
-          "key_rotation_skip" -> {add_err(errs, "STALE_KEY_REUSE"), unauth, hijacked, keyleak + 1, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
-          "stale_key_reuse" -> {add_err(errs, "STALE_KEY_REUSE"), unauth, hijacked, keyleak + 1, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
-          "steal_key" -> {add_err(errs, "KEY_LEAK_ATTEMPT"), unauth, hijacked, keyleak + 1, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t}
+          "bitrate_abuse" -> {add_err(errs, "BITRATE_ABUSE"), unauth, hijacked, keyleak, replayed, dup, spoof, bitrate + 1, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
+          "key_rotation_skip" -> {add_err(errs, "STALE_KEY_REUSE"), unauth, hijacked, keyleak + 1, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
+          "stale_key_reuse" -> {add_err(errs, "STALE_KEY_REUSE"), unauth, hijacked, keyleak + 1, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
+          "steal_key" -> {add_err(errs, "KEY_LEAK_ATTEMPT"), unauth, hijacked, keyleak + 1, replayed, dup, spoof, bitrate, fpb, fnl, affected_acc, det_time || t, authed_acc, routes_acc, layers_acc}
           _ -> acc
         end
       end)
