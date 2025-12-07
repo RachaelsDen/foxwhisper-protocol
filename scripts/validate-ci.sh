@@ -222,9 +222,19 @@ if run_validation "Rust Corrupted EARE" "cargo run --bin validate_corrupted_eare
     successful_validations=$((successful_validations + 1))
 fi
 
+# Minimal JS Client
+echo "🧩 Minimal JS Client"
+echo "-------------------"
+
+total_validations=$((total_validations + 1))
+if run_validation "Minimal JS Client" "cd clients/minimal-js && npm test" "minimal_js_client"; then
+    successful_validations=$((successful_validations + 1))
+fi
+ 
 # Elixir validations
 echo "💧 Elixir Validations"
 echo "------------------"
+
 
 total_validations=$((total_validations + 1))
 if run_validation "Elixir" "bash scripts/jobs/validate-erlang.sh" "elixir"; then
