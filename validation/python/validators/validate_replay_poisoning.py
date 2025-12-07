@@ -4,13 +4,18 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Dict, List
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from validation.python.util.reporting import write_json  # type: ignore[import]
+
 VECTORS_FILE = ROOT_DIR / "tests/common/handshake/replay_poisoning_test_vectors.json"
-RESULTS_DIR = ROOT_DIR / "results"
 
 
 @dataclass
@@ -206,16 +211,12 @@ def load_vectors(path: Path = VECTORS_FILE) -> Dict[str, Any]:
 
 
 def save_results(results: List[ScenarioResult]) -> Path:
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = RESULTS_DIR / "replay_poisoning_validation_results.json"
     payload = {
         "scenario_count": len(results),
         "results": [asdict(result) for result in results],
         "success": all(result.valid for result in results),
     }
-    with output_path.open("w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=2)
-    return output_path
+    return write_json("replay_poisoning_validation_results.json", payload)
 
 
 def main() -> None:

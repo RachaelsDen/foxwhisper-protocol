@@ -1,8 +1,8 @@
+use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
 use std::error::Error;
-use base64::{Engine as _, engine::general_purpose};
+use std::fs;
 
 // FoxWhisper End-to-End Test Vector Generator (Rust)
 // Generates complete protocol flow test vectors for FoxWhisper v0.9
@@ -146,8 +146,10 @@ impl EndToEndTestVectorGenerator {
 
     pub fn save_test_vectors(&mut self, filename: &str) -> Result<(), Box<dyn Error>> {
         let handshake_flow = self.generate_handshake_flow();
-        self.test_vectors.insert("handshake_flow".to_string(), 
-            serde_json::to_value(&handshake_flow)?);
+        self.test_vectors.insert(
+            "handshake_flow".to_string(),
+            serde_json::to_value(&handshake_flow)?,
+        );
 
         // Add metadata
         let metadata = serde_json::json!({
@@ -171,16 +173,19 @@ impl EndToEndTestVectorGenerator {
         fs::write(filename, json_data)?;
 
         println!("✅ End-to-end test vectors saved to {}", filename);
-        println!("📊 Generated {} test scenarios", self.test_vectors.len() - 1);
+        println!(
+            "📊 Generated {} test scenarios",
+            self.test_vectors.len() - 1
+        );
 
         Ok(())
     }
 }
 
 fn generate_random_base64(size: usize) -> String {
-    use rand::RngCore;
     use rand::thread_rng;
-    
+    use rand::RngCore;
+
     let mut bytes = vec![0u8; size];
     let mut rng = thread_rng();
     rng.fill_bytes(&mut bytes);

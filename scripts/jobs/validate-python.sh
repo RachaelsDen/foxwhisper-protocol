@@ -75,6 +75,12 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
+    # Replay Storm Simulation
+    total_tests=$((total_tests + 1))
+    if run_python_validation "replay_storm" "replay_storm_simulation.py" ""; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
     # Generate job summary
     echo ""
     echo "Python Validation Summary:"
@@ -99,7 +105,8 @@ main() {
     "python_schema_validation_results.log", 
     "python_multi_device_sync_results.log",
     "python_replay_poisoning_results.log",
-    "python_malformed_fuzz_results.log"
+    "python_malformed_fuzz_results.log",
+    "python_replay_storm_results.log"
   ]
 }
 EOF

@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Dict, List, Any
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from validation.python.util.reporting import write_json  # type: ignore[import]
 
 class MultiDeviceSyncValidator:
     """
@@ -333,12 +337,8 @@ class MultiDeviceSyncValidator:
     
     def save_results(self, results: Dict[str, Any], filename: str):
         """Save validation results to JSON file"""
-        output_dir = ROOT_DIR / "results"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_file = output_dir / filename
-        with open(output_file, 'w') as f:
-            json.dump(results, f, indent=2)
-        print(f"\n📄 Results saved to {output_file}")
+        output_path = write_json(filename, results)
+        print(f"\n📄 Results saved to {output_path}")
 
 def main():
     if len(sys.argv) != 2:

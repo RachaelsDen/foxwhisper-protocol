@@ -1,8 +1,6 @@
 const fs = require('fs');
-const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
-const RESULTS_DIR = path.join(REPO_ROOT, 'results');
+const { ROOT_DIR, writeJson } = require('../util/reporting');
 
 class MultiDeviceSyncValidator {
     constructor() {
@@ -301,12 +299,7 @@ class MultiDeviceSyncValidator {
     }
 
     saveResults(filename) {
-        if (!fs.existsSync(RESULTS_DIR)) {
-            fs.mkdirSync(RESULTS_DIR, { recursive: true });
-        }
-        const filePath = path.join(RESULTS_DIR, filename);
-        const resultsJson = JSON.stringify(this.validationResults, null, 2);
-        fs.writeFileSync(filePath, resultsJson);
+        const filePath = writeJson(filename, this.validationResults);
         console.log(`\n📄 Results saved to ${filePath}`);
     }
 }

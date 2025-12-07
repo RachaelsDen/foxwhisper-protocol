@@ -8,14 +8,13 @@ const cbor = require('cbor');
 const fs = require('fs');
 const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
-const RESULTS_DIR = path.join(REPO_ROOT, 'results');
+const { ROOT_DIR, writeJson } = require('../util/reporting');
 
 // Load test data from JSON file for consistency
 function loadTestData() {
     const testFiles = [
-        path.join(REPO_ROOT, 'tests', 'common', 'handshake', 'cbor_test_vectors_fixed.json'),
-        path.join(REPO_ROOT, 'tests', 'common', 'handshake', 'cbor_test_vectors.json')
+        path.join(ROOT_DIR, 'tests/common/handshake/cbor_test_vectors_fixed.json'),
+        path.join(ROOT_DIR, 'tests/common/handshake/cbor_test_vectors.json'),
     ];
     
     for (const testFile of testFiles) {
@@ -132,12 +131,8 @@ function main() {
         }
     }
     
-    if (!fs.existsSync(RESULTS_DIR)) {
-        fs.mkdirSync(RESULTS_DIR, { recursive: true });
-    }
-    const outputFile = path.join(RESULTS_DIR, 'nodejs_cbor_results.json');
-    fs.writeFileSync(outputFile, JSON.stringify(hexResults, null, 2));
-    console.log(`📄 Results saved to ${outputFile}`);
+    const outputPath = writeJson('nodejs_cbor_results.json', hexResults);
+    console.log(`📄 Results saved to ${outputPath}`);
 }
 
 if (require.main === module) {

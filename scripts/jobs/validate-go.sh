@@ -53,9 +53,33 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
-    # Cross-Language Validation
+    # Multi-Device Sync Validation
     total_tests=$((total_tests + 1))
-    if run_go_validation "cross_language" "../../common/validators/validate_cbor_crosslang.go" ""; then
+    if run_go_validation "multi_device_sync" "multi_device_sync/main.go" "$ROOT_DIR/tests/common/handshake/multi_device_sync_test_vectors.json"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # Replay & Poisoning Validation
+    total_tests=$((total_tests + 1))
+    if run_go_validation "replay_poisoning" "replay_poisoning/main.go" "$ROOT_DIR/tests/common/handshake/replay_poisoning_test_vectors.json"; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # CBOR Schema Validation
+    total_tests=$((total_tests + 1))
+    if run_go_validation "cbor_schema" "schema/main.go" ""; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # Malformed Packet Fuzz Harness
+    total_tests=$((total_tests + 1))
+    if run_go_validation "malformed_fuzz" "malformed_fuzz/main.go" ""; then
+        passed_tests=$((passed_tests + 1))
+    fi
+
+    # Replay Storm Simulation
+    total_tests=$((total_tests + 1))
+    if run_go_validation "replay_storm" "replay_storm/main.go" ""; then
         passed_tests=$((passed_tests + 1))
     fi
 
@@ -80,7 +104,11 @@ main() {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "logs": [
     "go_cbor_validation_results.log",
-    "go_cross_language_results.log"
+    "go_multi_device_sync_results.log",
+    "go_replay_poisoning_results.log",
+    "go_cbor_schema_results.log",
+    "go_malformed_fuzz_results.log",
+    "go_replay_storm_results.log"
   ]
 }
 EOF

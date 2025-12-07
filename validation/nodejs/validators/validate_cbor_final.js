@@ -8,14 +8,8 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
-const RESULTS_DIR = path.join(REPO_ROOT, 'results');
+const { RESULTS_DIR, ensureResultsDir } = require('../util/reporting');
 
-function ensureResultsDir() {
-    if (!fs.existsSync(RESULTS_DIR)) {
-        fs.mkdirSync(RESULTS_DIR, { recursive: true });
-    }
-}
 
 function loadResults(filename) {
     try {

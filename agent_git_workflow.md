@@ -3,7 +3,7 @@
 This document defines mandatory rules for how AI agents interact with Git and GitHub in this repository.
 
 The goals:
-- Protect long-lived branches (`main`, `develop`, `epic/*`, etc.).
+- Protect long-lived branches (`main`, `dev`, `epic/*`, etc.).
 - Enforce short-lived, well-named branches for all work.
 - Use consistent commit messages.
 - Automatically open a GitHub Pull Request using GitHub MCP if available, or `gh` CLI as a fallback.
@@ -12,7 +12,7 @@ The goals:
 You must treat the following branches as protected:
 - `main`
 - `master`
-- `develop`
+- `dev`
 - Any branch matching: `epic/*`
 - Any branch matching: `release/*`
 

@@ -24,47 +24,38 @@ foxwhisper-protocol/
 │   ├── repository-organization.md   # This file
 │   └── [other documentation...]
 │
-├── 📁 validation/                  # 🆕 All validation tools and results
+├── 📁 results/                     # Aggregated validation outputs (generated)
+│
+├── 📁 validation/                  # 🆕 All validation tools
 │   ├── python/                     # Python-specific validation
 │   │   ├── validators/             # Python validation scripts
-│   │   ├── results/                # Python validation results
 │   │   └── logs/                  # Python validation logs
 │   ├── nodejs/                     # Node.js-specific validation
 │   │   ├── validators/             # Node.js validation scripts
-│   │   ├── results/                # Node.js validation results
 │   │   └── logs/                  # Node.js validation logs
 │   ├── go/                        # Go-specific validation
 │   │   ├── validators/             # Go validation scripts
-│   │   ├── results/                # Go validation results
 │   │   └── logs/                  # Go validation logs
 │   ├── rust/                      # Rust-specific validation
 │   │   ├── validators/             # Rust validation scripts
-│   │   ├── results/                # Rust validation results
 │   │   └── logs/                  # Rust validation logs
 │   ├── common/                     # Cross-language validation
 │   │   ├── validators/             # Cross-language scripts
-│   │   ├── results/                # Cross-language results
 │   │   └── logs/                  # Cross-language logs
 │   ├── bin/                       # Compiled validation binaries
 │   ├── temp/                      # Temporary files
 │   └── ci/                        # CI/CD specific files
 │
 ├── 📁 tests/                       # 🆕 Test vectors and test data
-│   ├── common/                     # Cross-language test vectors
-│   │   ├── handshake/             # Handshake test vectors
-│   │   ├── media/                 # Media encryption tests
-│   │   ├── multi-device/           # Multi-device sync tests
-│   │   └── epoch/                 # Epoch transition tests
-│   ├── python/                     # Python-specific tests
-│   ├── nodejs/                     # Node.js-specific tests
-│   ├── go/                        # Go-specific tests
-│   └── rust/                      # Rust-specific tests
+│   └── common/                     # Shared vectors consumed by all validators
+│       ├── handshake/             # Handshake test vectors
+│       ├── media/                 # Media encryption tests
+│       ├── multi-device/           # Multi-device sync tests
+│       └── epoch/                 # Epoch transition tests
 │
-├── 📁 reports/                     # 🆕 Final reports and documentation
-│   ├── validation/                 # Validation reports
-│   ├── performance/                # Performance reports
-│   ├── security/                   # Security reports
-│   └── comprehensive/              # Complete analysis reports
+├── 📁 reports/                     # Final narrative reports
+│   ├── validation/                 # Validation narratives and schema deep dives
+│   └── comprehensive/              # Cross-discipline rollups
 │
 ├── 📁 tools/                       # Development and generation tools
 │   ├── generators/                 # Test vector generators
@@ -105,14 +96,18 @@ foxwhisper-protocol/
 - **Languages**: Go, Python, JavaScript for multi-language support
 - **Function**: CBOR validation, test vector generation, cross-language compatibility
 
-### `/test-vectors/` - Test Vectors & Results
-- **Purpose**: Comprehensive test vectors and validation results
+### `/results/` - Validation Outputs
+- **Purpose**: Central export directory for every validator and CI job
+- **Content**: Language status JSON files, cross-language comparisons, Markdown summaries
+- **Usage**: Populated via shared helpers (`validation/python/util/reporting.py`, `validation/nodejs/util/reporting.js`) so every script writes to the same root-level path
+
+### `/tests/` - Shared Test Inputs
+- **Purpose**: Central repository of canonical JSON vectors consumed by every validator
 - **Content**: 
   - Handshake message test vectors (primary: `cbor_test_vectors_fixed.json`)
   - AAD (Additional Authenticated Data) test vectors
-  - Double ratchet test vectors
-  - Cross-language validation results
-  - Language-specific validation results
+  - Double ratchet and replay/adversarial corpora under `tests/common/**`
+- **Note**: Validation outputs now live in `/results/`, keeping `/tests/` strictly for inputs (no per-language subfolders)
 
 ## 🧹 Recent Cleanup Actions
 

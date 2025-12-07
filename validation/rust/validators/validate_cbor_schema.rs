@@ -1,9 +1,9 @@
+use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
-use base64::{Engine as _, engine::general_purpose};
 
 // FoxWhisper CBOR Schema Validator (Rust)
 // Validates CBOR messages against FoxWhisper protocol schema
@@ -47,7 +47,7 @@ impl SchemaValidator {
             schemas: HashMap::new(),
             schema_version: "0.9".to_string(),
         };
-        
+
         validator.initialize_schemas();
         validator
     }
@@ -55,202 +55,282 @@ impl SchemaValidator {
     fn initialize_schemas(&mut self) {
         // HANDSHAKE_INIT schema
         let mut handshake_init_fields = HashMap::new();
-        handshake_init_fields.insert("type".to_string(), FieldDefinition {
-            field_type: "string".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Message type identifier".to_string(),
-        });
-        handshake_init_fields.insert("version".to_string(), FieldDefinition {
-            field_type: "integer".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Protocol version".to_string(),
-        });
-        handshake_init_fields.insert("client_id".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(32),
-            min_size: None,
-            max_size: None,
-            description: "Client identifier (32 bytes)".to_string(),
-        });
-        handshake_init_fields.insert("x25519_public_key".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(32),
-            min_size: None,
-            max_size: None,
-            description: "X25519 public key (32 bytes)".to_string(),
-        });
-        handshake_init_fields.insert("kyber_public_key".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(1568),
-            min_size: None,
-            max_size: None,
-            description: "Kyber public key (1568 bytes)".to_string(),
-        });
-        handshake_init_fields.insert("timestamp".to_string(), FieldDefinition {
-            field_type: "integer".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Unix timestamp".to_string(),
-        });
-        handshake_init_fields.insert("nonce".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(16),
-            min_size: None,
-            max_size: None,
-            description: "Random nonce (16 bytes)".to_string(),
-        });
+        handshake_init_fields.insert(
+            "type".to_string(),
+            FieldDefinition {
+                field_type: "string".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Message type identifier".to_string(),
+            },
+        );
+        handshake_init_fields.insert(
+            "version".to_string(),
+            FieldDefinition {
+                field_type: "integer".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Protocol version".to_string(),
+            },
+        );
+        handshake_init_fields.insert(
+            "client_id".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(32),
+                min_size: None,
+                max_size: None,
+                description: "Client identifier (32 bytes)".to_string(),
+            },
+        );
+        handshake_init_fields.insert(
+            "x25519_public_key".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(32),
+                min_size: None,
+                max_size: None,
+                description: "X25519 public key (32 bytes)".to_string(),
+            },
+        );
+        handshake_init_fields.insert(
+            "kyber_public_key".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(1568),
+                min_size: None,
+                max_size: None,
+                description: "Kyber public key (1568 bytes)".to_string(),
+            },
+        );
+        handshake_init_fields.insert(
+            "timestamp".to_string(),
+            FieldDefinition {
+                field_type: "integer".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Unix timestamp".to_string(),
+            },
+        );
+        handshake_init_fields.insert(
+            "nonce".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(16),
+                min_size: None,
+                max_size: None,
+                description: "Random nonce (16 bytes)".to_string(),
+            },
+        );
 
-        self.schemas.insert("HANDSHAKE_INIT".to_string(), MessageSchema {
-            message_type: "HANDSHAKE_INIT".to_string(),
-            tag: 0xD1,
-            required_fields: vec![
-                "type".to_string(), "version".to_string(), "client_id".to_string(),
-                "x25519_public_key".to_string(), "kyber_public_key".to_string(),
-                "timestamp".to_string(), "nonce".to_string()
-            ],
-            optional_fields: vec![],
-            field_definitions: handshake_init_fields,
-        });
+        self.schemas.insert(
+            "HANDSHAKE_INIT".to_string(),
+            MessageSchema {
+                message_type: "HANDSHAKE_INIT".to_string(),
+                tag: 0xD1,
+                required_fields: vec![
+                    "type".to_string(),
+                    "version".to_string(),
+                    "client_id".to_string(),
+                    "x25519_public_key".to_string(),
+                    "kyber_public_key".to_string(),
+                    "timestamp".to_string(),
+                    "nonce".to_string(),
+                ],
+                optional_fields: vec![],
+                field_definitions: handshake_init_fields,
+            },
+        );
 
         // HANDSHAKE_RESPONSE schema
         let mut handshake_response_fields = HashMap::new();
-        handshake_response_fields.insert("type".to_string(), FieldDefinition {
-            field_type: "string".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Message type identifier".to_string(),
-        });
-        handshake_response_fields.insert("version".to_string(), FieldDefinition {
-            field_type: "integer".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Protocol version".to_string(),
-        });
-        handshake_response_fields.insert("server_id".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(32),
-            min_size: None,
-            max_size: None,
-            description: "Server identifier (32 bytes)".to_string(),
-        });
-        handshake_response_fields.insert("x25519_public_key".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(32),
-            min_size: None,
-            max_size: None,
-            description: "X25519 public key (32 bytes)".to_string(),
-        });
-        handshake_response_fields.insert("kyber_ciphertext".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(1568),
-            min_size: None,
-            max_size: None,
-            description: "Kyber ciphertext (1568 bytes)".to_string(),
-        });
-        handshake_response_fields.insert("timestamp".to_string(), FieldDefinition {
-            field_type: "integer".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Unix timestamp".to_string(),
-        });
-        handshake_response_fields.insert("nonce".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(16),
-            min_size: None,
-            max_size: None,
-            description: "Random nonce (16 bytes)".to_string(),
-        });
+        handshake_response_fields.insert(
+            "type".to_string(),
+            FieldDefinition {
+                field_type: "string".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Message type identifier".to_string(),
+            },
+        );
+        handshake_response_fields.insert(
+            "version".to_string(),
+            FieldDefinition {
+                field_type: "integer".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Protocol version".to_string(),
+            },
+        );
+        handshake_response_fields.insert(
+            "server_id".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(32),
+                min_size: None,
+                max_size: None,
+                description: "Server identifier (32 bytes)".to_string(),
+            },
+        );
+        handshake_response_fields.insert(
+            "x25519_public_key".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(32),
+                min_size: None,
+                max_size: None,
+                description: "X25519 public key (32 bytes)".to_string(),
+            },
+        );
+        handshake_response_fields.insert(
+            "kyber_ciphertext".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(1568),
+                min_size: None,
+                max_size: None,
+                description: "Kyber ciphertext (1568 bytes)".to_string(),
+            },
+        );
+        handshake_response_fields.insert(
+            "timestamp".to_string(),
+            FieldDefinition {
+                field_type: "integer".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Unix timestamp".to_string(),
+            },
+        );
+        handshake_response_fields.insert(
+            "nonce".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(16),
+                min_size: None,
+                max_size: None,
+                description: "Random nonce (16 bytes)".to_string(),
+            },
+        );
 
-        self.schemas.insert("HANDSHAKE_RESPONSE".to_string(), MessageSchema {
-            message_type: "HANDSHAKE_RESPONSE".to_string(),
-            tag: 0xD2,
-            required_fields: vec![
-                "type".to_string(), "version".to_string(), "server_id".to_string(),
-                "x25519_public_key".to_string(), "kyber_ciphertext".to_string(),
-                "timestamp".to_string(), "nonce".to_string()
-            ],
-            optional_fields: vec![],
-            field_definitions: handshake_response_fields,
-        });
+        self.schemas.insert(
+            "HANDSHAKE_RESPONSE".to_string(),
+            MessageSchema {
+                message_type: "HANDSHAKE_RESPONSE".to_string(),
+                tag: 0xD2,
+                required_fields: vec![
+                    "type".to_string(),
+                    "version".to_string(),
+                    "server_id".to_string(),
+                    "x25519_public_key".to_string(),
+                    "kyber_ciphertext".to_string(),
+                    "timestamp".to_string(),
+                    "nonce".to_string(),
+                ],
+                optional_fields: vec![],
+                field_definitions: handshake_response_fields,
+            },
+        );
 
         // HANDSHAKE_COMPLETE schema
         let mut handshake_complete_fields = HashMap::new();
-        handshake_complete_fields.insert("type".to_string(), FieldDefinition {
-            field_type: "string".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Message type identifier".to_string(),
-        });
-        handshake_complete_fields.insert("version".to_string(), FieldDefinition {
-            field_type: "integer".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Protocol version".to_string(),
-        });
-        handshake_complete_fields.insert("session_id".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(32),
-            min_size: None,
-            max_size: None,
-            description: "Session identifier (32 bytes)".to_string(),
-        });
-        handshake_complete_fields.insert("handshake_hash".to_string(), FieldDefinition {
-            field_type: "base64".to_string(),
-            required: true,
-            size_bytes: Some(32),
-            min_size: None,
-            max_size: None,
-            description: "Handshake hash (32 bytes)".to_string(),
-        });
-        handshake_complete_fields.insert("timestamp".to_string(), FieldDefinition {
-            field_type: "integer".to_string(),
-            required: true,
-            size_bytes: None,
-            min_size: None,
-            max_size: None,
-            description: "Unix timestamp".to_string(),
-        });
+        handshake_complete_fields.insert(
+            "type".to_string(),
+            FieldDefinition {
+                field_type: "string".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Message type identifier".to_string(),
+            },
+        );
+        handshake_complete_fields.insert(
+            "version".to_string(),
+            FieldDefinition {
+                field_type: "integer".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Protocol version".to_string(),
+            },
+        );
+        handshake_complete_fields.insert(
+            "session_id".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(32),
+                min_size: None,
+                max_size: None,
+                description: "Session identifier (32 bytes)".to_string(),
+            },
+        );
+        handshake_complete_fields.insert(
+            "handshake_hash".to_string(),
+            FieldDefinition {
+                field_type: "base64".to_string(),
+                required: true,
+                size_bytes: Some(32),
+                min_size: None,
+                max_size: None,
+                description: "Handshake hash (32 bytes)".to_string(),
+            },
+        );
+        handshake_complete_fields.insert(
+            "timestamp".to_string(),
+            FieldDefinition {
+                field_type: "integer".to_string(),
+                required: true,
+                size_bytes: None,
+                min_size: None,
+                max_size: None,
+                description: "Unix timestamp".to_string(),
+            },
+        );
 
-        self.schemas.insert("HANDSHAKE_COMPLETE".to_string(), MessageSchema {
-            message_type: "HANDSHAKE_COMPLETE".to_string(),
-            tag: 0xD3,
-            required_fields: vec![
-                "type".to_string(), "version".to_string(), "session_id".to_string(),
-                "handshake_hash".to_string(), "timestamp".to_string()
-            ],
-            optional_fields: vec![],
-            field_definitions: handshake_complete_fields,
-        });
+        self.schemas.insert(
+            "HANDSHAKE_COMPLETE".to_string(),
+            MessageSchema {
+                message_type: "HANDSHAKE_COMPLETE".to_string(),
+                tag: 0xD3,
+                required_fields: vec![
+                    "type".to_string(),
+                    "version".to_string(),
+                    "session_id".to_string(),
+                    "handshake_hash".to_string(),
+                    "timestamp".to_string(),
+                ],
+                optional_fields: vec![],
+                field_definitions: handshake_complete_fields,
+            },
+        );
     }
 
-    pub fn validate_message(&self, message_data: &HashMap<String, serde_json::Value>) -> SchemaValidationResult {
+    pub fn validate_message(
+        &self,
+        message_data: &HashMap<String, serde_json::Value>,
+    ) -> SchemaValidationResult {
         let mut result = SchemaValidationResult {
             valid: false,
             errors: Vec::new(),
@@ -282,7 +362,9 @@ impl SchemaValidator {
         let schema = match self.schemas.get(message_type_str) {
             Some(s) => s,
             None => {
-                result.errors.push(format!("Unknown message type: {}", message_type_str));
+                result
+                    .errors
+                    .push(format!("Unknown message type: {}", message_type_str));
                 return result;
             }
         };
@@ -290,14 +372,20 @@ impl SchemaValidator {
         // Check required fields
         for field in &schema.required_fields {
             if !message_data.contains_key(field) {
-                result.errors.push(format!("Missing required field: {}", field));
+                result
+                    .errors
+                    .push(format!("Missing required field: {}", field));
             }
         }
 
         // Check for unknown fields
         for field_name in message_data.keys() {
-            if !schema.required_fields.contains(field_name) && !schema.optional_fields.contains(field_name) {
-                result.warnings.push(format!("Unknown field: {}", field_name));
+            if !schema.required_fields.contains(field_name)
+                && !schema.optional_fields.contains(field_name)
+            {
+                result
+                    .warnings
+                    .push(format!("Unknown field: {}", field_name));
             }
         }
 
@@ -312,16 +400,26 @@ impl SchemaValidator {
         result
     }
 
-    fn validate_field(&self, field_name: &str, value: &serde_json::Value, field_def: &FieldDefinition, result: &mut SchemaValidationResult) {
+    fn validate_field(
+        &self,
+        field_name: &str,
+        value: &serde_json::Value,
+        field_def: &FieldDefinition,
+        result: &mut SchemaValidationResult,
+    ) {
         match field_def.field_type.as_str() {
             "string" => {
                 if !value.is_string() {
-                    result.errors.push(format!("Field {} must be string", field_name));
+                    result
+                        .errors
+                        .push(format!("Field {} must be string", field_name));
                 }
             }
             "integer" => {
                 if !value.is_number() {
-                    result.errors.push(format!("Field {} must be integer", field_name));
+                    result
+                        .errors
+                        .push(format!("Field {} must be integer", field_name));
                 }
             }
             "base64" => {
@@ -330,38 +428,62 @@ impl SchemaValidator {
                 }
             }
             _ => {
-                result.warnings.push(format!("Unknown field type: {} for field {}", field_def.field_type, field_name));
+                result.warnings.push(format!(
+                    "Unknown field type: {} for field {}",
+                    field_def.field_type, field_name
+                ));
             }
         }
     }
 
-    fn validate_base64_field(&self, field_name: &str, value: &serde_json::Value, field_def: &FieldDefinition) -> Result<(), String> {
+    fn validate_base64_field(
+        &self,
+        field_name: &str,
+        value: &serde_json::Value,
+        field_def: &FieldDefinition,
+    ) -> Result<(), String> {
         let str_value = match value.as_str() {
             Some(s) => s,
             None => return Err(format!("Field {} must be string", field_name)),
         };
 
         // Try standard base64 first
-        let bytes = general_purpose::STANDARD.decode(str_value)
+        let bytes = general_purpose::STANDARD
+            .decode(str_value)
             .or_else(|_| general_purpose::URL_SAFE.decode(str_value))
             .map_err(|e| format!("Field {} must be valid base64 (error: {})", field_name, e))?;
 
         // Check size constraints
         if let Some(expected_size) = field_def.size_bytes {
             if bytes.len() != expected_size {
-                return Err(format!("Field {} wrong size: {} != {}", field_name, bytes.len(), expected_size));
+                return Err(format!(
+                    "Field {} wrong size: {} != {}",
+                    field_name,
+                    bytes.len(),
+                    expected_size
+                ));
             }
         }
 
         if let Some(min_size) = field_def.min_size {
             if bytes.len() < min_size {
-                return Err(format!("Field {} too small: {} < {}", field_name, bytes.len(), min_size));
+                return Err(format!(
+                    "Field {} too small: {} < {}",
+                    field_name,
+                    bytes.len(),
+                    min_size
+                ));
             }
         }
 
         if let Some(max_size) = field_def.max_size {
             if bytes.len() > max_size {
-                return Err(format!("Field {} too large: {} > {}", field_name, bytes.len(), max_size));
+                return Err(format!(
+                    "Field {} too large: {} > {}",
+                    field_name,
+                    bytes.len(),
+                    max_size
+                ));
             }
         }
 
@@ -386,7 +508,7 @@ impl SchemaValidator {
 
         let data = loaded_data.ok_or("Could not find test vectors file")?;
         let test_vectors: HashMap<String, serde_json::Value> = serde_json::from_str(&data)?;
-        
+
         let mut results = Vec::new();
 
         for (test_name, test_value) in test_vectors {
@@ -396,9 +518,12 @@ impl SchemaValidator {
                         println!("\nValidating: {}", test_name);
                         println!("{}", "-".repeat(30));
 
-                        let result = self.validate_message(&message_data.iter()
-                            .map(|(k, v)| (k.clone(), v.clone()))
-                            .collect());
+                        let result = self.validate_message(
+                            &message_data
+                                .iter()
+                                .map(|(k, v)| (k.clone(), v.clone()))
+                                .collect(),
+                        );
 
                         results.push(result.clone());
 
@@ -440,12 +565,20 @@ impl SchemaValidator {
             }
             total_errors += result.errors.len();
             total_warnings += result.warnings.len();
-            
-            let status = if result.valid { "✅ VALID" } else { "❌ INVALID" };
+
+            let status = if result.valid {
+                "✅ VALID"
+            } else {
+                "❌ INVALID"
+            };
             println!("{} Test {}", status, i + 1);
         }
 
-        println!("\nOverall: {}/{} messages valid", valid_count, results.len());
+        println!(
+            "\nOverall: {}/{} messages valid",
+            valid_count,
+            results.len()
+        );
         println!("Total errors: {}", total_errors);
         println!("Total warnings: {}", total_warnings);
 
