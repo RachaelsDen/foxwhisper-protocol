@@ -131,11 +131,6 @@ if run_validation "Node.js CBOR" "cd tools && node validate_cbor_node.js" "nodej
 fi
 
 total_validations=$((total_validations + 1))
-if run_validation "Node.js Fixed CBOR" "cd tools && node validate_cbor_node_fixed.js" "nodejs_cbor_fixed"; then
-    successful_validations=$((successful_validations + 1))
-fi
-
-total_validations=$((total_validations + 1))
 if run_validation "Node.js Cross-Language" "cd tools && node validate_cbor_crosslang.js" "nodejs_crosslang"; then
     successful_validations=$((successful_validations + 1))
 fi

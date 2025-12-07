@@ -91,11 +91,6 @@ jobs:
         cd validation/nodejs/validators
         node validate_cbor_node.js
         
-    - name: Run Node.js Fixed CBOR Validation
-      run: |
-        cd validation/nodejs/validators
-        node validate_cbor_node_fixed.js
-        
     - name: Run Node.js Cross-Language Validation
       run: |
         cd validation/nodejs/validators

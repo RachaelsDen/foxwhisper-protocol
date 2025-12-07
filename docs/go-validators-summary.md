@@ -100,7 +100,7 @@ go run validate_cbor_crosslang.go
 ```bash
 # Test all validators
 cd validation/python/validators && python3 validate_cbor_python_fixed.py
-cd ../nodejs/validators && node validate_cbor_node_fixed.js
+cd ../nodejs/validators && node validate_cbor_node.js
 cd ../go/validators && go run validate_cbor_go.go
 cd ../common/validators && go run validate_cbor_crosslang.go
 ```
