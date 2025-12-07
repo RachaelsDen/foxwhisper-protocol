@@ -127,19 +127,30 @@ defmodule Foxwhisper.Validators.CBOR do
   defp normalize_encoded(data), do: IO.iodata_to_binary(data)
 
   defp write_results(results) do
+    summary_success = Enum.all?(results, fn {_msg, res} -> res.success end)
+
     payload = %{
       language: "elixir",
       timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
       results:
         Enum.map(results, fn {message, result} ->
           %{
-            message: message,
+            name: message,
+            test: "cbor_validation",
             success: result.success,
             status: if(result.success, do: "success", else: "failed"),
             output: Map.get(result, :hex) || Map.get(result, :error),
             encoded_length: result[:length]
           }
-        end)
+        end) ++
+          [
+            %{
+              name: "cbor_validation",
+              test: "cbor_validation",
+              success: summary_success,
+              status: if(summary_success, do: "success", else: "failed")
+            }
+          ]
     }
 
     path = Reporting.write_json("elixir_cbor_status.json", payload)
