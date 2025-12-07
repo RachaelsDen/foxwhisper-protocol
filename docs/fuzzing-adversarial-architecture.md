@@ -47,9 +47,14 @@ Section 4.2 of the v0.9 roadmap covers malformed-packet fuzzing, replay storms, 
 - **Metrics**: `max/avg_dr_version_delta`, message loss + out-of-order rates, `max_clock_skew_ms`, divergence width (`max_diverged_device_count`), recovery attempts/successes, `max_rollback_events`, residual divergence flag, error categories (`DIVERGENCE_DETECTED`, `MESSAGE_LOSS`, `CLOCK_SKEW_VIOLATION`, `ROLLBACK_APPLIED`, `REPLAY_INJECTED`, etc.).
 - **Simulator**: Python oracle (`validation/common/simulators/desync.py`) with CLI `validation/python/validators/device_desync_sim.py --corpus tests/common/adversarial/device_desync.json --summary-out device_desync_summary.json`; writes `results/device_desync_summary.json` for CI.
 
-### 4.2.5 Corrupted EARE Injection & 4.2.6 SFU Abuse
-- **Corrupted EARE**: reuse the epoch fork DAG structures but add explicit tampering steps; integrate into `epoch_fork_fuzzer.py`.
-- **SFU abuse**: create `tests/common/adversarial/sfu_abuse.json` capturing unauthorized key requests, hijacked streams, etc. Node.js is the first target since the existing media validators use JavaScript; a Go shim validates server-side controls.
+### 4.2.5 Corrupted EARE Injection
+- **Corpus**: `tests/common/adversarial/corrupted_eare.json` with scenarios for invalid signature/PoP, hash-chain breaks, payload tamper, and extra fields; includes `group_context`, `nodes`, `corruptions`, and `expectations`.
+- **Python oracle**: `validation/common/simulators/corrupted_eare.py` with CLI runner `validation/python/validators/corrupted_eare_sim.py --corpus tests/common/adversarial/corrupted_eare.json --summary-out corrupted_eare_summary.json`.
+- **Multi-language shims**: Node.js (`validation/nodejs/validators/corrupted_eare.js`), Go (`validation/go/validators/corrupted_eare/main.go`), Rust (`validate_corrupted_eare_rust`), Erlang (`validation/erlang/validators/validate_corrupted_eare_erlang.exs`).
+- **CI outputs**: per-language summaries under `results/*corrupted_eare*`. Checks hash-chain continuity, tamper signals, and expectation matching.
+
+### 4.2.6 SFU Abuse
+- **Corpus (planned)**: `tests/common/adversarial/sfu_abuse.json` capturing unauthorized key requests, hijacked streams, etc. Node.js is the first target since the existing media validators use JavaScript; a Go shim validates server-side controls.
 
 ## Execution Plan
 1. Land the corpus files (starting with malformed packets and replay storms).

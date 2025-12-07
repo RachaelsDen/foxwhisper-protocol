@@ -60,6 +60,7 @@ main() {
     run_and_track "malformed_fuzz" "validate_malformed_fuzz.js" ""
     run_and_track "replay_storm" "validate_replay_storm.js" ""
     run_and_track "device_desync" "device_desync.js" ""
+    run_and_track "corrupted_eare" "corrupted_eare.js" ""
     run_and_track "epoch_fork" "epoch_fork.js" "--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json"
     
     echo ""
@@ -88,6 +89,7 @@ main() {
     "nodejs_malformed_fuzz_results.log",
     "nodejs_replay_storm_results.log",
     "nodejs_device_desync_results.log",
+    "nodejs_corrupted_eare_results.log",
     "nodejs_epoch_fork_results.log"
   ]
 }

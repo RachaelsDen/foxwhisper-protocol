@@ -1,0 +1,116 @@
+[
+  {
+    "scenario_id": "invalid_signature",
+    "tags": ["invalid-sig", "eare"],
+    "group_context": {
+      "group_id": "g-abc",
+      "membership_version": 3,
+      "epoch_size_limit": 64
+    },
+    "nodes": [
+      {
+        "node_id": "n1",
+        "epoch_id": 10,
+        "eare_hash": "h-n1",
+        "issued_by": "controller",
+        "previous_epoch_hash": "h-n0",
+        "membership_digest": "md-n1"
+      },
+      {
+        "node_id": "n2",
+        "epoch_id": 11,
+        "eare_hash": "h-n2",
+        "issued_by": "controller",
+        "previous_epoch_hash": "h-n1",
+        "membership_digest": "md-n2"
+      }
+    ],
+    "corruptions": [
+      {"type": "invalid_signature", "target_node": "n2", "reason": "tamper-bytes"}
+    ],
+    "expectations": {
+      "should_detect": true,
+      "expected_errors": ["INVALID_SIGNATURE"],
+      "max_detection_ms": 250,
+      "allow_partial_accept": false,
+      "residual_divergence_allowed": false
+    }
+  },
+  {
+    "scenario_id": "hash_chain_break",
+    "tags": ["hash-chain", "eare"],
+    "group_context": {
+      "group_id": "g-xyz",
+      "membership_version": 5,
+      "epoch_size_limit": 128
+    },
+    "nodes": [
+      {
+        "node_id": "a1",
+        "epoch_id": 20,
+        "eare_hash": "h-a1",
+        "issued_by": "controller",
+        "previous_epoch_hash": "h-a0",
+        "membership_digest": "md-a1"
+      },
+      {
+        "node_id": "a2",
+        "epoch_id": 21,
+        "eare_hash": "h-a2",
+        "issued_by": "controller",
+        "previous_epoch_hash": "wrong-hash",
+        "membership_digest": "md-a2"
+      }
+    ],
+    "corruptions": [
+      {"type": "hash_chain_break", "target_node": "a2"}
+    ],
+    "expectations": {
+      "should_detect": true,
+      "expected_errors": ["HASH_CHAIN_BREAK"],
+      "max_detection_ms": 250,
+      "allow_partial_accept": true,
+      "residual_divergence_allowed": true
+    }
+  },
+  {
+    "scenario_id": "tampered_payload_extra_fields",
+    "tags": ["payload", "extra-fields", "eare"],
+    "group_context": {
+      "group_id": "g-extra",
+      "membership_version": 8,
+      "epoch_size_limit": 256
+    },
+    "nodes": [
+      {
+        "node_id": "t1",
+        "epoch_id": 30,
+        "eare_hash": "h-t1",
+        "issued_by": "controller",
+        "previous_epoch_hash": "h-t0",
+        "membership_digest": "md-t1",
+        "payload": {"allowed": true}
+      },
+      {
+        "node_id": "t2",
+        "epoch_id": 31,
+        "eare_hash": "h-t2",
+        "issued_by": "controller",
+        "previous_epoch_hash": "h-t1",
+        "membership_digest": "md-t2",
+        "payload": {"allowed": true}
+      }
+    ],
+    "corruptions": [
+      {"type": "extra_fields", "target_node": "t2", "fields": {"unexpected": "value"}},
+      {"type": "tamper_payload", "target_node": "t2", "payload_patch": {"allowed": false, "tampered": true}}
+    ],
+    "expectations": {
+      "should_detect": true,
+      "expected_errors": ["EXTRA_FIELDS", "PAYLOAD_TAMPERED"],
+      "max_detection_ms": 250,
+      "allow_partial_accept": false,
+      "residual_divergence_allowed": false
+    }
+  }
+]

@@ -124,6 +124,11 @@ if run_validation "Python Device Desync" "cd validation/python/validators && pyt
     successful_validations=$((successful_validations + 1))
 fi
 
+total_validations=$((total_validations + 1))
+if run_validation "Python Corrupted EARE" "cd validation/python/validators && python3 corrupted_eare_sim.py" "python_corrupted_eare"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
 echo ""
 
 # Node.js validations
@@ -150,6 +155,11 @@ if run_validation "Node.js Device Desync" "cd validation/nodejs/validators && no
     successful_validations=$((successful_validations + 1))
 fi
 
+total_validations=$((total_validations + 1))
+if run_validation "Node.js Corrupted EARE" "cd validation/nodejs/validators && node corrupted_eare.js" "nodejs_corrupted_eare"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
 echo ""
 
 # Go validations
@@ -168,6 +178,11 @@ fi
 
 total_validations=$((total_validations + 1))
 if run_validation "Go Device Desync" "cd validation/go/validators && go run device_desync/main.go" "go_device_desync"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
+total_validations=$((total_validations + 1))
+if run_validation "Go Corrupted EARE" "cd validation/go/validators && go run corrupted_eare/main.go" "go_corrupted_eare"; then
     successful_validations=$((successful_validations + 1))
 fi
 
@@ -199,6 +214,11 @@ fi
 
 total_validations=$((total_validations + 1))
 if run_validation "Rust Device Desync" "cargo run --bin validate_device_desync_rust" "rust_device_desync"; then
+    successful_validations=$((successful_validations + 1))
+fi
+
+total_validations=$((total_validations + 1))
+if run_validation "Rust Corrupted EARE" "cargo run --bin validate_corrupted_eare_rust" "rust_corrupted_eare"; then
     successful_validations=$((successful_validations + 1))
 fi
 
