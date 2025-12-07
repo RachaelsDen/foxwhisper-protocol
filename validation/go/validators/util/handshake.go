@@ -36,10 +36,10 @@ func validateHandshakeInit(data map[string]interface{}) bool {
 	if !checkBase64Len(data["x25519_public_key"], 32) {
 		return false
 	}
-	if !checkBase64Len(data["kyber_public_key"], 32) {
+	if !checkBase64Len(data["kyber_public_key"], 1568) {
 		return false
 	}
-	if !checkBase64Len(data["nonce"], 12) {
+	if !checkBase64Len(data["nonce"], 16) {
 		return false
 	}
 	return true
@@ -60,10 +60,10 @@ func validateHandshakeResponse(data map[string]interface{}) bool {
 	if !checkBase64Len(data["x25519_public_key"], 32) {
 		return false
 	}
-	if !checkBase64Len(data["kyber_ciphertext"], 32) {
+	if !checkBase64Len(data["kyber_ciphertext"], 1568) {
 		return false
 	}
-	if !checkBase64Len(data["nonce"], 12) {
+	if !checkBase64Len(data["nonce"], 16) {
 		return false
 	}
 	return true
@@ -115,7 +115,7 @@ func checkBase64Len(value interface{}, expected int) bool {
 			return false
 		}
 	}
-	return len(decoded) >= expected
+	return len(decoded) == expected
 }
 
 func toInt(value interface{}) (int64, bool) {
