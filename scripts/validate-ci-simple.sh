@@ -47,6 +47,7 @@ run_test "Node.js CBOR" "cd validation/nodejs/validators && node validate_cbor_n
 run_test "Go CBOR" "cd validation/go/validators && go run validate_cbor_go.go"
 run_test "Rust CBOR" "cd validation/rust/validators && cargo run --bin validate_cbor_rust"
 run_test "Elixir" "bash scripts/jobs/validate-erlang.sh"
+run_test "Device Desync (Python)" "cd validation/python/validators && python3 device_desync_sim.py"
 
 echo ""
 echo "🔗 Cross-Language Compatibility"
