@@ -30,11 +30,14 @@ defmodule Foxwhisper.Util.Reporting do
     |> Jason.decode!()
   end
 
+  @default_crypto_profile "fw-hybrid-x25519-kyber1024"
+
   @spec write_json(String.t(), map()) :: String.t()
   def write_json(filename, payload) do
     dir = ensure_results_dir()
     output_path = Path.join(dir, filename)
-    File.write!(output_path, Jason.encode!(payload, pretty: true))
+    with_profile = Map.put_new(payload, "crypto_profile", @default_crypto_profile)
+    File.write!(output_path, Jason.encode!(with_profile, pretty: true))
     output_path
   end
 end

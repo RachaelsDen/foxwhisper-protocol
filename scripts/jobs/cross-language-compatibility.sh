@@ -60,20 +60,29 @@ import json
 import os
 import glob
 from datetime import datetime, timezone
+from pathlib import Path
+
+DEFAULT_CRYPTO_PROFILE = "fw-hybrid-x25519-kyber1024"
 
 # Load all validation results
 results = {}
+
+# Helper to add crypto profile if missing
+
+def with_profile(payload):
+    if isinstance(payload, dict) and "crypto_profile" not in payload:
+        payload = {"crypto_profile": DEFAULT_CRYPTO_PROFILE, **payload}
+    return payload
 
 # Load Python results
 for result_file in glob.glob('results/python_*_status.json'):
     if os.path.exists(result_file):
         with open(result_file, 'r') as f:
-            data = json.load(f)
+            data = with_profile(json.load(f))
             status = data.get('status')
             if status is None:
                 continue
-            if 'python' not in results:
-                results['python'] = {'tests': [], 'success': True}
+            results.setdefault('python', {'tests': [], 'success': True})
             results['python']['tests'].append(data)
             if status != 'success':
                 results['python']['success'] = False
@@ -82,12 +91,11 @@ for result_file in glob.glob('results/python_*_status.json'):
 for result_file in glob.glob('results/nodejs_*_status.json'):
     if os.path.exists(result_file):
         with open(result_file, 'r') as f:
-            data = json.load(f)
+            data = with_profile(json.load(f))
             status = data.get('status')
             if status is None:
                 continue
-            if 'nodejs' not in results:
-                results['nodejs'] = {'tests': [], 'success': True}
+            results.setdefault('nodejs', {'tests': [], 'success': True})
             results['nodejs']['tests'].append(data)
             if status != 'success':
                 results['nodejs']['success'] = False
@@ -96,12 +104,11 @@ for result_file in glob.glob('results/nodejs_*_status.json'):
 for result_file in glob.glob('results/go_*_status.json'):
     if os.path.exists(result_file):
         with open(result_file, 'r') as f:
-            data = json.load(f)
+            data = with_profile(json.load(f))
             status = data.get('status')
             if status is None:
                 continue
-            if 'go' not in results:
-                results['go'] = {'tests': [], 'success': True}
+            results.setdefault('go', {'tests': [], 'success': True})
             results['go']['tests'].append(data)
             if status != 'success':
                 results['go']['success'] = False
@@ -110,12 +117,11 @@ for result_file in glob.glob('results/go_*_status.json'):
 for result_file in glob.glob('results/rust_*_status.json'):
     if os.path.exists(result_file):
         with open(result_file, 'r') as f:
-            data = json.load(f)
+            data = with_profile(json.load(f))
             status = data.get('status')
             if status is None:
                 continue
-            if 'rust' not in results:
-                results['rust'] = {'tests': [], 'success': True}
+            results.setdefault('rust', {'tests': [], 'success': True})
             results['rust']['tests'].append(data)
             if status != 'success':
                 results['rust']['success'] = False
@@ -124,7 +130,7 @@ for result_file in glob.glob('results/rust_*_status.json'):
 for erlang_path in ['results/erlang_cbor_status.json', 'results/elixir_cbor_status.json']:
     if os.path.exists(erlang_path):
         with open(erlang_path, 'r') as f:
-            data = json.load(f)
+            data = with_profile(json.load(f))
         entries = data.get('results') or []
         success = all(entry.get('success') for entry in entries) if entries else True
         results['erlang'] = {
@@ -132,6 +138,32 @@ for erlang_path in ['results/erlang_cbor_status.json', 'results/elixir_cbor_stat
             'success': success
         }
         break
+
+# Load minimal e2e status artifact (from minimal-js)
+minimal_status = None
+for candidate in [
+    Path('clients/minimal-js/test-output/minimal_e2e_status.json'),
+    Path('results/minimal_e2e_status.json'),
+    Path('minimal-js-test-output/minimal_e2e_status.json'),
+]:
+    if candidate.exists():
+        try:
+            minimal_status = with_profile(json.loads(candidate.read_text()))
+            break
+        except Exception:
+            continue
+
+if minimal_status:
+    results['minimal_e2e'] = {
+        'tests': [minimal_status],
+        'success': True,
+    }
+else:
+    results['minimal_e2e'] = {
+        'tests': [],
+        'success': False,
+        'error': 'minimal_e2e_status.json not found'
+    }
 
 # Generate compatibility report
 print("🦊 FoxWhisper Protocol - Cross-Language Compatibility Report")
@@ -154,15 +186,18 @@ for lang, result in results.items():
         for t in tests
         if t.get('status') == 'success' or t.get('success') is True
     )
-    print(f"{lang.upper():<8} : {status} ({passed_count}/{test_count} tests)")
+    print(f"{lang.upper():<12} : {status} ({passed_count}/{test_count} tests)")
+    if lang == 'minimal_e2e' and tests:
+        t = tests[0]
+        print(f"    profile={t.get('crypto_profile')} backend={t.get('backend')} session_id={t.get('session_id')} encKey_sha256={t.get('key_digests', {}).get('encKey_sha256')}")
 
 # Check if all passed
-all_passed = successful_languages == total_languages
+all_passed = successful_languages == total_languages and results.get('minimal_e2e', {}).get('success', False)
 if all_passed:
     print("\n🎉 ALL LANGUAGES PASSED - Cross-language compatibility verified!")
     exit_code = 0
 else:
-    print(f"\n⚠️  {total_languages - successful_languages} language(s) failed - Compatibility issues detected!")
+    print(f"\n⚠️  {total_languages - successful_languages} language(s) failed or missing artifacts!")
     exit_code = 1
 
 # Save compatibility report

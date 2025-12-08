@@ -1,7 +1,7 @@
 {
-  "name": "foxwhisper-minimal-client",
+  "name": "foxwhisper-minimal-server",
   "version": "0.1.0",
-  "description": "Minimal FoxWhisper reference client for handshake, device record, and basic messaging.",
+  "description": "Minimal metadata-only FoxWhisper reference server (handshake + data routing)",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "FOXW_CRYPTO_BACKEND=real vitest run",
     "test:watch": "FOXW_CRYPTO_BACKEND=real vitest",
-    "conformance": "FOXW_CRYPTO_BACKEND=real vitest run test/conformance.test.ts",
+    "demo": "FOXW_CRYPTO_BACKEND=real tsx demo/minimal-chat.ts",
     "lint": "echo 'lint skipped (no config)'",
     "typecheck": "tsc --noEmit"
   },
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/pqclean": "^0.3.2",
     "@types/ws": "^8.5.10",
+    "tsx": "^4.21.0",
     "typescript": "^5.6.3",
     "vitest": "^4.0.15"
   }

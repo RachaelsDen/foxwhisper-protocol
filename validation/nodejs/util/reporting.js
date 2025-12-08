@@ -9,10 +9,13 @@ function ensureResultsDir() {
   return RESULTS_DIR;
 }
 
+const DEFAULT_CRYPTO_PROFILE = 'fw-hybrid-x25519-kyber1024';
+
 function writeJson(filename, payload) {
   const dir = ensureResultsDir();
   const outputPath = path.join(dir, filename);
-  fs.writeFileSync(outputPath, JSON.stringify(payload, null, 2));
+  const withProfile = payload.crypto_profile ? payload : { crypto_profile: DEFAULT_CRYPTO_PROFILE, ...payload };
+  fs.writeFileSync(outputPath, JSON.stringify(withProfile, null, 2));
   return outputPath;
 }
 

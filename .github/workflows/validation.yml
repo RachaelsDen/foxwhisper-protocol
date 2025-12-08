@@ -141,7 +141,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '25'
 
     - name: Install dependencies
       run: |
@@ -149,9 +149,41 @@ jobs:
         npm ci
 
     - name: Run minimal client tests
+      env:
+        FOXW_CRYPTO_BACKEND: real
       run: |
         cd clients/minimal-js
         npm test
+
+    - name: Upload minimal client test output
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: minimal-js-test-output
+        path: clients/minimal-js/test-output/
+        if-no-files-found: error
+
+  # Minimal Node client/server metadata flow
+  minimal-node:
+    runs-on: ubuntu-latest
+    needs: minimal-client
+    name: Minimal Node Client/Server
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '25'
+
+    - name: Run minimal client/server validation
+      env:
+        FOXW_CRYPTO_BACKEND: real
+      run: |
+        chmod +x scripts/validate-node-minimal.sh
+        ./scripts/validate-node-minimal.sh
 
   # Go Validation
   validate-go:

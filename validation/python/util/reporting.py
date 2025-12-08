@@ -15,11 +15,14 @@ def ensure_results_dir() -> Path:
     return RESULTS_DIR
 
 
+DEFAULT_CRYPTO_PROFILE = "fw-hybrid-x25519-kyber1024"
+
 def write_json(filename: str, payload: Dict[str, Any]) -> Path:
     output_dir = ensure_results_dir()
     output_path = output_dir / filename
+    to_write = payload if "crypto_profile" in payload else {"crypto_profile": DEFAULT_CRYPTO_PROFILE, **payload}
     with output_path.open("w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=2)
+        json.dump(to_write, handle, indent=2)
     return output_path
 
 

@@ -1,0 +1,28 @@
+name: Minimal Node Smoke
+
+on:
+  pull_request:
+    paths:
+      - "clients/minimal-js/**"
+      - "servers/minimal-js/**"
+      - "scripts/validate-node-minimal.sh"
+      - ".github/workflows/minimal-smoke.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "25"
+
+      - name: Run minimal client/server validation
+        env:
+          FOXW_CRYPTO_BACKEND: real
+        run: |
+          chmod +x scripts/validate-node-minimal.sh
+          ./scripts/validate-node-minimal.sh
