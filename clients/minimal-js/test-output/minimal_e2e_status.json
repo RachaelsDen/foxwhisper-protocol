@@ -1,12 +1,12 @@
 {
   "crypto_profile": "fw-hybrid-x25519-kyber1024",
   "backend": "real",
-  "session_id": "QRAmXhIM1cYFO/Sv7OMsMJxyOPSRAyYRIpA9RpJaoHE=",
-  "handshake_hash": "COXta3AMJ6cVuZxkchgbLpq492tUX4DjwdJPysYXKs0=",
+  "session_id": "a/L4JwQkclMrC96meue3odZqVdsdQSXdRtVov+6vXOA=",
+  "handshake_hash": "O/GUIjva2ga86jp91sV0+Y9EI4oCJBQFhbE53+rMp3g=",
   "key_digests": {
-    "encKey_sha256": "KjWPdPkOB93aXnW7Kq7L4Oc7XxMvrV+7dZrrJjjHOyY=",
-    "authKey_sha256": "bGGhoE84uerCnttuySbFTZMFj1gDMegRFRhjHi+ZXr0=",
-    "nonce_sha256": "BoSHs1Y1nGZd6NPuT+yE+3WZWVrZsREo3w3kYzCKcbI="
+    "encKey_sha256": "ewAX11dUjUBpbRjmO48XUT5S1mYUzwADFQDX85qhkVU=",
+    "authKey_sha256": "Hjxf94s7Wn6MnKRbUWEVQXurGqabS2dKu3dLGHWmUls=",
+    "nonce_sha256": "dpN+PZAdsqB9oW0mWYr/umrIeYqHvb28si488pPaiM4="
   },
-  "timestamp": 1765238285188
+  "timestamp": 1765239256500
 }

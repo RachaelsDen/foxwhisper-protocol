@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "[minimal-node] installing client deps..."
+npm ci --prefix "$(dirname "$0")/../clients/minimal-js"
+
 echo "[minimal-node] running client lint/typecheck..."
 export FOXW_CRYPTO_BACKEND=real
 npm run lint --prefix "$(dirname "$0")/../clients/minimal-js"
@@ -31,6 +34,9 @@ done
 
 echo "[minimal-node] running client conformance..."
 npm run conformance --prefix "$(dirname "$0")/../clients/minimal-js"
+
+echo "[minimal-node] installing server deps..."
+npm ci --prefix "$(dirname "$0")/../servers/minimal-js"
 
 echo "[minimal-node] running server lint/typecheck..."
 npm run lint --prefix "$(dirname "$0")/../servers/minimal-js"
