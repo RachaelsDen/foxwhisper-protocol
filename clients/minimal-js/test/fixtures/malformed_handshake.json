@@ -1,0 +1,11 @@
+{
+  "handshake_response": {
+    "type": "HANDSHAKE_RESPONSE",
+    "version": 999,
+    "server_id": "srv",
+    "x25519_public_key": "srv-x",
+    "kyber_ciphertext": "ct",
+    "timestamp": 1700000000000,
+    "nonce": "n-srv"
+  }
+}

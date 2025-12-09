@@ -1,5 +1,6 @@
 import cbor from 'cbor';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash, hkdfSync } from 'crypto';
+import { encodeCanonical } from './cborCanonical.js';
 import type { HandshakeInit, HandshakeResponse, HandshakeComplete } from './types.js';
 
 export const TAG_HANDSHAKE_INIT = 0xd1;
@@ -33,7 +34,8 @@ export function encodeHandshakeInit(msg: HandshakeInit): Buffer {
 }
 
 export function encodeHandshakeComplete(msg: HandshakeComplete): Buffer {
-  return encodeTagged(msg, TAG_HANDSHAKE_COMPLETE);
+  const { shared_secret, ...toEncode } = msg as any;
+  return encodeTagged(toEncode, TAG_HANDSHAKE_COMPLETE);
 }
 
 export function decodeIncoming(data: Buffer): any {
@@ -50,15 +52,19 @@ export function isHandshakeComplete(obj: any): obj is HandshakeComplete {
 }
 
 export function deriveHandshakeComplete(resp: HandshakeResponse): HandshakeComplete {
-  const hash = createHash('sha256')
-    .update(resp.server_id)
-    .update(resp.nonce)
-    .digest('base64');
+  const transcript = encodeCanonical(resp);
+  const hashBytes = createHash('sha256').update(transcript).digest();
+  const handshake_hash = hashBytes.toString('base64');
+  const sessionIdBytes = new Uint8Array(
+    hkdfSync('sha256', hashBytes, Buffer.alloc(0), Buffer.from('FoxWhisper-SessionId', 'utf8'), 32),
+  );
+  const session_id = Buffer.from(sessionIdBytes).toString('base64');
+
   return {
     type: 'HANDSHAKE_COMPLETE',
     version: 1,
-    session_id: hash,
-    handshake_hash: hash,
+    session_id,
+    handshake_hash,
     timestamp: Date.now(),
   };
 }

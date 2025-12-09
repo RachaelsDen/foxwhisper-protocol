@@ -2,12 +2,17 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
+
+	"foxwhisper-protocol/validation/go/validators/util"
+	"golang.org/x/crypto/hkdf"
 )
 
 // EndToEndTestVectorGenerator generates complete protocol flow test vectors
@@ -38,7 +43,7 @@ type HandshakeMessage struct {
 	ClientID        string `json:"client_id,omitempty"`
 	ServerID        string `json:"server_id,omitempty"`
 	SessionID       string `json:"session_id,omitempty"`
-	X25519PublicKey string `json:"x25519_public_key"`
+	X25519PublicKey string `json:"x25519_public_key,omitempty"`
 	KyberPublicKey  string `json:"kyber_public_key,omitempty"`
 	KyberCiphertext string `json:"kyber_ciphertext,omitempty"`
 	HandshakeHash   string `json:"handshake_hash,omitempty"`
@@ -55,6 +60,22 @@ type ValidationCriteria struct {
 	MatchingSessionIDs       bool `json:"matching_session_ids"`
 }
 
+func deriveFromHandshakeResponse(resp HandshakeMessage) (string, string, error) {
+	encoded, err := util.EncodeCanonical(resp)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to encode handshake response: %w", err)
+	}
+	hash := sha256.Sum256(encoded)
+	handshakeHash := base64.StdEncoding.EncodeToString(hash[:])
+
+	h := hkdf.New(sha256.New, hash[:], nil, []byte("FoxWhisper-SessionId"))
+	okm := make([]byte, 32)
+	if _, err := io.ReadFull(h, okm); err != nil {
+		return "", "", fmt.Errorf("failed to derive session id: %w", err)
+	}
+	return handshakeHash, base64.StdEncoding.EncodeToString(okm), nil
+}
+
 func (g *EndToEndTestVectorGenerator) generateHandshakeFlow() HandshakeFlow {
 	// Generate cryptographic material
 	clientID := generateRandomBase64(32)
@@ -65,8 +86,21 @@ func (g *EndToEndTestVectorGenerator) generateHandshakeFlow() HandshakeFlow {
 	serverKyberCipher := generateRandomBase64(1568)
 	clientNonce := generateRandomBase64(16)
 	serverNonce := generateRandomBase64(16)
-	sessionID := generateRandomBase64(32)
-	handshakeHash := generateRandomBase64(32)
+
+	handshakeResponse := HandshakeMessage{
+		Type:            "HANDSHAKE_RESPONSE",
+		Version:         1,
+		ServerID:        serverID,
+		X25519PublicKey: serverX25519Pub,
+		KyberCiphertext: serverKyberCipher,
+		Timestamp:       1701763201000,
+		Nonce:           serverNonce,
+	}
+
+	handshakeHash, sessionID, err := deriveFromHandshakeResponse(handshakeResponse)
+	if err != nil {
+		log.Fatalf("failed to derive handshake outputs: %v", err)
+	}
 
 	handshakeFlow := HandshakeFlow{
 		Description:  "Complete FoxWhisper handshake flow",
@@ -89,19 +123,11 @@ func (g *EndToEndTestVectorGenerator) generateHandshakeFlow() HandshakeFlow {
 				ExpectedResponse: "HANDSHAKE_RESPONSE",
 			},
 			{
-				Step: 2,
-				Type: "HANDSHAKE_RESPONSE",
-				From: "server",
-				To:   "client",
-				Message: HandshakeMessage{
-					Type:            "HANDSHAKE_RESPONSE",
-					Version:         1,
-					ServerID:        serverID,
-					X25519PublicKey: serverX25519Pub,
-					KyberCiphertext: serverKyberCipher,
-					Timestamp:       1701763201000,
-					Nonce:           serverNonce,
-				},
+				Step:             2,
+				Type:             "HANDSHAKE_RESPONSE",
+				From:             "server",
+				To:               "client",
+				Message:          handshakeResponse,
 				ExpectedResponse: "HANDSHAKE_COMPLETE",
 			},
 			{
@@ -181,7 +207,7 @@ func main() {
 	generator := &EndToEndTestVectorGenerator{}
 
 	// Generate test vectors
-	outputFile := "../test-vectors/handshake/end_to_end_test_vectors_go.json"
+	outputFile := "tests/common/handshake/end_to_end_test_vectors_go.json"
 	err := generator.saveTestVectors(outputFile)
 	if err != nil {
 		log.Fatalf("Failed to generate test vectors: %v", err)

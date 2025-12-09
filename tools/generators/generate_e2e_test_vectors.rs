@@ -1,8 +1,13 @@
 use base64::{engine::general_purpose, Engine as _};
+use hkdf::Hkdf;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
+
+mod cbor_canonical;
+use cbor_canonical::encode_canonical;
 
 // FoxWhisper End-to-End Test Vector Generator (Rust)
 // Generates complete protocol flow test vectors for FoxWhisper v0.9
@@ -18,8 +23,8 @@ pub struct HandshakeMessage {
     pub server_id: Option<String>,
     #[serde(rename = "session_id", skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
-    #[serde(rename = "x25519_public_key")]
-    pub x25519_public_key: String,
+    #[serde(rename = "x25519_public_key", skip_serializing_if = "Option::is_none")]
+    pub x25519_public_key: Option<String>,
     #[serde(rename = "kyber_public_key", skip_serializing_if = "Option::is_none")]
     pub kyber_public_key: Option<String>,
     #[serde(rename = "kyber_ciphertext", skip_serializing_if = "Option::is_none")]
@@ -52,6 +57,20 @@ pub struct HandshakeFlow {
     pub steps: Vec<HandshakeStep>,
 }
 
+fn derive_from_handshake_response(resp: &HandshakeMessage) -> Result<(String, String), Box<dyn Error>> {
+    let buf = encode_canonical(resp)?;
+
+    let hash = Sha256::digest(&buf);
+    let handshake_hash = general_purpose::STANDARD.encode(hash);
+
+    let hk = Hkdf::<Sha256>::new(None, &hash);
+    let mut okm = [0u8; 32];
+    hk.expand(b"FoxWhisper-SessionId", &mut okm)
+        .map_err(|e| format!("hkdf expand failed: {e}"))?;
+    let session_id = general_purpose::STANDARD.encode(okm);
+    Ok((handshake_hash, session_id))
+}
+
 pub struct EndToEndTestVectorGenerator {
     test_vectors: HashMap<String, serde_json::Value>,
 }
@@ -73,8 +92,23 @@ impl EndToEndTestVectorGenerator {
         let server_kyber_cipher = Some(generate_random_base64(1568));
         let client_nonce = Some(generate_random_base64(16));
         let server_nonce = Some(generate_random_base64(16));
-        let session_id = Some(generate_random_base64(32));
-        let handshake_hash = Some(generate_random_base64(32));
+
+        let handshake_response = HandshakeMessage {
+            message_type: "HANDSHAKE_RESPONSE".to_string(),
+            version: 1,
+            client_id: None,
+            server_id: server_id.clone(),
+            session_id: None,
+            x25519_public_key: Some(server_x25519_pub.clone()),
+            kyber_public_key: None,
+            kyber_ciphertext: server_kyber_cipher.clone(),
+            handshake_hash: None,
+            timestamp: 1701763201000,
+            nonce: server_nonce.clone(),
+        };
+
+        let (handshake_hash, session_id) = derive_from_handshake_response(&handshake_response)
+            .expect("failed to derive handshake values");
 
         HandshakeFlow {
             description: "Complete FoxWhisper handshake flow".to_string(),
@@ -91,7 +125,7 @@ impl EndToEndTestVectorGenerator {
                         client_id: client_id.clone(),
                         server_id: None,
                         session_id: None,
-                        x25519_public_key: client_x25519_pub,
+                        x25519_public_key: Some(client_x25519_pub),
                         kyber_public_key: client_kyber_pub,
                         kyber_ciphertext: None,
                         handshake_hash: None,
@@ -105,19 +139,7 @@ impl EndToEndTestVectorGenerator {
                     step_type: "HANDSHAKE_RESPONSE".to_string(),
                     from: "server".to_string(),
                     to: "client".to_string(),
-                    message: HandshakeMessage {
-                        message_type: "HANDSHAKE_RESPONSE".to_string(),
-                        version: 1,
-                        client_id: None,
-                        server_id: server_id.clone(),
-                        session_id: None,
-                        x25519_public_key: server_x25519_pub,
-                        kyber_public_key: None,
-                        kyber_ciphertext: server_kyber_cipher,
-                        handshake_hash: None,
-                        timestamp: 1701763201000,
-                        nonce: server_nonce,
-                    },
+                    message: handshake_response,
                     expected_response: "HANDSHAKE_COMPLETE".to_string(),
                 },
                 HandshakeStep {
@@ -130,11 +152,11 @@ impl EndToEndTestVectorGenerator {
                         version: 1,
                         client_id: None,
                         server_id: None,
-                        session_id: session_id,
-                        x25519_public_key: String::new(), // Empty for this message type
+                        session_id: Some(session_id),
+                        x25519_public_key: None,
                         kyber_public_key: None,
                         kyber_ciphertext: None,
-                        handshake_hash: handshake_hash,
+                        handshake_hash: Some(handshake_hash),
                         timestamp: 1701763202000,
                         nonce: None,
                     },
@@ -199,7 +221,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut generator = EndToEndTestVectorGenerator::new();
 
     // Generate test vectors
-    let output_file = "../test-vectors/handshake/end_to_end_test_vectors_rust.json";
+    let output_file = "tests/common/handshake/end_to_end_test_vectors_rust.json";
     generator.save_test_vectors(output_file)?;
 
     println!("\n🎉 End-to-end test vector generation completed!");

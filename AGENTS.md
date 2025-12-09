@@ -1,5 +1,7 @@
 # FoxWhisper Protocol - Agent Development Guide
 
+This root guide applies to the entire repository; when working in subdirectories, also follow any nested `AGENTS.md` files whose scope covers the files you touch.
+
 ## Build/Test Commands
 - **Nested CI workflow**: `./scripts/validate-ci-nested.sh` (replicates GitHub workflow exactly)
 - **Full validation**: `./scripts/validate-ci.sh` (runs all language tests)
@@ -23,6 +25,7 @@
 - `validation/` - Multi-language CBOR validation tools
 - `tests/common/handshake/` - Cross-language test vectors
 - `tools/generators/` - Test vector generation scripts
+- See also `docs/AGENTS-spec.md` for spec/v0.9 editing guidance
 
 ## Security Requirements
 - Hardware-backed key storage required for identity keys

@@ -1,0 +1,12 @@
+{
+  "crypto_profile": "fw-hybrid-x25519-kyber1024",
+  "backend": "real",
+  "session_id": "QRAmXhIM1cYFO/Sv7OMsMJxyOPSRAyYRIpA9RpJaoHE=",
+  "handshake_hash": "COXta3AMJ6cVuZxkchgbLpq492tUX4DjwdJPysYXKs0=",
+  "key_digests": {
+    "encKey_sha256": "KjWPdPkOB93aXnW7Kq7L4Oc7XxMvrV+7dZrrJjjHOyY=",
+    "authKey_sha256": "bGGhoE84uerCnttuySbFTZMFj1gDMegRFRhjHi+ZXr0=",
+    "nonce_sha256": "BoSHs1Y1nGZd6NPuT+yE+3WZWVrZsREo3w3kYzCKcbI="
+  },
+  "timestamp": 1765238285188
+}

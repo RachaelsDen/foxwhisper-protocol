@@ -1,0 +1,7 @@
+{
+  "backup_device_public_key_sha256": "afa85956b2f6f3b0f88d743adf4020cfa2d16738b1ebda4b0311928746420583",
+  "backup_device_private_key_sha256": "d9f11e8eeaced99ee4ea735649c85cb7e41f05dcbd92ce5d0b565a4893e08e81",
+  "backup_data_sha256": "d78a8cc4b74969e2bba2b104dd211cf35d2b369bfa52217b21690c0e0f98c3ad",
+  "restore_verification_code_sha256": "9a4eddf868b3998561e9f967e85cc7fe68e1b18bc67104385859087acf1e5889",
+  "reset_verification_code_sha256": "eae9e96abeee72bc172b7d1d13b6dc9cccee9efbdeea39e8ede5df98c964ddd5"
+}
