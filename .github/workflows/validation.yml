@@ -91,42 +91,25 @@ jobs:
       with:
         node-version: '25'
         
-    - name: Install dependencies
+    - name: Install root dependencies
       run: |
-        cd validation/nodejs/validators
-        npm install cbor
-        
-    - name: Run Node.js CBOR Validation
+        npm install --global cbor
+    
+    - name: Run Node.js validation job (validators + minimal-js SFU)
       run: |
-        cd validation/nodejs/validators
-        node validate_cbor_node.js
-        
-    - name: Run Node.js Cross-Language Validation
-      run: |
-        cd validation/nodejs/validators
-        node validate_cbor_crosslang.js
-        
-    - name: Run Node.js Multi-Device Sync Validation
-      run: |
-        cd validation/nodejs/validators
-        node validate_multi_device_sync.js ../../../tests/common/handshake/multi_device_sync_test_vectors.json
-        
-    - name: Run Node.js Device Desync Simulation
-      run: |
-        cd validation/nodejs/validators
-        node device_desync.js
-        
-    - name: Run Node.js Corrupted EARE Simulation
-      run: |
-        cd validation/nodejs/validators
-        node corrupted_eare.js
-        
+        chmod +x scripts/jobs/validate-nodejs.sh
+        ./scripts/jobs/validate-nodejs.sh
+      env:
+        FOXW_CRYPTO_BACKEND: real
+    
     - name: Upload Node.js Results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: nodejs-validation-results
-        path: results/
+        path: |
+          results/
+          servers/minimal-js/test-output/
         if-no-files-found: warn
 
   # Minimal JS Client

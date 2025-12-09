@@ -1,0 +1,19 @@
+{
+  "vector": "key_distribution",
+  "results": [
+    {
+      "step": 1,
+      "status": "granted"
+    },
+    {
+      "step": 2,
+      "status": "denied",
+      "error": "KEY_LEAK_ATTEMPT"
+    },
+    {
+      "step": 2,
+      "status": "denied",
+      "error": "KEY_LEAK_ATTEMPT"
+    }
+  ]
+}
