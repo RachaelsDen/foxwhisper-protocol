@@ -91,9 +91,9 @@ jobs:
       with:
         node-version: '25'
         
-    - name: Install root dependencies
+    - name: Install Node.js validator dependency
       run: |
-        npm install --global cbor
+        npm install cbor --prefix validation/nodejs/validators
     
     - name: Run Node.js validation job (validators + minimal-js SFU)
       run: |

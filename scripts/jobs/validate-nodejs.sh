@@ -54,6 +54,11 @@ run_custom_command() {
 main() {
     echo "Starting Node.js validation tests..."
     
+    # Ensure validator dependencies (cbor)
+    if [ ! -d "$VALIDATOR_DIR/node_modules" ] || [ ! -d "$VALIDATOR_DIR/node_modules/cbor" ]; then
+        (cd "$VALIDATOR_DIR" && npm install cbor >/dev/null 2>&1)
+    fi
+    
     total_tests=0
     passed_tests=0
 
