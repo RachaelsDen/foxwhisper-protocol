@@ -256,6 +256,23 @@ export class MinimalSfu {
       });
       return 'UNAUTHORIZED_SUBSCRIBE' as SfuErrorCode;
     }
+    if (frame.participant_id !== publisherId) {
+      this.metrics.hijacked_tracks += 1;
+      this.metrics.unauthorized_tracks += 1;
+      this.recordTranscript({
+        call_id: frame.call_id,
+        room_id: this.config.roomId,
+        sfu_id: this.config.sfuId,
+        participant_id: frame.participant_id,
+        track_id: frame.stream_id,
+        media_epoch: frame.media_epoch,
+        frame_sequence: frame.frame_sequence,
+        routing_action: 'denied',
+        reason: 'HIJACKED_TRACK',
+        header_digest: this.digestFrameHeader(frame),
+      });
+      return 'HIJACKED_TRACK';
+    }
     this.recordTranscript({
       call_id: frame.call_id,
       room_id: this.config.roomId,
