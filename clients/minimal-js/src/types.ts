@@ -203,8 +203,8 @@ export interface WebSocketLike {
   readyState: number;
   onopen: null | (() => void);
   onmessage: null | ((ev: { data: any }) => void);
-  onclose: null | (() => void);
+  onclose: null | ((ev: any) => void);
   onerror: null | ((err: any) => void);
   send(data: any): void;
-  close(): void;
+  close(code?: number, reason?: string): void;
 }

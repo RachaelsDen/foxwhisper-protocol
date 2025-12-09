@@ -136,7 +136,9 @@ export class FoxClient extends EventEmitter {
     const insecureAllowed =
       this.cfg.insecureCrypto === true || process.env.FOXW_ALLOW_INSECURE_TOY_CRYPTO === 'YES_I_UNDERSTAND';
     if (!this.cryptoProvider) {
-      const backend = this.cfg.cryptoBackend ?? process.env.FOXW_CRYPTO_BACKEND ?? (insecureAllowed ? 'toy' : 'real');
+      const backend = (this.cfg.cryptoBackend ?? process.env.FOXW_CRYPTO_BACKEND ?? (insecureAllowed ? 'toy' : 'real')) as
+        | 'toy'
+        | 'real';
       if (backend === 'real') {
         this.cryptoProvider = createRealCryptoProvider(this.cfg.realCryptoConfig ?? {});
       } else {
