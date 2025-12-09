@@ -33,8 +33,31 @@ run_nodejs_validation() {
     fi
 }
 
+run_custom_command() {
+    local name=$1
+    local cmd=$2
+    local log_file="$RESULTS_DIR/nodejs_${name,,}_results.log"
+    local status_file="$RESULTS_DIR/nodejs_${name,,}_status.json"
+
+    echo "Running $name..."
+    if (cd "$ROOT_DIR" && eval "$cmd") > "$log_file" 2>&1; then
+        echo "✅ $name PASSED"
+        echo "{\"test\": \"$name\", \"status\": \"success\", \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > "$status_file"
+        return 0
+    else
+        echo "❌ $name FAILED"
+        echo "{\"test\": \"$name\", \"status\": \"failed\", \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > "$status_file"
+        return 1
+    fi
+}
+
 main() {
     echo "Starting Node.js validation tests..."
+    
+    # Ensure validator dependencies (cbor)
+    if [ ! -d "$VALIDATOR_DIR/node_modules" ] || [ ! -d "$VALIDATOR_DIR/node_modules/cbor" ]; then
+        (cd "$VALIDATOR_DIR" && npm install cbor >/dev/null 2>&1)
+    fi
     
     total_tests=0
     passed_tests=0
@@ -45,6 +68,15 @@ main() {
         local args=$3
         total_tests=$((total_tests + 1))
         if run_nodejs_validation "$name" "$script" "$args"; then
+            passed_tests=$((passed_tests + 1))
+        fi
+    }
+
+    run_and_track_custom() {
+        local name=$1
+        local cmd=$2
+        total_tests=$((total_tests + 1))
+        if run_custom_command "$name" "$cmd"; then
             passed_tests=$((passed_tests + 1))
         fi
     }
@@ -62,6 +94,9 @@ main() {
     run_and_track "device_desync" "device_desync.js" ""
     run_and_track "corrupted_eare" "corrupted_eare.js" ""
     run_and_track "epoch_fork" "epoch_fork.js" "--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json"
+
+    # Minimal JS SFU / server tests (runs vitest + writes SFU artifacts)
+    run_and_track_custom "minimal_js_sfu" "npm --prefix servers/minimal-js ci && npm --prefix servers/minimal-js test"
     
     echo ""
     echo "Node.js Validation Summary:"
@@ -90,7 +125,8 @@ main() {
     "nodejs_replay_storm_results.log",
     "nodejs_device_desync_results.log",
     "nodejs_corrupted_eare_results.log",
-    "nodejs_epoch_fork_results.log"
+    "nodejs_epoch_fork_results.log",
+    "nodejs_minimal_js_sfu_results.log"
   ]
 }
 EOF

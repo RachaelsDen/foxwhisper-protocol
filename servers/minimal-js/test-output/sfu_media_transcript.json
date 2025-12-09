@@ -1,0 +1,22 @@
+[
+  {
+    "call_id": "call-xyz",
+    "room_id": "call-xyz",
+    "participant_id": "alice",
+    "track_id": "a1",
+    "media_epoch": 0,
+    "frame_sequence": 1,
+    "routing_action": "routed",
+    "header_digest": "7140967bafd5aed6fcf755eb6b6b1bde232d902a9fd2eb0324d346fb6fd5c55b"
+  },
+  {
+    "call_id": "call-xyz",
+    "room_id": "call-xyz",
+    "track_id": "missing",
+    "participant_id": "ghost",
+    "media_epoch": 0,
+    "frame_sequence": 1,
+    "routing_action": "denied",
+    "reason": "UNAUTHORIZED_SUBSCRIBE"
+  }
+]
