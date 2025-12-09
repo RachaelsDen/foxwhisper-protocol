@@ -7,7 +7,39 @@ Generates complete protocol flow test vectors for FoxWhisper v0.9
 import json
 import base64
 import os
+import sys
+import hashlib
+import hmac
+from pathlib import Path
 from typing import Dict, List, Any
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT_DIR / "validation" / "python"))
+
+try:
+    import cbor2
+except ImportError as exc:
+    raise SystemExit("cbor2 is required to generate canonical handshake vectors; pip install cbor2") from exc
+
+from util.cbor_canonical import encode_canonical
+
+
+
+def hkdf_sha256(ikm: bytes, info: bytes, length: int = 32) -> bytes:
+    """Minimal HKDF-SHA256 with zero salt (spec placeholder)."""
+    salt = b"\x00" * hashlib.sha256().digest_size
+    prk = hmac.new(salt, ikm, hashlib.sha256).digest()
+    t1 = hmac.new(prk, info + b"\x01", hashlib.sha256).digest()
+    return t1[:length]
+
+
+def derive_from_handshake_response(resp: Dict[str, Any]) -> Dict[str, str]:
+    encoded = encode_canonical(resp)
+    hash_bytes = hashlib.sha256(encoded).digest()
+    handshake_hash = base64.b64encode(hash_bytes).decode()
+    session_id = base64.b64encode(hkdf_sha256(hash_bytes, b"FoxWhisper-SessionId", 32)).decode()
+    return {"handshake_hash": handshake_hash, "session_id": session_id}
+
 
 class EndToEndTestVectorGenerator:
     """Generates comprehensive end-to-end test vectors"""
@@ -36,9 +68,20 @@ class EndToEndTestVectorGenerator:
         client_nonce = base64.b64encode(os.urandom(16)).decode()
         server_nonce = base64.b64encode(os.urandom(16)).decode()
         
-        # Session keys
-        session_id = base64.b64encode(os.urandom(32)).decode()
-        handshake_hash = base64.b64encode(os.urandom(32)).decode()
+        # Handshake response (used to derive transcript-bound values)
+        handshake_response = {
+            "type": "HANDSHAKE_RESPONSE",
+            "version": 1,
+            "server_id": server_id,
+            "x25519_public_key": server_x25519_pub,
+            "kyber_ciphertext": server_kyber_ciphertext,
+            "timestamp": 1701763201000,
+            "nonce": server_nonce
+        }
+
+        derivation = derive_from_handshake_response(handshake_response)
+        session_id = derivation["session_id"]
+        handshake_hash = derivation["handshake_hash"]
         
         handshake_flow = {
             "description": "Complete FoxWhisper handshake flow",
@@ -65,15 +108,7 @@ class EndToEndTestVectorGenerator:
                     "type": "HANDSHAKE_RESPONSE",
                     "from": "server",
                     "to": "client",
-                    "message": {
-                        "type": "HANDSHAKE_RESPONSE",
-                        "version": 1,
-                        "server_id": server_id,
-                        "x25519_public_key": server_x25519_pub,
-                        "kyber_ciphertext": server_kyber_ciphertext,
-                        "timestamp": 1701763201000,
-                        "nonce": server_nonce
-                    },
+                    "message": handshake_response,
                     "expected_response": "HANDSHAKE_COMPLETE"
                 },
                 {
@@ -159,10 +194,10 @@ class EndToEndTestVectorGenerator:
     
     def save_test_vectors(self, filename: str):
         """Save all test vectors to file"""
-        
+
         self.test_vectors["handshake_flow"] = self.generate_handshake_flow()
         self.test_vectors["device_addition"] = self.generate_device_addition_flow()
-        
+
         # Add metadata
         self.test_vectors["_metadata"] = {
             "version": "0.9",
@@ -174,15 +209,18 @@ class EndToEndTestVectorGenerator:
                 "field_size_validation",
                 "base64_encoding_validation",
                 "chronological_validation",
-                "session_consistency_validation"
-            ]
+                "session_consistency_validation",
+            ],
         }
-        
-        with open(filename, 'w') as f:
+
+        path = Path(filename)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as f:
             json.dump(self.test_vectors, f, indent=2)
-        
+
         print(f"✅ End-to-end test vectors saved to {filename}")
         print(f"📊 Generated {len(self.test_vectors)-1} test scenarios")
+
     
     def validate_test_vectors(self, filename: str):
         """Validate generated test vectors"""
@@ -267,12 +305,13 @@ def main():
     generator = EndToEndTestVectorGenerator()
     
     # Generate test vectors
-    output_file = "../test-vectors/handshake/end_to_end_test_vectors.json"
-    generator.save_test_vectors(output_file)
-    
-    # Validate generated vectors
+    output_file = ROOT_DIR / "tests/common/handshake/end_to_end_test_vectors.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    generator.save_test_vectors(str(output_file))
+
     print("\nValidating generated test vectors...")
-    validation_results = generator.validate_test_vectors(output_file)
+    validation_results = generator.validate_test_vectors(str(output_file))
+
     
     for category, result in validation_results.items():
         if result["valid"]:

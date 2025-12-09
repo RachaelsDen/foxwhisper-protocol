@@ -7,17 +7,23 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "FOXW_CRYPTO_BACKEND=real vitest run",
+    "test:watch": "FOXW_CRYPTO_BACKEND=real vitest",
+    "conformance": "FOXW_CRYPTO_BACKEND=real vitest run test/conformance.test.ts",
+    "lint": "echo 'lint skipped (no config)'",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "cbor": "^10.0.11",
+    "pqclean": "^0.8.1",
     "ws": "^8.17.0"
   },
   "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/pqclean": "^0.3.2",
     "@types/ws": "^8.5.10",
     "typescript": "^5.6.3",
     "vitest": "^4.0.15"

@@ -1,0 +1,8 @@
+{
+  "handshake_complete_session_id": "55UeXau1vcwwB/cL2/wLpLvBwThK43z7f6pKgfUjNBg=",
+  "encKey_sha256": "4d4760f61a34313019b91a178317e5a2f61f15259570f06bb7560a7cebc7c782",
+  "authKey_sha256": "5f03edc3f63d1c37b16965622b9d04e647e9374a109c92b13b6f580fbe219d10",
+  "nonce_sha256": "600f6455f03a8bd6378d9e581e736f194235655d7779009e0673e057575a7c3b",
+  "deterministic_nonce_b64": "5eGD2pr2lHxEaTC1",
+  "deterministic_nonce_sha256": "e47be8df89442d01162bf8df58aaf0d1f6dcec9026d2fb64d378b096f004e70a"
+}

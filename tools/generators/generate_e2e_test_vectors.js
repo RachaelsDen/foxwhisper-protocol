@@ -6,10 +6,27 @@
 
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
+const cbor = require('cbor');
 
 class EndToEndTestVectorGenerator {
     constructor() {
         this.testVectors = {};
+    }
+
+    deriveFromHandshakeResponse(resp) {
+        const transcript = cbor.encodeOne(resp, { canonical: true });
+        const hashBytes = crypto.createHash('sha256').update(transcript).digest();
+        const handshakeHash = hashBytes.toString('base64');
+        const sessionIdBytes = crypto.hkdfSync(
+            'sha256',
+            hashBytes,
+            Buffer.alloc(0),
+            Buffer.from('FoxWhisper-SessionId', 'utf8'),
+            32,
+        );
+        const sessionId = Buffer.from(sessionIdBytes).toString('base64');
+        return { handshakeHash, sessionId };
     }
 
     generateHandshakeFlow() {
@@ -31,9 +48,17 @@ class EndToEndTestVectorGenerator {
         const clientNonce = crypto.randomBytes(16).toString('base64');
         const serverNonce = crypto.randomBytes(16).toString('base64');
         
-        // Session keys
-        const sessionId = crypto.randomBytes(32).toString('base64');
-        const handshakeHash = crypto.randomBytes(32).toString('base64');
+        const handshakeResponse = {
+            type: "HANDSHAKE_RESPONSE",
+            version: 1,
+            server_id: serverId,
+            x25519_public_key: serverX25519Pub,
+            kyber_ciphertext: serverKyberCipher,
+            timestamp: 1701763201000,
+            nonce: serverNonce
+        };
+
+        const { handshakeHash, sessionId } = this.deriveFromHandshakeResponse(handshakeResponse);
 
         const handshakeFlow = {
             description: "Complete FoxWhisper handshake flow",
@@ -60,15 +85,7 @@ class EndToEndTestVectorGenerator {
                     type: "HANDSHAKE_RESPONSE",
                     from: "server",
                     to: "client",
-                    message: {
-                        type: "HANDSHAKE_RESPONSE",
-                        version: 1,
-                        server_id: serverId,
-                        x25519_public_key: serverX25519Pub,
-                        kyber_ciphertext: serverKyberCipher,
-                        timestamp: 1701763201000,
-                        nonce: serverNonce
-                    },
+                    message: handshakeResponse,
                     expected_response: "HANDSHAKE_COMPLETE"
                 },
                 {
@@ -186,7 +203,7 @@ function main() {
     const generator = new EndToEndTestVectorGenerator();
 
     // Generate test vectors
-    const outputFile = "../test-vectors/handshake/end_to_end_test_vectors_js.json";
+    const outputFile = path.resolve(__dirname, '../../tests/common/handshake/end_to_end_test_vectors_js.json');
     generator.saveTestVectors(outputFile);
 
     // Validate generated vectors

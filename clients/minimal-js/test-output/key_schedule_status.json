@@ -1,0 +1,21 @@
+{
+  "handshake": {
+    "encKey_sha256": "4d4760f61a34313019b91a178317e5a2f61f15259570f06bb7560a7cebc7c782",
+    "authKey_sha256": "5f03edc3f63d1c37b16965622b9d04e647e9374a109c92b13b6f580fbe219d10",
+    "nonce_sha256": "600f6455f03a8bd6378d9e581e736f194235655d7779009e0673e057575a7c3b"
+  },
+  "group": {
+    "sender_key_sha256": "8a5d6c2d49f19fa6f42d98c77e9fdc96ad3e4ff993891b6976caf316bca5a045",
+    "ciphertext_sha256": "0c631f85c2aa3a04a81c4f699f3783871d218fb126e1a9a22386b143320ca6d6",
+    "nonce_sha256": "ba24e3e949526df789cb4c7859538100ef81174f17b320881e434e77ddbbd8b1",
+    "aad_sha256": "e67cca4049e1c076c4bc1dc99075980515357a2436a20f089d8b2a74f91686ae"
+  },
+  "media": {
+    "derived_media_key_sha256": "12b9bab7c9861db436f2f886c82949fec7bf4b4db9bb4a09f64a88fcb7e84cbb",
+    "vector_media_key_sha256": "57bad0f146adb1adcd2b8ba2c9a994afe4ba8f77715db6d7b1baab25f18f1839"
+  },
+  "device_record": {
+    "device_public_key_sha256": "afa85956b2f6f3b0f88d743adf4020cfa2d16738b1ebda4b0311928746420583",
+    "device_private_key_sha256": "d9f11e8eeaced99ee4ea735649c85cb7e41f05dcbd92ce5d0b565a4893e08e81"
+  }
+}

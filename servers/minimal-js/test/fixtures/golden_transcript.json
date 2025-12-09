@@ -1,0 +1,58 @@
+[
+  {
+    "label": "handshake_init",
+    "tag": 337,
+    "body": {
+      "type": "HANDSHAKE_INIT",
+      "version": 1,
+      "client_id": "client-a",
+      "x25519_public_key": "cli-x",
+      "kyber_public_key": "cli-k",
+      "timestamp": 1700000000000,
+      "nonce": "nonce-a"
+    }
+  },
+  {
+    "label": "handshake_response",
+    "tag": 338,
+    "body": {
+      "type": "HANDSHAKE_RESPONSE",
+      "version": 1,
+      "server_id": "srv-1",
+      "x25519_public_key": "srv-x",
+      "kyber_ciphertext": "cipher",
+      "timestamp": 1700000000100,
+      "nonce": "nonce-srv"
+    }
+  },
+  {
+    "label": "handshake_complete",
+    "tag": 339,
+    "body": {
+      "type": "HANDSHAKE_COMPLETE",
+      "version": 1,
+      "session_id": "sess-abc",
+      "handshake_hash": "hash-abc",
+      "timestamp": 1700000000200
+    }
+  },
+  {
+    "label": "join",
+    "body": { "type": "JOIN", "room_id": "demo-room", "timestamp": 1700000000300, "seq": 1 }
+  },
+  {
+    "label": "join_ack",
+    "body": { "type": "JOIN_ACK", "room_id": "demo-room", "members": ["client-a", "client-b"], "timestamp": 1700000000310 }
+  },
+  {
+    "label": "data",
+    "body": {
+      "type": "DATA",
+      "room_id": "demo-room",
+      "sender": "client-a",
+      "payload": { "hello": "world" },
+      "timestamp": 1700000000400,
+      "seq": 1
+    }
+  }
+]

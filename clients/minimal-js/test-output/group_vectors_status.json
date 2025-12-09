@@ -1,0 +1,7 @@
+{
+  "vector_cipher_sha256": "a058f9252b301972e6a160eea79e8dab6d3779741f353a661db2221a64afeba4",
+  "harness_cipher_sha256": "5461f4eafb995bb87c815878b58fece7d45729519fc5547771fe6bd3151690ba",
+  "harness_nonce_b64": "pV/Wwv8/9bCuhnVg",
+  "harness_aad_sha256": "e67cca4049e1c076c4bc1dc99075980515357a2436a20f089d8b2a74f91686ae",
+  "harness_sender_key_sha256": "8a5d6c2d49f19fa6f42d98c77e9fdc96ad3e4ff993891b6976caf316bca5a045"
+}

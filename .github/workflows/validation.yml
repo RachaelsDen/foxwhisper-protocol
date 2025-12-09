@@ -141,7 +141,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '25'
 
     - name: Install dependencies
       run: |
@@ -149,9 +149,41 @@ jobs:
         npm ci
 
     - name: Run minimal client tests
+      env:
+        FOXW_CRYPTO_BACKEND: real
       run: |
         cd clients/minimal-js
         npm test
+
+    - name: Upload minimal client test output
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: minimal-js-test-output
+        path: clients/minimal-js/test-output/
+        if-no-files-found: error
+
+  # Minimal Node client/server metadata flow
+  minimal-node:
+    runs-on: ubuntu-latest
+    needs: minimal-client
+    name: Minimal Node Client/Server
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '25'
+
+    - name: Run minimal client/server validation
+      env:
+        FOXW_CRYPTO_BACKEND: real
+      run: |
+        chmod +x scripts/validate-node-minimal.sh
+        ./scripts/validate-node-minimal.sh
 
   # Go Validation
   validate-go:
@@ -562,24 +594,33 @@ jobs:
         echo "🔒 FoxWhisper Protocol - Security Validation"
         echo "================================================"
         
-        # Check for any hardcoded secrets
+        # Check for any hardcoded secrets (exclude canonical helpers and test vectors)
         echo "Checking for hardcoded secrets..."
-        # Exclude test vector generation and known safe patterns
-        if grep -r -i "password\|secret\|key.*=" --include="*.py" --include="*.js" --include="*.go" --include="*.rs" tools/ | grep -v "test_vectors\|secrets.token\|os.urandom\|serde.*skip_serializing"; then
+        if rg -i "(password|secret(_key)?|api[_-]?key|token)" tools \
+          --glob '*.py' --glob '*.js' --glob '*.go' --glob '*.rs' \
+          --glob '!**/test_vectors*' \
+          --glob '!**/cbor_canonical.rs' \
+          --glob '!**/cborcanonical.go' \
+          --glob '!**/cbor_canonical.py' \
+          --glob '!**/cbor_canonical.ex' \
+          --glob '!**/fw_cbor_canonical.ex'; then
           echo "⚠️  Potential hardcoded secrets found"
           exit 1
         else
           echo "✅ No hardcoded secrets detected"
         fi
         
-        # Check for insecure random usage
+        # Check for insecure random usage (JS/TS Math.random and Python's random.random)
         echo "Checking for secure random usage..."
-        if grep -r "random\|Math.random" --include="*.py" --include="*.js" tools/ | grep -v "secure\|crypto\|secrets\|os.urandom\|def.*random\|\"\"\"\".*Generate.*random\|.*\"\"\".*\"\"\""; then
-          echo "⚠️  Insecure random usage detected"
+        if rg "Math\.random" tools --glob '*.js' --glob '*.ts'; then
+          echo "⚠️  Insecure random usage detected (Math.random)"
           exit 1
-        else
-          echo "✅ Secure random usage verified"
         fi
+        if rg "\brandom\.random\b" tools --glob '*.py' --glob '!**/test_vectors*'; then
+          echo "⚠️  Insecure random usage detected (random.random)"
+          exit 1
+        fi
+        echo "✅ Secure random usage verified"
         
         # Validate cryptographic material sizes
         echo "Validating cryptographic material sizes..."

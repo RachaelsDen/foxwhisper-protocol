@@ -1,11 +1,15 @@
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import { WebSocketServer } from 'ws';
 import { FoxClient } from '../src/client.js';
-import { TAG_HANDSHAKE_INIT, TAG_HANDSHAKE_RESPONSE, encodeTagged } from '../src/handshake.js';
+import { TAG_HANDSHAKE_COMPLETE, TAG_HANDSHAKE_INIT, TAG_HANDSHAKE_RESPONSE, deriveHandshakeComplete, encodeTagged } from '../src/handshake.js';
+import { KYBER_CT_B64 } from '../src/crypto/kyber.js';
 import type { HandshakeResponse } from '../src/types.js';
 import cbor from 'cbor';
 
+const SERVER_X25519_PUB = 'MCowBQYDK2VuAyEAoNF8HngL59Fo+xvZ1cKXmVAvycQTJhUyRi5lC7VFiUk=';
+
 let wss: WebSocketServer;
+
 let port: number;
 
 beforeAll(async () => {
@@ -38,21 +42,14 @@ test('performs handshake and reaches ready state', async () => {
           type: 'HANDSHAKE_RESPONSE',
           version: 1,
           server_id: 'server-1',
-          x25519_public_key: 'srv-x25519',
-          kyber_ciphertext: 'cipher',
+          x25519_public_key: SERVER_X25519_PUB,
+          kyber_ciphertext: KYBER_CT_B64,
           timestamp: Date.now(),
           nonce: 'nonce-srv',
         };
         socket.send(encodeTagged(resp, TAG_HANDSHAKE_RESPONSE));
-        // And immediately send HANDSHAKE_COMPLETE
-        const complete = {
-          type: 'HANDSHAKE_COMPLETE',
-          version: 1,
-          session_id: 'sess-1',
-          handshake_hash: 'hash-1',
-          timestamp: Date.now(),
-        };
-        socket.send(encodeTagged(complete, 0xd3));
+        const complete = deriveHandshakeComplete(resp);
+        socket.send(encodeTagged(complete, TAG_HANDSHAKE_COMPLETE));
       }
     });
   });
