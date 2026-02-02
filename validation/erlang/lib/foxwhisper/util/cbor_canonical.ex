@@ -33,7 +33,7 @@ defmodule Foxwhisper.Util.CBORCanonical do
   defp canonicalize(other), do: other
 
   defp encode(term) do
-    case CBOR.encode(term, %{canonical: true}) do
+    case CBOR.encode(term) do
       {:ok, iodata} -> IO.iodata_to_binary(iodata)
       {:error, reason} -> raise "CBOR encoding failed: #{inspect(reason)}"
       bin when is_binary(bin) -> bin

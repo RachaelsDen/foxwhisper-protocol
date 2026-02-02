@@ -3,7 +3,7 @@
 # FoxWhisper Protocol - Simple CI Validation Script
 # Runs core validations for CI/CD integration
 
-set -e
+set -euo pipefail
 
 echo "🦊 FoxWhisper Protocol - CI Validation"
 echo "===================================="
@@ -22,9 +22,12 @@ run_test() {
     total=$((total + 1))
     echo "Testing $name..."
     
-    # Run command in subshell to preserve directory
+    # Run command in subshell to preserve directory.
+    # Temporarily disable `-e` so we can record failures and continue.
+    set +e
     (eval "$cmd")
     local exit_code=$?
+    set -e
     
     if [ $exit_code -eq 0 ]; then
         echo "✅ $name PASSED"
@@ -32,7 +35,8 @@ run_test() {
         return 0
     else
         echo "❌ $name FAILED (exit code: $exit_code)"
-        return 1
+        # Don't fail-fast; collect all results.
+        return 0
     fi
 }
 
@@ -41,16 +45,28 @@ echo ""
 echo "🔍 Running Core Validations"
 echo "========================="
 
-run_test "Python CBOR" "cd validation/python/validators && python3 validate_cbor_python.py"
-run_test "Python Schema" "cd validation/python/validators && python3 validate_cbor_schema.py"
-run_test "Node.js CBOR" "cd validation/nodejs/validators && node validate_cbor_node.js"
-run_test "Go CBOR" "cd validation/go/validators && go run validate_cbor_go.go"
-run_test "Rust CBOR" "cd validation/rust/validators && cargo run --bin validate_cbor_rust"
-run_test "Elixir" "bash scripts/jobs/validate-erlang.sh"
-run_test "Device Desync (Python)" "cd validation/python/validators && python3 device_desync_sim.py"
-run_test "Corrupted EARE (Python)" "cd validation/python/validators && python3 corrupted_eare_sim.py"
-run_test "Minimal JS Client" "cd clients/minimal-js && npm test"
-run_test "Minimal JS SFU" "cd servers/minimal-js && npm test"
+run_test "Python Validators" "bash scripts/jobs/validate-python.sh"
+run_test "Node.js Validators" "bash scripts/jobs/validate-nodejs.sh"
+
+if command -v go >/dev/null 2>&1; then
+    run_test "Go Validators" "bash scripts/jobs/validate-go.sh"
+else
+    echo "⏭️  Go Validators SKIPPED (missing: go)"
+fi
+
+if command -v cargo >/dev/null 2>&1; then
+    run_test "Rust Validators" "bash scripts/jobs/validate-rust.sh"
+else
+    echo "⏭️  Rust Validators SKIPPED (missing: cargo)"
+fi
+
+if command -v mix >/dev/null 2>&1; then
+    run_test "Elixir/Erlang Validators" "bash scripts/jobs/validate-erlang.sh"
+else
+    echo "⏭️  Elixir/Erlang Validators SKIPPED (missing: mix)"
+fi
+
+run_test "Minimal Node Harness" "bash scripts/validate-node-minimal.sh"
  
  echo ""
 
@@ -58,7 +74,11 @@ run_test "Minimal JS SFU" "cd servers/minimal-js && npm test"
 echo "🔗 Cross-Language Compatibility"
 echo "=============================="
 
-run_test "Cross-Language Validation" "cd validation/common/validators && go run validate_cbor_crosslang.go"
+if command -v go >/dev/null 2>&1; then
+    run_test "Cross-Language Validation" "cd validation/common/validators && go run validate_cbor_crosslang.go"
+else
+    echo "⏭️  Cross-Language Validation SKIPPED (missing: go)"
+fi
 
 echo ""
 echo "📊 Results Summary"
