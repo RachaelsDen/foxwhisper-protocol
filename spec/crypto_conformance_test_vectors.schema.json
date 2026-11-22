@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.invalid/foxwhisper/crypto_conformance_test_vectors.schema.json",
+  "title": "FoxWhisper Crypto Conformance Test Vectors (v0.9)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "encoding", "cases"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "encoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes"],
+      "properties": {
+        "bytes": {
+          "type": "string",
+          "enum": ["base64"]
+        }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/case"}
+    }
+  },
+  "definitions": {
+    "b64": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "crypto_suite_id", "handshake_auth", "handshake"],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "crypto_suite_id": {"type": "string", "enum": ["FW-CRYPTO-SUITE-01"]},
+        "handshake_auth": {"type": "string", "minLength": 1},
+        "notes": {"type": "string"},
+        "handshake": {"$ref": "#/definitions/handshake"}
+      }
+    },
+    "handshake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "handshake_transcript_raw_cbor_b64",
+        "client_x25519_public_key_b64",
+        "server_x25519_public_key_b64",
+        "kyber_public_key_b64",
+        "kyber_ciphertext_b64",
+        "expected"
+      ],
+      "properties": {
+        "handshake_transcript_raw_cbor_b64": {"$ref": "#/definitions/b64"},
+        "client_x25519_public_key_b64": {"$ref": "#/definitions/b64"},
+        "server_x25519_public_key_b64": {"$ref": "#/definitions/b64"},
+        "kyber_public_key_b64": {"$ref": "#/definitions/b64"},
+        "kyber_ciphertext_b64": {"$ref": "#/definitions/b64"},
+        "expected": {"$ref": "#/definitions/handshake_expected"}
+      }
+    },
+    "handshake_expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_id_b64"],
+      "properties": {
+        "session_id_b64": {"$ref": "#/definitions/b64"},
+        "transcript_sha256_b64": {"$ref": "#/definitions/b64"},
+
+        "x25519_shared_sha256_b64": {"$ref": "#/definitions/b64"},
+        "kem_shared_sha256_b64": {"$ref": "#/definitions/b64"},
+        "handshake_secret_sha256_b64": {"$ref": "#/definitions/b64"},
+        "key_confirmation_sha256_b64": {"$ref": "#/definitions/b64"},
+        "sp_mac_key_sha256_b64": {"$ref": "#/definitions/b64"}
+      }
+    }
+  }
+}

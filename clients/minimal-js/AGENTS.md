@@ -18,8 +18,8 @@ When modifying code under `clients/minimal-js/`, agents MUST:
   - Hybrid handshake secret:
     - `x25519_shared = X25519(client_x25519_priv, server_x25519_pub)`
     - `kyber_shared = Kyber.Decapsulate(client_kyber_priv, server_kyber_ciphertext)`
-    - `handshake_secret = HKDF(x25519_shared || kyber_shared, "FoxWhisper-Handshake-Root", 32)`
-  - KDF: **HKDF-SHA256**, 32-byte outputs, with labeled `info` strings (e.g., "FoxWhisper-Message", "FoxWhisper-Chain", "FW-MediaEpochKey", "FW-FrameKey").
+    - `handshake_secret = HKDF(x25519_shared || kem_shared, "FW-Handshake-Root", 32)`
+  - KDF: **HKDF-SHA256**, 32-byte outputs, with labeled `info` strings (e.g., "FW-Message", "FW-Chain", "FW-MediaEpochKey", "FW-FrameKey").
   - AEAD: **AES-256-GCM** for DR, messaging, and media.
   - IV/nonce: deterministic 96-bit IV = `Truncate_96bits(SHA256(context))`, where context is defined by the spec:
     - DR/messaging: typically `call_id || participant_id || stream_id || frame_sequence` (see v0.8.1 §6.1.2).

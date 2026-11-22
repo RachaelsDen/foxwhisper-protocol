@@ -75,7 +75,7 @@ defmodule Foxwhisper.Validators.CorruptedEARE do
   defp evaluate_nodes(nodes, corruptions) do
     corr_by_target = Enum.group_by(corruptions, fn c -> Map.get(c, "target_node", "*") end)
 
-    {errors, hash_breaks, accepted, rejected, last_hash} =
+    {errors, hash_breaks, accepted, rejected, _last_hash} =
       Enum.reduce(nodes, {[], 0, 0, 0, nil}, fn node, {errs, breaks, acc, rej, last} ->
         prev = Map.get(node, "previous_epoch_hash")
         node_hash = Map.get(node, "eare_hash")
@@ -93,8 +93,7 @@ defmodule Foxwhisper.Validators.CorruptedEARE do
           Enum.reduce(targets, {errs, breaks, rej}, fn t, {acc_errs, acc_breaks, acc_rej} ->
             corrs = Map.get(corr_by_target, t, [])
 
-            Enum.reduce(corrs, {acc_errs, acc_breaks, acc_rej}, fn c,
-                                                              {e, b, r} ->
+            Enum.reduce(corrs, {acc_errs, acc_breaks, acc_rej}, fn c, {e, b, r} ->
               case String.upcase(to_string(Map.get(c, "type", ""))) do
                 "INVALID_SIGNATURE" -> {add_err(e, "INVALID_SIGNATURE"), b, r}
                 "INVALID_POP" -> {add_err(e, "INVALID_POP"), b, r}

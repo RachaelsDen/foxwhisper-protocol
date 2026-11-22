@@ -48,18 +48,21 @@ test('joins and exchanges a data message', async () => {
       receivedServer.push(msg);
 
       if (tagged instanceof cbor.Tagged && tagged.tag === TAG_HANDSHAKE_INIT) {
+        const init = tagged.value as any;
         const resp = {
           type: 'HANDSHAKE_RESPONSE',
           version: 1,
           server_id: 'srv',
+          crypto_suite_id: 'FW-CRYPTO-SUITE-01',
+          handshake_auth: 'TLS-PINNED',
           x25519_public_key: SERVER_X25519_PUB,
           kyber_ciphertext: KYBER_CT_B64,
-          timestamp: Date.now(),
-          nonce: 'n-srv',
+          session_id: '',
+          timestamp_ms: Date.now(),
+          nonce: Buffer.alloc(16, 4).toString('base64'),
         };
+        resp.session_id = deriveHandshakeComplete(init, resp as any).session_id;
         socket.send(encodeTagged(resp, TAG_HANDSHAKE_RESPONSE));
-        const complete = deriveHandshakeComplete(resp as any);
-        socket.send(encodeTagged(complete, TAG_HANDSHAKE_COMPLETE));
         return;
       }
 

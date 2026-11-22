@@ -15,19 +15,14 @@ export function createRealCryptoProvider(config: RealCryptoConfig): CryptoProvid
 
   const keyAgreement: KeyAgreement = {
     deriveSessionKeys(handshake): SessionKeys {
-      // Prefer a real shared secret if provided; fall back to legacy stub for older vectors.
       const sessionId = decodeBase64ToBytes(handshake.session_id);
-      const handshakeHash = decodeBase64ToBytes(handshake.handshake_hash);
-      let handshakeSecret: Buffer;
-      if ((handshake as any).shared_secret) {
-        const shared = decodeBase64ToBytes((handshake as any).shared_secret);
-        // Bind transcript hash into the salt for the handshake secret.
-        handshakeSecret = hkdfLabel(shared, handshakeHash, 'FoxWhisper-Handshake-Root', 32);
-      } else {
-        // Legacy deterministic path (vectors without shared_secret).
-        const hybridStub = Buffer.concat([handshakeHash, sessionId]);
-        handshakeSecret = hkdfLabel(hybridStub, Buffer.alloc(0), 'FoxWhisper-Handshake-Root', 32);
+      const sharedB64 = (handshake as any).shared_secret as string | undefined;
+      if (!sharedB64) {
+        throw new Error('missing shared_secret for v0.9 handshake');
       }
+      const shared = decodeBase64ToBytes(sharedB64);
+      const salt = Buffer.alloc(32, 0);
+      const handshakeSecret = hkdfLabel(shared, salt, 'FW-Handshake-Root', 32);
       return primitives.kdf(handshakeSecret, sessionId);
     },
   };

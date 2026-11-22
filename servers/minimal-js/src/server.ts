@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import cbor from 'cbor';
 import { createHash } from 'crypto';
-import { decodeTagged, encodeTagged, makeHandshakeComplete, makeHandshakeResponse, TAG_HANDSHAKE_COMPLETE, TAG_HANDSHAKE_INIT, TAG_HANDSHAKE_RESPONSE } from './handshake.js';
+import { decodeTagged, encodeTagged, makeHandshakeResponse, TAG_HANDSHAKE_COMPLETE, TAG_HANDSHAKE_INIT, TAG_HANDSHAKE_RESPONSE } from './handshake.js';
 import { createToyCryptoProvider } from './crypto/toy.js';
 import { createRealCryptoProvider } from './crypto/real.js';
 import { computeSharedSecret, generateX25519KeyPair } from './crypto/x25519.js';
@@ -242,26 +242,37 @@ import type { DataMessage, HandshakeInit, JoinMessage, ServerConfig } from './ty
         this.log('handshake:x25519_error', { client_id: init.client_id, error: err instanceof Error ? err.message : String(err) });
       }
       const resp = makeHandshakeResponse(init, this.serverId, this.serverX25519PubB64, kyberCiphertext);
-      const complete = makeHandshakeComplete(resp);
       socket.send(encodeTagged(resp, TAG_HANDSHAKE_RESPONSE));
-      socket.send(encodeTagged(complete, TAG_HANDSHAKE_COMPLETE));
-      this.sessions.add(socket);
       const hybridShared = x25519Shared && kyberShared ? Buffer.concat([x25519Shared, Buffer.from(kyberShared, 'base64')]).toString('base64') : undefined;
       this.connections.set(socket, {
         clientId: init.client_id,
-        sessionId: complete.session_id,
+        sessionId: resp.session_id,
         connectionId,
         remote: existing?.remote,
         hybrid_shared_b64: hybridShared,
       });
       this.log('handshake:complete', {
         client_id: init.client_id,
-        session_id: complete.session_id,
+        session_id: resp.session_id,
         connection_id: connectionId,
         crypto_profile: CRYPTO_PROFILE,
         hybrid_shared_digest: hybridShared ? createHash('sha256').update(Buffer.from(hybridShared, 'base64')).digest('base64') : undefined,
       });
-      this.audit('device_registered', { client_id: init.client_id, session_id: complete.session_id, connection_id: connectionId });
+      this.audit('device_registered', { client_id: init.client_id, session_id: resp.session_id, connection_id: connectionId });
+      return;
+    }
+
+    if (tag === TAG_HANDSHAKE_COMPLETE) {
+      const meta = this.connections.get(socket);
+      const expected = meta?.sessionId;
+      const provided = (value as any)?.session_id as string | undefined;
+      if (!expected || !provided || provided !== expected) {
+        this.log('handshake:complete:reject', { connection_id: meta?.connectionId, expected, provided });
+        socket.close();
+        return;
+      }
+      this.sessions.add(socket);
+      this.log('handshake:complete:recv', { connection_id: meta?.connectionId, session_id: expected, client_id: meta?.clientId });
       return;
     }
 

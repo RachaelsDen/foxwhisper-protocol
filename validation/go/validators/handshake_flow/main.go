@@ -5,12 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os"
 
 	"foxwhisper-protocol/validation/go/validators/util"
-	"golang.org/x/crypto/hkdf"
 )
 
 // Simple handshake flow validator: recompute handshake_hash/session_id from the
@@ -21,7 +19,7 @@ func main() {
 		log.Fatalf("failed to locate repo root: %v", err)
 	}
 
-	path := root + "/tests/common/handshake/end_to_end_test_vectors_go.json"
+	path := root + "/tests/common/handshake/v0.9/handshake_flow_test_vectors.json"
 	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("failed to read vectors: %v", err)
@@ -36,47 +34,38 @@ func main() {
 	if !ok {
 		log.Fatalf("handshake_flow missing or wrong type")
 	}
+	transcript, ok := hf["transcript"].(map[string]any)
+	if !ok {
+		log.Fatalf("handshake_flow.transcript missing or wrong type")
+	}
+	rawB64, _ := transcript["handshake_transcript_raw_cbor_b64"].(string)
+	expectedSession, _ := transcript["session_id_b64"].(string)
+	if rawB64 == "" || expectedSession == "" {
+		log.Fatalf("missing transcript.handshake_transcript_raw_cbor_b64 or transcript.session_id_b64")
+	}
+	raw, err := base64.StdEncoding.DecodeString(rawB64)
+	if err != nil {
+		log.Fatalf("failed to decode transcript CBOR: %v", err)
+	}
+	h := sha256.Sum256(raw)
+	derivedSession := base64.StdEncoding.EncodeToString(h[:])
+	if derivedSession != expectedSession {
+		log.Fatalf("session_id_b64 mismatch: expected %v, got %v", expectedSession, derivedSession)
+	}
 	steps, ok := hf["steps"].([]any)
 	if !ok || len(steps) < 3 {
 		log.Fatalf("handshake_flow.steps missing or too short")
 	}
-
-	respMap := steps[1].(map[string]any)["message"].(map[string]any)
+	resp := steps[1].(map[string]any)["message"].(map[string]any)
 	complete := steps[2].(map[string]any)["message"].(map[string]any)
-
-	type respStruct struct {
-		Type            string `json:"type"`
-		Version         int    `json:"version"`
-		ServerID        string `json:"server_id"`
-		X25519PublicKey string `json:"x25519_public_key"`
-		KyberCiphertext string `json:"kyber_ciphertext"`
-		Timestamp       int64  `json:"timestamp"`
-		Nonce           string `json:"nonce"`
+	if resp["session_id"] != expectedSession {
+		log.Fatalf("HANDSHAKE_RESPONSE.session_id mismatch: expected %v, got %v", expectedSession, resp["session_id"])
 	}
-	respBytes, _ := json.Marshal(respMap)
-	var resp respStruct
-	_ = json.Unmarshal(respBytes, &resp)
-
-	encoded, err := util.EncodeCanonical(resp)
-	if err != nil {
-		log.Fatalf("canonical encode failed: %v", err)
+	if complete["session_id"] != expectedSession {
+		log.Fatalf("HANDSHAKE_COMPLETE.session_id mismatch: expected %v, got %v", expectedSession, complete["session_id"])
 	}
-	h := sha256.Sum256(encoded)
-	handshakeHash := base64.StdEncoding.EncodeToString(h[:])
-
-	hk := hkdf.New(sha256.New, h[:], nil, []byte("FoxWhisper-SessionId"))
-	okm := make([]byte, 32)
-	if _, err := io.ReadFull(hk, okm); err != nil {
-		log.Fatalf("hkdf failed: %v", err)
+	if resp["timestamp_ms"] == nil || complete["timestamp_ms"] == nil {
+		log.Fatalf("missing timestamp_ms in handshake messages")
 	}
-	sessionID := base64.StdEncoding.EncodeToString(okm)
-
-	if handshakeHash != complete["handshake_hash"] {
-		log.Fatalf("handshake_hash mismatch: expected %v, got %v", complete["handshake_hash"], handshakeHash)
-	}
-	if sessionID != complete["session_id"] {
-		log.Fatalf("session_id mismatch: expected %v, got %v", complete["session_id"], sessionID)
-	}
-
-	fmt.Println("✅ handshake_flow derivation matches (Go)")
+	fmt.Println("✅ handshake_flow v0.9 transcript binding matches (Go)")
 }

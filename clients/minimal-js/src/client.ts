@@ -9,7 +9,7 @@ import {
   isHandshakeResponse,
   isHandshakeComplete,
 } from './handshake.js';
-import type { HandshakeComplete } from './types.js';
+import type { HandshakeComplete, HandshakeInit } from './types.js';
 import { createWebSocket } from './transport.js';
 import { DeviceRecordStore } from './device_record.js';
 import { ConnectionError, ProtocolError, StateError } from './errors.js';
@@ -56,6 +56,7 @@ export class FoxClient extends EventEmitter {
   private kyberPublicB64: string;
   private cryptoBackendChosen: 'toy' | 'real' | null = null;
   private lastHandshakeComplete: HandshakeComplete | null = null;
+  private lastHandshakeInit: HandshakeInit | null = null;
 
   constructor(cfg: ClientConfig) {
     super();
@@ -172,6 +173,7 @@ export class FoxClient extends EventEmitter {
             x25519PublicKey: this.x25519PublicB64,
             kyberPublicKey: this.cfg.kyberPublicKey ?? this.kyberPublicB64,
           });
+          this.lastHandshakeInit = init;
           this.log('handshake:init:send', { client_id: this.cfg.clientId });
           this.sendRaw(encodeHandshakeInit(init));
         } catch (err) {
@@ -196,7 +198,10 @@ export class FoxClient extends EventEmitter {
           const message = (decoded instanceof cbor.Tagged ? decoded.value : decoded) as IncomingMessage;
           if (isHandshakeResponse(message)) {
             this.log('handshake:response:recv', { server_id: message.server_id });
-            const complete = deriveHandshakeComplete(message);
+            if (!this.lastHandshakeInit) {
+              throw new ProtocolError('handshake init missing', { kind: 'MALFORMED_JOIN', detail: 'missing cached HANDSHAKE_INIT' });
+            }
+            const complete = deriveHandshakeComplete(this.lastHandshakeInit, message);
             const parts: Buffer[] = [];
             try {
               const shared = computeSharedSecret(this.x25519PrivateDer, message.x25519_public_key);
@@ -219,15 +224,15 @@ export class FoxClient extends EventEmitter {
             this.sessionKeys = (this.cryptoProvider as CryptoProvider).keyAgreement.deriveSessionKeys(complete);
             this.sendRaw(encodeHandshakeComplete(complete));
             this.log('handshake:complete:send', { session_id: complete.session_id });
-          } else if (isHandshakeComplete(message)) {
+
             if (this.state !== 'ready') {
               this.transition('ready', ['handshaking']);
               this.emit('ready');
-            } else {
-              this.log('handshake:complete:dup', { session_id: message.session_id });
             }
-            this.log('handshake:complete:recv', { session_id: message.session_id });
             resolve();
+          } else if (isHandshakeComplete(message)) {
+            // v0.9: server does not send HANDSHAKE_COMPLETE; ignore if received.
+            this.log('handshake:complete:unexpected', { session_id: message.session_id });
           } else if ((message as any).type === 'DATA') {
             const dataMsg = message as DataMessage;
             const emitted = this.handleDataMessage(dataMsg);

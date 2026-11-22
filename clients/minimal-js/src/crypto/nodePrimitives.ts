@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'crypto';
+import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from 'crypto';
 import type { RealCryptoPrimitives, SessionKeys } from '../types.js';
 
 /**
@@ -18,7 +18,7 @@ export function createNodeRealCryptoPrimitives(): RealCryptoPrimitives {
     // Derive 32 + 32 + 12 bytes = 76 bytes of key material
     const totalLength = 32 + 32 + 12;
     const okm = Buffer.from(
-      new Uint8Array(hkdfSync('sha256', sharedSecret, context, Buffer.from('FoxWhisper-SessionKeys', 'utf8'), totalLength)),
+      new Uint8Array(hkdfSync('sha256', sharedSecret, context, Buffer.from('FW-CP-MAC', 'utf8'), totalLength)),
     );
 
     const encKeyBytes = okm.subarray(0, 32);
@@ -94,12 +94,9 @@ export function createNodeRealCryptoPrimitives(): RealCryptoPrimitives {
     x25519Ecdh(ourPrivate: Uint8Array, theirPublic: Uint8Array): Uint8Array {
       // Placeholder: real X25519 ECDH will be introduced once we have a
       // concrete key representation shared with other implementations.
-      // For now, combine inputs via HKDF to get deterministic behavior.
+      // Test-only placeholder: deterministic digest of inputs.
       const combined = Buffer.concat([Buffer.from(ourPrivate), Buffer.from(theirPublic)]);
-      const okm = Buffer.from(
-        new Uint8Array(hkdfSync('sha256', combined, Buffer.alloc(0), Buffer.from('FoxWhisper-X25519-Stub', 'utf8'), 32)),
-      );
-      return okm;
+      return createHash('sha256').update(combined).digest();
     },
     kdf(sharedSecret: Uint8Array, context: Uint8Array): SessionKeys {
       return deriveSessionKeys(sharedSecret, context);

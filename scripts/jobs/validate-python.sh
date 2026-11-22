@@ -93,15 +93,22 @@ main() {
         passed_tests=$((passed_tests + 1))
     fi
 
-    # Epoch Fork Simulation (Python coordinator + Go shim)
-    total_tests=$((total_tests + 1))
-    stress_flag=""
-    if [ "${EPOCH_FORK_STRESS:-0}" != "0" ]; then
-        stress_flag="--stress"
-    fi
-    epoch_args="--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json --summary-out $RESULTS_DIR/epoch_fork_summary.json --envelope-out $RESULTS_DIR/epoch_fork_envelopes.jsonl --go-shim go --node-shim node --rust-shim cargo $stress_flag"
-    if run_python_validation "epoch_fork" "epoch_fork_fuzzer.py" "$epoch_args"; then
-        passed_tests=$((passed_tests + 1))
+    # Epoch Fork Simulation (Python coordinator + Go/Node/Rust shims)
+    # On fresh machines, toolchains may be missing; treat this as an optional check.
+    if command -v go >/dev/null 2>&1 && command -v node >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
+        total_tests=$((total_tests + 1))
+        stress_flag=""
+        if [ "${EPOCH_FORK_STRESS:-0}" != "0" ]; then
+            stress_flag="--stress"
+        fi
+        epoch_args="--corpus $ROOT_DIR/tests/common/adversarial/epoch_forks.json --summary-out $RESULTS_DIR/epoch_fork_summary.json --envelope-out $RESULTS_DIR/epoch_fork_envelopes.jsonl --go-shim go --node-shim node --rust-shim cargo $stress_flag"
+        if run_python_validation "epoch_fork" "epoch_fork_fuzzer.py" "$epoch_args"; then
+            passed_tests=$((passed_tests + 1))
+        fi
+    else
+        echo "⚠️  Skipping epoch_fork (requires go + node + cargo on PATH)"
+        echo "epoch_fork skipped: missing toolchain(s)" > "$RESULTS_DIR/python_epoch_fork_results.log"
+        echo "{\"test\": \"epoch_fork\", \"status\": \"skipped\", \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > "$RESULTS_DIR/python_epoch_fork_status.json"
     fi
 
     # Generate job summary

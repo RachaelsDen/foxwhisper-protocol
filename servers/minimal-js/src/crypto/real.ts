@@ -14,8 +14,9 @@ function deriveSessionKeys(handshakeHashB64: string, sessionIdB64: string): Serv
   const handshakeHash = Buffer.from(handshakeHashB64, 'base64');
   const sessionId = Buffer.from(sessionIdB64, 'base64');
   const hybridStub = Buffer.concat([handshakeHash, sessionId]);
-  const handshakeSecret = hkdfLabel(hybridStub, Buffer.alloc(0), 'FoxWhisper-Handshake-Root', 32);
-  const total = hkdfLabel(handshakeSecret, sessionId, 'FoxWhisper-SessionKeys', 32 + 32 + 12);
+  const salt = Buffer.alloc(32, 0);
+  const handshakeSecret = hkdfLabel(hybridStub, salt, 'FW-Handshake-Root', 32);
+  const total = hkdfLabel(handshakeSecret, sessionId, 'FW-CP-MAC', 32 + 32 + 12);
   return {
     encKey: total.subarray(0, 32),
     authKey: total.subarray(32, 64),

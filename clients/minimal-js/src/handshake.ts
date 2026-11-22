@@ -1,5 +1,5 @@
 import cbor from 'cbor';
-import { randomBytes, createHash, hkdfSync } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import { encodeCanonical } from './cborCanonical.js';
 import type { HandshakeInit, HandshakeResponse, HandshakeComplete } from './types.js';
 
@@ -18,9 +18,11 @@ export function createHandshakeInit(params: {
     type: 'HANDSHAKE_INIT',
     version: 1,
     client_id: params.clientId,
+    crypto_suite_id: 'FW-CRYPTO-SUITE-01',
+    handshake_auth: 'TLS-PINNED',
     x25519_public_key: params.x25519PublicKey,
     kyber_public_key: params.kyberPublicKey,
-    timestamp: params.timestamp ?? Date.now(),
+    timestamp_ms: params.timestamp ?? Date.now(),
     nonce: params.nonce ?? randomBytes(16).toString('base64'),
   };
 }
@@ -51,20 +53,31 @@ export function isHandshakeComplete(obj: any): obj is HandshakeComplete {
   return obj && obj.type === 'HANDSHAKE_COMPLETE' && obj.version === 1;
 }
 
-export function deriveHandshakeComplete(resp: HandshakeResponse): HandshakeComplete {
-  const transcript = encodeCanonical(resp);
-  const hashBytes = createHash('sha256').update(transcript).digest();
-  const handshake_hash = hashBytes.toString('base64');
-  const sessionIdBytes = new Uint8Array(
-    hkdfSync('sha256', hashBytes, Buffer.alloc(0), Buffer.from('FoxWhisper-SessionId', 'utf8'), 32),
-  );
-  const session_id = Buffer.from(sessionIdBytes).toString('base64');
+function b64ToBuf(b64: string): Buffer {
+  return Buffer.from(b64, 'base64');
+}
+
+export function deriveHandshakeComplete(init: HandshakeInit, resp: HandshakeResponse): HandshakeComplete {
+  const params = {
+    crypto_suite_id: init.crypto_suite_id,
+    handshake_auth: init.handshake_auth,
+  };
+  const handshakeTranscriptRaw = {
+    type: 'HANDSHAKE_TRANSCRIPT',
+    client_x25519_pub: b64ToBuf(init.x25519_public_key),
+    server_x25519_pub: b64ToBuf(resp.x25519_public_key),
+    kyber_public_key: b64ToBuf(init.kyber_public_key),
+    kyber_ciphertext: b64ToBuf(resp.kyber_ciphertext),
+    params,
+  };
+  const transcriptBytes = encodeCanonical(handshakeTranscriptRaw);
+  const sessionIdBytes = createHash('sha256').update(transcriptBytes).digest();
+  const session_id = sessionIdBytes.toString('base64');
 
   return {
     type: 'HANDSHAKE_COMPLETE',
     version: 1,
     session_id,
-    handshake_hash,
-    timestamp: Date.now(),
+    timestamp_ms: Date.now(),
   };
 }
