@@ -1,7 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
-use hkdf::Hkdf;
-use serde::Deserialize;
 use serde::ser::{SerializeMap, SerializeSeq};
+use serde::Deserialize;
 use serde_cbor::value::{to_value, Value};
 use sha2::{Digest, Sha256};
 use std::error::Error;
@@ -30,10 +29,13 @@ impl<'a> serde::Serialize for CanonValue<'a> {
             Value::Map(map) => {
                 let mut entries = Vec::with_capacity(map.len());
                 for (k, v) in map.iter() {
-                    let key_bytes = serde_cbor::to_vec(&CanonValue(k)).map_err(serde::ser::Error::custom)?;
+                    let key_bytes =
+                        serde_cbor::to_vec(&CanonValue(k)).map_err(serde::ser::Error::custom)?;
                     entries.push((key_bytes, k, v));
                 }
-                entries.sort_by(|(kb1, _, _), (kb2, _, _)| kb1.len().cmp(&kb2.len()).then_with(|| kb1.cmp(kb2)));
+                entries.sort_by(|(kb1, _, _), (kb2, _, _)| {
+                    kb1.len().cmp(&kb2.len()).then_with(|| kb1.cmp(kb2))
+                });
 
                 let mut map_ser = serializer.serialize_map(Some(entries.len()))?;
                 for (_, k, v) in entries {
@@ -62,35 +64,76 @@ struct Step {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let data = fs::read_to_string("tests/common/handshake/end_to_end_test_vectors.json")?;
-    let doc: FlowDoc = serde_json::from_str(&data)?;
-    let steps = &doc.handshake_flow.steps;
+    let data = fs::read_to_string("tests/common/handshake/v0.9/handshake_flow_test_vectors.json")?;
+    let doc: serde_json::Value = serde_json::from_str(&data)?;
+    let flow = doc.get("handshake_flow").ok_or("missing handshake_flow")?;
+    let transcript = flow
+        .get("transcript")
+        .ok_or("missing handshake_flow.transcript")?;
+
+    let raw_cbor_b64 = transcript
+        .get("handshake_transcript_raw_cbor_b64")
+        .and_then(|v| v.as_str())
+        .ok_or("missing transcript.handshake_transcript_raw_cbor_b64")?;
+    let expected_session = transcript
+        .get("session_id_b64")
+        .and_then(|v| v.as_str())
+        .ok_or("missing transcript.session_id_b64")?;
+
+    let raw_cbor = general_purpose::STANDARD.decode(raw_cbor_b64)?;
+    let derived_session = general_purpose::STANDARD.encode(Sha256::digest(&raw_cbor));
+    if derived_session != expected_session {
+        return Err(format!(
+            "session_id_b64 mismatch: {} != {}",
+            expected_session, derived_session
+        )
+        .into());
+    }
+
+    let steps = flow
+        .get("steps")
+        .and_then(|v| v.as_array())
+        .ok_or("handshake_flow.steps missing")?;
     if steps.len() < 3 {
         return Err("handshake_flow missing steps".into());
     }
-    let resp = &steps[1].message;
-    let complete = &steps[2].message;
+    let init = steps[0].get("message").ok_or("step0 missing message")?;
+    let resp = steps[1].get("message").ok_or("step1 missing message")?;
+    let complete = steps[2].get("message").ok_or("step2 missing message")?;
 
-    let encoded = encode_canonical(resp)?;
-    let hash = Sha256::digest(&encoded);
-    let handshake_hash = general_purpose::STANDARD.encode(hash);
-
-    let hk = Hkdf::<Sha256>::new(None, &hash);
-    let mut okm = [0u8; 32];
-    hk.expand(b"FoxWhisper-SessionId", &mut okm)
-        .map_err(|e| format!("hkdf expand failed: {e}"))?;
-    let session_id = general_purpose::STANDARD.encode(okm);
-
-    let expected_hash = complete["handshake_hash"].as_str().unwrap_or("");
-    let expected_session = complete["session_id"].as_str().unwrap_or("");
-
-    if handshake_hash != expected_hash {
-        return Err(format!("handshake_hash mismatch: {} != {}", expected_hash, handshake_hash).into());
+    let resp_session = resp
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let complete_session = complete
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if resp_session != expected_session {
+        return Err(format!(
+            "HANDSHAKE_RESPONSE.session_id mismatch: {} != {}",
+            resp_session, expected_session
+        )
+        .into());
     }
-    if session_id != expected_session {
-        return Err(format!("session_id mismatch: {} != {}", expected_session, session_id).into());
+    if complete_session != expected_session {
+        return Err(format!(
+            "HANDSHAKE_COMPLETE.session_id mismatch: {} != {}",
+            complete_session, expected_session
+        )
+        .into());
     }
 
-    println!("✅ handshake_flow derivation matches (Rust)");
+    for (msg, name) in [
+        (init, "HANDSHAKE_INIT"),
+        (resp, "HANDSHAKE_RESPONSE"),
+        (complete, "HANDSHAKE_COMPLETE"),
+    ] {
+        if msg.get("timestamp_ms").is_none() {
+            return Err(format!("{} missing timestamp_ms", name).into());
+        }
+    }
+
+    println!("✅ handshake_flow v0.9 transcript binding matches (Rust)");
     Ok(())
 }

@@ -79,6 +79,9 @@ results/
 cross_language_validation_results.json
 cbor_validation_report.md
 
+# Local-only crypto conformance secrets
+tests/local/handshake/crypto_conformance_secrets.json
+
 # Elixir build artifacts
 validation/erlang/_build/
 validation/erlang/deps/

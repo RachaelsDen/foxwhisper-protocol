@@ -1,11 +1,25 @@
 {
+  "handshake_init": {
+    "type": "HANDSHAKE_INIT",
+    "version": 1,
+    "client_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+    "crypto_suite_id": "FW-CRYPTO-SUITE-01",
+    "handshake_auth": "TLS-PINNED",
+    "x25519_public_key": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+    "kyber_public_key": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=",
+    "timestamp_ms": 1700000000000,
+    "nonce": "AwMDAwMDAwMDAwMDAwMDAw=="
+  },
   "handshake_response": {
     "type": "HANDSHAKE_RESPONSE",
     "version": 1,
     "server_id": "srv",
-    "x25519_public_key": "srv-x",
-    "kyber_ciphertext": "ct",
-    "timestamp": 1700000000000,
-    "nonce": "n-srv"
+    "crypto_suite_id": "FW-CRYPTO-SUITE-01",
+    "handshake_auth": "TLS-PINNED",
+    "x25519_public_key": "BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=",
+    "kyber_ciphertext": "BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU=",
+    "session_id": "",
+    "timestamp_ms": 1700000001000,
+    "nonce": "BgYGBgYGBgYGBgYGBgYGBg=="
   }
 }

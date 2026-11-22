@@ -16,7 +16,8 @@ const HANDSHAKE_VECTORS_PATH = path.join(
   'tests',
   'common',
   'handshake',
-  'end_to_end_test_vectors_js.json',
+  'v0.9',
+  'handshake_flow_test_vectors.json',
 );
 const DR_VECTORS_PATH = path.join(ROOT_DIR, 'tests', 'common', 'handshake', 'dr_test_vectors.json');
 const OUT_DIR = path.join(ROOT_DIR, 'clients', 'minimal-js', 'test-output');
@@ -33,11 +34,12 @@ describe('handshake/DR derived digests', () => {
   test('derives session keys and deterministic nonce digests from handshake vectors', () => {
     const handshakeVectors = JSON.parse(fs.readFileSync(HANDSHAKE_VECTORS_PATH, 'utf8'));
     const steps = handshakeVectors.handshake_flow.steps as Array<{ type: string; message: any }>;
-    const completeMsg = steps.find((s) => s.type === 'HANDSHAKE_COMPLETE')?.message as HandshakeComplete | undefined;
+    const completeMsg = steps[2]?.message as HandshakeComplete | undefined;
     expect(completeMsg).toBeTruthy();
 
     const provider = createRealCryptoProvider({});
-    const keys = provider.keyAgreement.deriveSessionKeys(completeMsg as HandshakeComplete);
+    const withSecret = { ...(completeMsg as any), shared_secret: Buffer.alloc(64, 9).toString('base64') } as HandshakeComplete;
+    const keys = provider.keyAgreement.deriveSessionKeys(withSecret);
 
     const encKeyBytes = decodeB64(keys.encKey);
     const authKeyBytes = decodeB64(keys.authKey);

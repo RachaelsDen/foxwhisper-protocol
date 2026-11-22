@@ -38,18 +38,31 @@ test('performs handshake and reaches ready state', async () => {
       serverReceived.push(tagged.value);
       // Respond with handshake response
       if (tagged.tag === TAG_HANDSHAKE_INIT) {
+        const init = tagged.value as any;
         const resp: HandshakeResponse = {
           type: 'HANDSHAKE_RESPONSE',
           version: 1,
           server_id: 'server-1',
+          crypto_suite_id: 'FW-CRYPTO-SUITE-01',
+          handshake_auth: 'TLS-PINNED',
           x25519_public_key: SERVER_X25519_PUB,
           kyber_ciphertext: KYBER_CT_B64,
-          timestamp: Date.now(),
-          nonce: 'nonce-srv',
+          session_id: deriveHandshakeComplete(init, {
+            type: 'HANDSHAKE_RESPONSE',
+            version: 1,
+            server_id: 'server-1',
+            crypto_suite_id: 'FW-CRYPTO-SUITE-01',
+            handshake_auth: 'TLS-PINNED',
+            x25519_public_key: SERVER_X25519_PUB,
+            kyber_ciphertext: KYBER_CT_B64,
+            session_id: '',
+            timestamp_ms: Date.now(),
+            nonce: Buffer.alloc(16, 1).toString('base64'),
+          } as any).session_id,
+          timestamp_ms: Date.now(),
+          nonce: Buffer.alloc(16, 2).toString('base64'),
         };
         socket.send(encodeTagged(resp, TAG_HANDSHAKE_RESPONSE));
-        const complete = deriveHandshakeComplete(resp);
-        socket.send(encodeTagged(complete, TAG_HANDSHAKE_COMPLETE));
       }
     });
   });

@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import cbor from 'cbor';
 import { FoxClient } from '../src/client.js';
-import { encodeTagged, TAG_HANDSHAKE_RESPONSE, TAG_HANDSHAKE_COMPLETE, deriveHandshakeComplete } from '../src/handshake.js';
+import { encodeTagged, TAG_HANDSHAKE_RESPONSE, deriveHandshakeComplete } from '../src/handshake.js';
 import { StateError } from '../src/errors.js';
 import { buildAssociatedData, createToyAead, createToyKeyAgreement } from '../src/testCrypto.js';
 import { KYBER_CT_B64 } from '../src/crypto/kyber.js';
-import type { WebSocketLike, DataMessage, HandshakeResponse } from '../src/types.js';
+import type { WebSocketLike, DataMessage, HandshakeInit, HandshakeResponse } from '../src/types.js';
  
 const SERVER_X25519_PUB = 'MCowBQYDK2VuAyEAoNF8HngL59Fo+xvZ1cKXmVAvycQTJhUyRi5lC7VFiUk=';
  
@@ -36,7 +36,9 @@ class FakeSocket implements WebSocketLike {
   }
 }
 
-async function connectClient(logger: (event: string, meta?: Record<string, unknown>) => void = () => {}): Promise<{ client: FoxClient; socket: FakeSocket; resp: HandshakeResponse }> {
+async function connectClient(
+  logger: (event: string, meta?: Record<string, unknown>) => void = () => {},
+): Promise<{ client: FoxClient; socket: FakeSocket; init: HandshakeInit; resp: HandshakeResponse }> {
   const socket = new FakeSocket();
   const client = new FoxClient({
     serverUrl: 'ws://fake',
@@ -53,20 +55,35 @@ async function connectClient(logger: (event: string, meta?: Record<string, unkno
   const connectPromise = client.connect();
   socket.triggerOpen();
 
+  const init: HandshakeInit = {
+    type: 'HANDSHAKE_INIT',
+    version: 1,
+    client_id: Buffer.alloc(16, 9).toString('base64'),
+    crypto_suite_id: 'FW-CRYPTO-SUITE-01',
+    handshake_auth: 'TLS-PINNED',
+    x25519_public_key: Buffer.alloc(32, 1).toString('base64'),
+    kyber_public_key: Buffer.alloc(32, 2).toString('base64'),
+    timestamp_ms: Date.now(),
+    nonce: Buffer.alloc(16, 3).toString('base64'),
+  };
+
   const resp: HandshakeResponse = {
     type: 'HANDSHAKE_RESPONSE',
     version: 1,
     server_id: 'srv',
+    crypto_suite_id: 'FW-CRYPTO-SUITE-01',
+    handshake_auth: 'TLS-PINNED',
     x25519_public_key: SERVER_X25519_PUB,
     kyber_ciphertext: KYBER_CT_B64,
-    timestamp: Date.now(),
-    nonce: 'n-srv',
+    session_id: '',
+    timestamp_ms: Date.now(),
+    nonce: Buffer.alloc(16, 4).toString('base64'),
   };
+  resp.session_id = deriveHandshakeComplete(init, resp).session_id;
   socket.triggerMessage(encodeTagged(resp, TAG_HANDSHAKE_RESPONSE));
-  socket.triggerMessage(encodeTagged(deriveHandshakeComplete(resp), TAG_HANDSHAKE_COMPLETE));
 
   await connectPromise;
-  return { client, socket, resp };
+  return { client, socket, init, resp };
 }
 
 function lastSentDataOfType(socket: FakeSocket, type: string) {
@@ -99,12 +116,12 @@ test('double JOIN is idempotent (no second send)', async () => {
 });
 
 test('decrypts ciphertext payloads before emitting', async () => {
-  const { client, socket, resp } = await connectClient();
+  const { client, socket, init, resp } = await connectClient();
   const events: DataMessage[] = [];
   client.on('message', (msg) => events.push(msg as DataMessage));
   await client.join('room-9');
 
-  const keys = createToyKeyAgreement().deriveSessionKeys(deriveHandshakeComplete(resp));
+  const keys = createToyKeyAgreement().deriveSessionKeys(deriveHandshakeComplete(init, resp) as any);
   const packet = { room_id: 'room-9', sender: 'other', payload: { hi: 'there' }, seq: 7 };
   const ad = buildAssociatedData({ room_id: packet.room_id, sender: packet.sender, seq: packet.seq });
   const cipherBytes = createToyAead().encrypt(cbor.encodeOne(packet.payload), ad, keys);

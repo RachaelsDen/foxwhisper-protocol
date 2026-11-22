@@ -56,12 +56,12 @@ Agents MUST implement and maintain the crypto checks described in **4.4.4 Crypto
   - Recompute hybrid secret using X25519 + Kyber as per v0.8.1:
     - `x25519_shared = X25519(client_x25519_priv, server_x25519_pub)`
     - `kyber_shared = Kyber.Decapsulate(client_kyber_priv, server_kyber_ciphertext)`
-    - `handshake_secret = HKDF(x25519_shared || kyber_shared, "FoxWhisper-Handshake-Root", 32)`
+    - `handshake_secret = HKDF(x25519_shared || kem_shared, "FW-Handshake-Root", 32)`
   - Compare derived values with shared test vectors.
 
 - **DR/Double Ratchet checks**
   - Recompute message and chain keys via HKDF-SHA256 with labels:
-    - `"FoxWhisper-Message"`, `"FoxWhisper-Chain"`.
+    - `"FW-Message"`, `"FW-Chain"`.
   - Verify AES-256-GCM encrypt/decrypt using deterministic 96-bit IV and AAD as per v0.8.1 (§6.1.2).
 
 - **Media crypto checks**

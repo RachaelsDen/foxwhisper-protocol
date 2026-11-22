@@ -2,9 +2,11 @@ export type HandshakeInit = {
   type: 'HANDSHAKE_INIT';
   version: number;
   client_id: string;
+  crypto_suite_id: 'FW-CRYPTO-SUITE-01';
+  handshake_auth: 'TLS-PINNED' | 'ED25519-TRANSCRIPT';
   x25519_public_key: string;
   kyber_public_key: string;
-  timestamp: number;
+  timestamp_ms: number;
   nonce: string;
 };
 
@@ -12,18 +14,22 @@ export type HandshakeResponse = {
   type: 'HANDSHAKE_RESPONSE';
   version: number;
   server_id: string;
+  crypto_suite_id: 'FW-CRYPTO-SUITE-01';
+  handshake_auth: 'TLS-PINNED' | 'ED25519-TRANSCRIPT';
   x25519_public_key: string;
   kyber_ciphertext: string;
-  timestamp: number;
+  session_id: string;
+  timestamp_ms: number;
   nonce: string;
+  server_confirm?: string;
 };
 
 export type HandshakeComplete = {
   type: 'HANDSHAKE_COMPLETE';
   version: number;
   session_id: string;
-  handshake_hash: string;
-  timestamp: number;
+  timestamp_ms: number;
+  client_confirm?: string;
 };
 
 export type DataMessage = {

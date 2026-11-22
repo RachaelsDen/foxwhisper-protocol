@@ -18,7 +18,8 @@ const HANDSHAKE_VECTORS_PATH = path.join(
   'tests',
   'common',
   'handshake',
-  'end_to_end_test_vectors_js.json',
+  'v0.9',
+  'handshake_flow_test_vectors.json',
 );
 const GROUP_VECTORS_PATH = path.join(ROOT_DIR, 'tests', 'common', 'handshake', 'group_messaging_test_vectors.json');
 const MEDIA_VECTORS_PATH = path.join(ROOT_DIR, 'tests', 'common', 'handshake', 'media_encryption_test_vectors.json');
@@ -40,11 +41,12 @@ describe('key schedule consistency (digest-only)', () => {
 
   test('collects digests across handshake → group → media → DR', () => {
     const steps = handshakeVectors.handshake_flow.steps as Array<{ type: string; message: any }>;
-    const completeMsg = steps.find((s) => s.type === 'HANDSHAKE_COMPLETE')?.message as HandshakeComplete | undefined;
+    const completeMsg = steps[2]?.message as HandshakeComplete | undefined;
     expect(completeMsg).toBeTruthy();
 
     const provider = createRealCryptoProvider({});
-    const sessionKeys = provider.keyAgreement.deriveSessionKeys(completeMsg as HandshakeComplete);
+    const withSecret = { ...(completeMsg as any), shared_secret: Buffer.alloc(64, 9).toString('base64') } as HandshakeComplete;
+    const sessionKeys = provider.keyAgreement.deriveSessionKeys(withSecret);
     const sessionDigests = {
       encKey_sha256: sha256Hex(decodeB64(sessionKeys.encKey)),
       authKey_sha256: sha256Hex(decodeB64(sessionKeys.authKey)),

@@ -6,9 +6,10 @@ import { encodeTagged, TAG_HANDSHAKE_RESPONSE, TAG_HANDSHAKE_COMPLETE, deriveHan
 import { decodeIncoming } from '../src/handshake.js';
 import { FoxClient } from '../src/client.js';
 
-const resp = vectors.handshake_response;
+const init = (vectors as any).handshake_init;
+const resp = (vectors as any).handshake_response;
 const respBuf = encodeTagged(resp, TAG_HANDSHAKE_RESPONSE);
-const complete = deriveHandshakeComplete(resp);
+const complete = deriveHandshakeComplete(init, resp);
 const completeBuf = encodeTagged(complete, TAG_HANDSHAKE_COMPLETE);
 
 describe('conformance: golden handshake vector', () => {
