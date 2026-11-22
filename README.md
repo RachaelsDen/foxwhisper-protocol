@@ -2,6 +2,24 @@
 
 A formally verified, quantum-resistant end-to-end encryption protocol designed for privacy-preserving safety infrastructure with media capabilities and multi-device synchronization.
 
+## Status: Dormant (since February 2026)
+
+This project is not under active development. It is preserved as a reference — the
+specification is sound and (in theory) implementable, should a future implementer
+want to try.
+
+- **Latest stable spec:** v0.8.1 (`git checkout v0.8.1-stable`)
+- **Latest draft:** v0.9, implementation-grade (`git checkout v0.9-draft`) — never
+  integrated into any product; a few known rough edges.
+
+> ⚠️ **Do not trust the current test harness.** The conformance suite, validators,
+> and minimal-js fixtures predate v0.9's normative changes (HKDF label registry,
+> salt semantics, AEAD context separation, hash-based IV derivation) and are out
+> of date with the v0.9 spec. The migration to the crypto-conformance contract
+> (`spec/crypto_conformance_test_vectors.schema.json`) was started on the
+> `feature/crypto-conformance-contract` branch but never finished. Regenerate all
+> test vectors against the schema before relying on any test result.
+
 ## Overview
 
 FoxWhisper is a comprehensive E2EE protocol specification that has evolved through rigorous formal verification to provide enterprise-grade secure messaging with built-in compliance, moderation, and real-time media capabilities.
